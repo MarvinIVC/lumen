@@ -1,3 +1,5 @@
+import { clientEnv } from './env';
+
 /**
  * App-wide constants. The product name is still an open decision (00-BRIEF.md §9), so it lives
  * behind a single constant — renaming is a one-line change plus the env var.
@@ -18,3 +20,12 @@ export const AI_DISCLAIMER = 'AI-generated study aid — verify against your tex
 export const CURRICULUM_DISCLAIMER =
   'AP® and IB® are trademarks of the College Board and the International Baccalaureate ' +
   'Organization, which do not endorse and are not affiliated with this project.';
+
+/**
+ * The phase-01 design harness at /dev. Available whenever the build is not production, and in a
+ * production build only when NEXT_PUBLIC_DEV_SCREENS is set — which is what lets the end-to-end
+ * suite exercise the note renderer against `next start` without the screens reaching the live site.
+ */
+export function devScreensEnabled(): boolean {
+  return process.env.NODE_ENV !== 'production' || clientEnv.NEXT_PUBLIC_DEV_SCREENS;
+}

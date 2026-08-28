@@ -1,0 +1,107 @@
+/**
+ * Typography and third-party-renderer theming for the note document (03-DESIGN.md §3, §6, §9).
+ *
+ * These are element styles rather than utilities because the content they dress is generated:
+ * a KaTeX subtree or a Mermaid SVG arrives as markup we do not author, so the only way to bring
+ * it into the palette is to reach into it by selector. Everything still resolves to a token.
+ */
+
+/* ---------------------------------------------------------------- *
+ * KaTeX — inherit the surrounding color instead of KaTeX's own.
+ * ---------------------------------------------------------------- */
+.lumen-math .katex {
+  color: currentColor;
+  font-size: 1.05em;
+}
+
+.lumen-math-display .katex-display {
+  margin: 0;
+}
+
+/* KaTeX ships its own horizontal scroll for wide equations; keep it from adding a second one. */
+.lumen-math-display .katex-display > .katex {
+  white-space: normal;
+}
+
+/*
+ * A struck-through line often contains maths — "you wrote 1.3 × 10^24". KaTeX renders into
+ * inline-block spans, which do not inherit `text-decoration`, so half the line ends up struck and
+ * half does not. Reaching in is the only way to strike the whole thing.
+ */
+.lumen-struck,
+.lumen-struck .katex,
+.lumen-struck .lumen-math {
+  text-decoration: line-through;
+  text-decoration-color: inherit;
+}
+
+/* ---------------------------------------------------------------- *
+ * Mermaid — the SVG is themed through themeVariables, but a few
+ * things (fonts, the max-width it inlines) are only reachable here.
+ * ---------------------------------------------------------------- */
+/*
+ * Mermaid writes an inline `max-width` equal to the diagram's natural size, which on a wide
+ * column leaves a flowchart floating at half scale with 9px labels. Overriding to the full column
+ * width and letting the viewBox scale is what makes it read as a designed figure.
+ */
+.lumen-diagram svg {
+  width: 100%;
+  max-width: 100% !important;
+  height: auto;
+  font-family: var(--font-sans);
+}
+
+.lumen-diagram .nodeLabel,
+.lumen-diagram .edgeLabel {
+  font-family: var(--font-sans);
+}
+
+/* Mermaid puts a background rect behind edge labels; ours must be the page, not white. */
+.lumen-diagram .edgeLabel rect {
+  fill: var(--bg);
+}
+
+/* ---------------------------------------------------------------- *
+ * smiles-drawer — SVG output, colored through its theme object; the
+ * background it paints is the one thing the theme cannot remove.
+ * ---------------------------------------------------------------- */
+svg.lumen-structure {
+  max-width: 100%;
+  height: auto;
+  background: transparent;
+}
+
+/*
+ * smiles-drawer injects its own <style> setting `font: 11pt Arial` on atom labels. Arial in the
+ * middle of a Newsreader page is exactly the kind of seam 03-DESIGN.md §9 says to close, and the
+ * injected rule is the only place it can be reached.
+ */
+svg.lumen-structure text,
+svg.lumen-structure .element,
+svg.lumen-structure .sub {
+  font-family: var(--font-sans);
+}
+
+/* ---------------------------------------------------------------- *
+ * The note body. A measure, a serif, and a lot of vertical air.
+ * ---------------------------------------------------------------- */
+.lumen-note {
+  font-family: var(--font-serif);
+  font-size: var(--fs-md);
+  line-height: var(--lh-note);
+  color: var(--text);
+  /* Newsreader carries optical sizing; letting the browser use it is most of why it looks
+     bookish at 18px and still holds together at 40px. */
+  font-optical-sizing: auto;
+}
+
+.lumen-note :is(h2, h3, h4) {
+  font-family: var(--font-serif);
+  color: var(--text);
+  text-wrap: balance;
+}
+
+/* Numerals in tables and answers line up; numerals in prose do not need to. */
+.lumen-note :is(td, th) {
+  font-variant-numeric: tabular-nums;
+}

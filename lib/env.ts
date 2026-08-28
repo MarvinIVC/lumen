@@ -40,6 +40,13 @@ const clientSchema = z.object({
   NEXT_PUBLIC_SENTRY_ENABLED: booleanish,
   NEXT_PUBLIC_ANALYTICS_BEACON_URL: optional(z.url()),
   NEXT_PUBLIC_CF_ANALYTICS_TOKEN: optional(z.string()),
+
+  /**
+   * Serves the phase-01 design harness at /dev. On by default outside production; production has
+   * to opt in, which is how the CI end-to-end run reaches the note renderer against a real build
+   * without the screens appearing on the live site.
+   */
+  NEXT_PUBLIC_DEV_SCREENS: booleanish,
 });
 
 export type ClientEnv = z.infer<typeof clientSchema>;
@@ -79,6 +86,7 @@ const rawClientEnv = {
   NEXT_PUBLIC_SENTRY_ENABLED: process.env.NEXT_PUBLIC_SENTRY_ENABLED,
   NEXT_PUBLIC_ANALYTICS_BEACON_URL: process.env.NEXT_PUBLIC_ANALYTICS_BEACON_URL,
   NEXT_PUBLIC_CF_ANALYTICS_TOKEN: process.env.NEXT_PUBLIC_CF_ANALYTICS_TOKEN,
+  NEXT_PUBLIC_DEV_SCREENS: process.env.NEXT_PUBLIC_DEV_SCREENS,
 };
 
 /** Parses the public env. Exported for tests; app code should use `clientEnv`. */

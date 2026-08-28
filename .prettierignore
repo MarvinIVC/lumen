@@ -8,3 +8,4 @@ fixtures/
 playwright-report/
 test-results/
 .lighthouseci/
+lib/render/fixture/gold-source.ts

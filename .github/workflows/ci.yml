@@ -54,6 +54,10 @@ jobs:
 
       - name: Build
         run: pnpm build
+        env:
+          # Lets the Playwright suite reach the /dev design harness in a production build. The
+          # deploy workflow does not set it, so the live site still 404s those routes.
+          NEXT_PUBLIC_DEV_SCREENS: '1'
 
       # Runs after the build so it can inspect the real client chunks, not just the source.
       - name: No secrets in the client bundle
