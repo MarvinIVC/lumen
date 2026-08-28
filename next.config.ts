@@ -2,8 +2,13 @@ import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs';
 import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
 
-// Gives `next dev` the same Cloudflare bindings the deployed Worker gets.
-void initOpenNextCloudflareForDev();
+// Gives `next dev` the same Cloudflare bindings the deployed Worker gets. Storybook and Vitest
+// also load this config, and starting a workerd process for them wedges the run — so the guard
+// is not cosmetic.
+const isNextDev =
+  process.env.NODE_ENV === 'development' && !process.env.STORYBOOK && !process.env.VITEST;
+
+if (isNextDev) void initOpenNextCloudflareForDev();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

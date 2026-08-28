@@ -64,6 +64,15 @@ describe.each(THEMES)('%s theme', (_name, theme) => {
     }
   });
 
+  it('keeps a filled control legible — label on --accent and on --danger', () => {
+    // The two "foreground on a colored fill" pairs. Primary and danger buttons are built from
+    // them, so if either slips below the body-copy bar the whole button set fails AA at once.
+    expect(contrast(theme['--accent-fg'], theme['--accent'])).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrast(theme['--danger-fg'], theme['--danger'])).toBeGreaterThanOrEqual(AA_TEXT);
+    // Hover must not be the moment contrast quietly drops.
+    expect(contrast(theme['--accent-fg'], theme['--accent-hover'])).toBeGreaterThanOrEqual(AA_TEXT);
+  });
+
   it('keeps borders visible as non-text UI', () => {
     expect(contrast(theme['--border-strong'], theme['--bg'])).toBeGreaterThanOrEqual(1.4);
   });

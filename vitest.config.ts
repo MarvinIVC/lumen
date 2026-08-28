@@ -1,11 +1,15 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
+import { playwright } from '@vitest/browser-playwright';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 
 /**
  * Two projects, two CI jobs:
  *   `unit`     — everything under tests/unit. Fast, no network, runs on every push.
  *   `ai-evals` — the release gate for prompt changes (04-AI-ENGINE.md §9). Runs against a mock
  *                provider in CI and, from phase-04, nightly against the real key on a tiny budget.
+ *   `storybook`— renders every story in a real browser and runs axe on it. This is what makes
+ *                "no a11y violations on any story" (phase-01 DoD) a check rather than a claim.
  */
 export default defineConfig({
   resolve: { alias: { '@': resolve(import.meta.dirname, '.') } },
@@ -23,6 +27,19 @@ export default defineConfig({
           name: 'unit',
           include: ['tests/unit/**/*.test.ts'],
           environment: 'node',
+        },
+      },
+      {
+        extends: true,
+        plugins: [storybookTest({ configDir: resolve(import.meta.dirname, '.storybook') })],
+        test: {
+          name: 'storybook',
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: playwright(),
+            instances: [{ browser: 'chromium' }],
+          },
         },
       },
       {

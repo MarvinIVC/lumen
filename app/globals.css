@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '../lib/design/tokens.css';
+@import '../lib/design/motion.css';
 
 /*
  * Tailwind v4 reads our CSS variables through `@theme inline`, so every utility resolves to a
@@ -26,6 +27,7 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-weak: var(--accent-weak);
+  --color-accent-fg: var(--accent-fg);
   --color-link: var(--link);
 
   --color-ai-added: var(--ai-added-bg);
@@ -36,6 +38,9 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-fg: var(--danger-fg);
+  --color-ai-added-rule: var(--ai-added-rule);
 
   --text-xs: var(--fs-xs);
   --text-sm: var(--fs-sm);
