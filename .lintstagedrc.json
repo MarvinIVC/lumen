@@ -1,0 +1,5 @@
+{
+  "*.{ts,tsx}": ["eslint --fix --max-warnings=0 --no-warn-ignored", "prettier --write"],
+  "*.{js,mjs,cjs,json,css,md,yml,yaml}": ["prettier --write"],
+  "lib/curriculum/packs/*.json": ["node scripts/pack-validate.mjs"]
+}

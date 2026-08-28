@@ -1,0 +1,10 @@
+.next/
+.open-next/
+.wrangler/
+node_modules/
+coverage/
+pnpm-lock.yaml
+fixtures/
+playwright-report/
+test-results/
+.lighthouseci/

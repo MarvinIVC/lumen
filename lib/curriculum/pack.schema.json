@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumen.app/schemas/curriculum-pack.schema.json",
+  "title": "Lumen curriculum pack",
+  "description": "A pluggable syllabus reference that constrains and grounds enhancement for one course. See 05-CURRICULUM-PACKS.md. Pack content must be authored in the maintainer's own words — never copied from a copyrighted syllabus (§1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "subject",
+    "curriculum",
+    "displayName",
+    "language",
+    "domainFamily",
+    "authority",
+    "status",
+    "globalConventions",
+    "units"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Unique kebab-case identifier, e.g. 'ap-chemistry'."
+    },
+    "version": { "type": "string", "pattern": "^\\d{4}\\.\\d+$" },
+    "subject": { "type": "string", "minLength": 1 },
+    "curriculum": {
+      "type": "string",
+      "enum": ["AP", "IB_HL", "IB_SL", "A_LEVEL", "IGCSE", "INTERNAL", "GENERAL"]
+    },
+    "displayName": { "type": "string", "minLength": 1 },
+    "language": { "type": "string", "minLength": 2, "description": "BCP-47 tag." },
+    "domainFamily": {
+      "type": "string",
+      "enum": [
+        "stem-quantitative",
+        "stem-descriptive",
+        "history-social",
+        "literature-language-arts",
+        "language-acquisition",
+        "generic"
+      ]
+    },
+    "authority": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The publicly published document this pack is aligned to, named nominatively. Never implies endorsement."
+    },
+    "disclaimer": { "type": "string" },
+    "status": { "type": "string", "enum": ["stable", "beta", "draft"] },
+    "maintainers": { "type": "array", "items": { "type": "string" } },
+
+    "globalConventions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["notation"],
+      "properties": {
+        "notation": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Short imperative rules the model must follow."
+        },
+        "commandTerms": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Exam command term -> what it demands of the student."
+        },
+        "providedReference": { "type": "array", "items": { "type": "string" } },
+        "mustMemorise": { "type": "array", "items": { "type": "string" } },
+        "penalisedShortcuts": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "equationsSheet": { "type": "array", "items": { "type": "string" } },
+
+    "units": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/unit" }
+    }
+  },
+
+  "$defs": {
+    "unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "summary", "topics"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "name": { "type": "string", "minLength": 1 },
+        "bigIdeas": { "type": "array", "items": { "type": "string" } },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The author's own words: what the unit is about and where it sits."
+        },
+        "topics": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/topic" } }
+      }
+    },
+
+    "topic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "scope", "mustDefine", "requiredDepth"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "objectiveCodes": { "type": "array", "items": { "type": "string" } },
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One or two sentences, author's words: what a student must be able to DO."
+        },
+        "mustDefine": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "requiredDepth": { "type": "string", "minLength": 1 },
+        "commonMisconceptions": { "type": "array", "items": { "type": "string" } },
+        "workedExamplePatterns": { "type": "array", "items": { "type": "string" } },
+        "visualsThatHelp": { "type": "array", "items": { "type": "string" } },
+        "connections": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

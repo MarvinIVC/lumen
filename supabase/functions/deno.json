@@ -1,0 +1,6 @@
+{
+  "lock": false,
+  "fmt": { "singleQuote": true, "lineWidth": 100, "semiColons": true },
+  "lint": { "rules": { "tags": ["recommended"] } },
+  "compilerOptions": { "strict": true, "lib": ["deno.window", "esnext"] }
+}

@@ -1,0 +1,54 @@
+import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+
+// Gives `next dev` the same Cloudflare bindings the deployed Worker gets.
+void initOpenNextCloudflareForDev();
+
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  poweredByHeader: false,
+
+  // A type or lint error must fail the build, not get waved through.
+  typescript: { ignoreBuildErrors: false },
+  eslint: { ignoreDuringBuilds: false },
+
+  experimental: {
+    // Keeps the marketing bundle under the 90 KB budget (02-ARCHITECTURE.md §8) by tree-shaking
+    // barrel imports from the packages that have them.
+    optimizePackageImports: ['radix-ui', '@tanstack/react-query'],
+  },
+
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=()' },
+        ],
+      },
+      {
+        // The worker must never be cached, or an update can never ship.
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+      },
+    ];
+  },
+};
+
+const sentryEnabled = process.env.NEXT_PUBLIC_SENTRY_ENABLED === 'true';
+
+export default sentryEnabled
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      silent: true,
+      widenClientFileUpload: true,
+      // Proxies Sentry through our own origin so ad blockers do not swallow error reports.
+      tunnelRoute: '/monitoring',
+      disableLogger: true,
+    })
+  : nextConfig;

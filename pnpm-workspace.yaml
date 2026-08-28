@@ -1,0 +1,10 @@
+allowBuilds:
+  '@sentry/cli': true
+  esbuild: true
+  supabase: true
+  unrs-resolver: true
+  workerd: true
+minimumReleaseAgeExclude:
+  - '@tanstack/query-core@5.102.8'
+  - '@tanstack/react-query@5.102.8'
+  - lint-staged@17.4.1

@@ -1,0 +1,59 @@
+{
+  "$schema": "../lib/curriculum/pack.schema.json",
+  "id": "example-course",
+  "version": "2026.1",
+  "subject": "Chemistry",
+  "curriculum": "GENERAL",
+  "displayName": "Example Course",
+  "language": "en",
+  "domainFamily": "stem-quantitative",
+  "authority": "Replace with the publicly published syllabus document this pack is aligned to, named nominatively (e.g. 'College Board AP Chemistry Course and Exam Description').",
+  "disclaimer": "Not affiliated with or endorsed by the awarding body. Written in the maintainers' own words.",
+  "status": "draft",
+  "maintainers": ["@your-handle"],
+
+  "globalConventions": {
+    "notation": [
+      "State units on every quantity, including intermediate steps.",
+      "Match significant figures to the least precise datum given.",
+      "Write chemical equations with mhchem, e.g. \\ce{2H2 + O2 -> 2H2O}."
+    ],
+    "commandTerms": {
+      "Justify": "Give evidence and reasoning that connect the claim to the data.",
+      "Explain": "Give the mechanism or cause, not only the observation."
+    },
+    "providedReference": ["periodic table", "constants and equations sheet"],
+    "mustMemorise": ["polyatomic ion names and charges", "solubility rules"],
+    "penalisedShortcuts": [
+      "'atomic mass = molar mass' without the amu-vs-g·mol⁻¹ distinction",
+      "dropping units mid-calculation"
+    ]
+  },
+
+  "equationsSheet": ["n = m/M", "n = N/N_A", "PV = nRT"],
+
+  "units": [
+    {
+      "id": "unit-1",
+      "name": "First Unit Name",
+      "bigIdeas": ["A one-line big idea the unit serves"],
+      "summary": "In your own words: what this unit is about and where it sits in the course.",
+      "topics": [
+        {
+          "id": "1.1",
+          "name": "First Topic Name",
+          "objectiveCodes": ["ABC-1.A"],
+          "scope": "One or two sentences, in your own words, describing what a student must be able to DO.",
+          "mustDefine": ["term one", "term two"],
+          "requiredDepth": "How far the course actually goes — and, just as usefully, where it stops.",
+          "commonMisconceptions": [
+            "The wrong idea students most often bring to this topic, stated as they would state it."
+          ],
+          "workedExamplePatterns": ["given X and Y → find Z by dimensional analysis"],
+          "visualsThatHelp": ["a conversion map as a mermaid flowchart"],
+          "connections": ["1.2 the next topic", "4.x where this is used again"]
+        }
+      ]
+    }
+  ]
+}

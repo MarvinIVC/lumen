@@ -1,0 +1,30 @@
+# Cloudflare deploy config (02-ARCHITECTURE.md §2).
+#
+# @opennextjs/cloudflare v1 targets Workers with Static Assets rather than the older Pages
+# adapter, which Cloudflare has deprecated. Same platform, same free tier, current supported path.
+#
+#   pnpm cf:build     build the worker into .open-next/
+#   pnpm cf:preview   run it locally in workerd
+#   pnpm cf:deploy    build and deploy
+
+name = "lumen"
+main = ".open-next/worker.js"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[observability]
+enabled = true
+
+# Secrets are set with `wrangler secret put NAME`, never committed. Public values live in
+# .env.example and are inlined at build time.
+[vars]
+NEXT_PUBLIC_ENV = "production"
+
+# Weekly ping so the free Supabase project never idles into a pause (02-ARCHITECTURE.md §2).
+# Enable once a production Supabase project exists (phase-06).
+# [triggers]
+# crons = ["0 6 * * 1"]

@@ -1,0 +1,121 @@
+@import 'tailwindcss';
+@import '../lib/design/tokens.css';
+
+/*
+ * Tailwind v4 reads our CSS variables through `@theme inline`, so every utility resolves to a
+ * token and follows the theme automatically (03-DESIGN.md §10).
+ *
+ * Color keys are mapped 1:1 with the token names in tokens.css — `--bg` becomes `bg-bg`,
+ * `--text-muted` becomes `text-text-muted`. Slightly blunt, but it means there is exactly one
+ * vocabulary between the spec, the CSS, and the components.
+ *
+ * Font families need no mapping: tokens.css redefines --font-sans/--font-serif/--font-mono on
+ * :root after Tailwind's defaults, so `font-sans` / `font-serif` / `font-mono` already resolve
+ * to our stacks. The spacing scale (4·8·12·16·24·32·48·64·96) is Tailwind's default 0.25rem
+ * scale, so that needs no mapping either.
+ */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-sunken: var(--bg-sunken);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-weak: var(--accent-weak);
+  --color-link: var(--link);
+
+  --color-ai-added: var(--ai-added-bg);
+  --color-ai-clarified: var(--ai-clarified-bg);
+  --color-ai-corrected: var(--ai-corrected-bg);
+  --color-ai-corrected-mark: var(--ai-corrected-mk);
+  --color-verify: var(--verify-bg);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --text-xs: var(--fs-xs);
+  --text-sm: var(--fs-sm);
+  --text-base: var(--fs-base);
+  --text-md: var(--fs-md);
+  --text-lg: var(--fs-lg);
+  --text-xl: var(--fs-xl);
+  --text-2xl: var(--fs-2xl);
+  --text-3xl: var(--fs-3xl);
+  --text-4xl: var(--fs-4xl);
+
+  --leading-tight: var(--lh-tight);
+  --leading-snug: var(--lh-snug);
+  --leading-normal: var(--lh-normal);
+  --leading-note: var(--lh-note);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-note: var(--r-note);
+
+  --shadow-card: var(--shadow-1);
+  --shadow-overlay: var(--shadow-2);
+
+  --ease-lumen: var(--ease);
+}
+
+/* `dark:` for the rare case a utility must differ beyond a token swap. Covers both the explicit
+   override and the OS preference, matching the guard in tokens.css. */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+      @slot;
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: var(--fs-base);
+    line-height: var(--lh-normal);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* One focus treatment everywhere (03-DESIGN.md §5). */
+  :focus-visible {
+    outline: var(--focus-ring) solid var(--accent);
+    outline-offset: var(--focus-offset);
+    border-radius: var(--r-sm);
+  }
+
+  ::selection {
+    background-color: var(--accent-weak);
+    color: var(--text);
+  }
+
+  a {
+    color: var(--link);
+  }
+
+  /* 03-DESIGN.md §7: reduced motion means no motion, not less motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
