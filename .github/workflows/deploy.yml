@@ -25,10 +25,13 @@ jobs:
     environment:
       name: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
-      NEXT_PUBLIC_APP_NAME: ${{ vars.NEXT_PUBLIC_APP_NAME }}
+      # Fallbacks keep the very first deploy working before any repo variables are set. There is
+      # no production Supabase project until phase-06, and nothing calls it before then; once one
+      # exists, set these as repo variables and the fallbacks stop being used.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-until-phase-06-0000000000' }}
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'https://lumen.marvinmaiwang.workers.dev' }}
+      NEXT_PUBLIC_APP_NAME: ${{ vars.NEXT_PUBLIC_APP_NAME || 'Lumen' }}
       NEXT_PUBLIC_ENV: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
       NEXT_PUBLIC_SENTRY_ENABLED: ${{ vars.NEXT_PUBLIC_SENTRY_ENABLED }}
