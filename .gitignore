@@ -40,3 +40,6 @@ blob-report/
 
 # typescript incremental build info
 *.tsbuildinfo
+
+# Storybook static build
+storybook-static/

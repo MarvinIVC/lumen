@@ -26,7 +26,46 @@ const SERVER_ONLY = [
   'scripts/**',
   'tests/**',
   'eslint.config.mjs',
+  '.storybook/**',
 ];
+
+/**
+ * 03-DESIGN.md §10: tokens are the only source of color, space and type. A hex literal or a
+ * Tailwind arbitrary value like `p-[13px]` in a component is design debt that survives review by
+ * looking harmless, so it fails the lint instead. `tests/unit/tokens-only.test.ts` covers the
+ * same ground for CSS files, which ESLint does not parse.
+ *
+ * Escape hatches that stay legal, because they still resolve to a token:
+ *   `bg-[var(--accent-weak)]`, `duration-[--dur-fast]`, `w-[--margin-col]`.
+ */
+const HEX_COLOR = String.raw`#[0-9a-fA-F]{3,8}\b`;
+const ARBITRARY_LENGTH = String.raw`\[-?[0-9.]+(px|rem|em|pt)\]`;
+
+const tokensOnly = {
+  'no-restricted-syntax': [
+    'error',
+    {
+      selector: `Literal[value=/${HEX_COLOR}/]`,
+      message:
+        'No hardcoded colors in the design system (03-DESIGN.md §10). Use a token: a Tailwind ' +
+        'utility such as `bg-accent-weak`, or `var(--accent)` for a third-party renderer.',
+    },
+    {
+      selector: `TemplateElement[value.raw=/${HEX_COLOR}/]`,
+      message: 'No hardcoded colors in the design system (03-DESIGN.md §10). Use a token.',
+    },
+    {
+      selector: `Literal[value=/${ARBITRARY_LENGTH}/]`,
+      message:
+        'No arbitrary lengths in the design system (03-DESIGN.md §10). Use the spacing/type ' +
+        'scale, or reference a token: `w-[var(--margin-col)]`.',
+    },
+    {
+      selector: `TemplateElement[value.raw=/${ARBITRARY_LENGTH}/]`,
+      message: 'No arbitrary lengths in the design system (03-DESIGN.md §10). Use the scale.',
+    },
+  ],
+};
 
 /**
  * The rule behind "no secret is referenced in any client component" (phase-00 DoD).
@@ -66,6 +105,7 @@ export default tseslint.config(
       'coverage/**',
       'playwright-report/**',
       'test-results/**',
+      'storybook-static/**',
       '.lighthouseci/**',
       'next-env.d.ts',
       'cloudflare-env.d.ts',
@@ -116,6 +156,26 @@ export default tseslint.config(
   {
     files: SERVER_ONLY,
     rules: { 'no-restricted-syntax': 'off' },
+  },
+
+  {
+    files: ['components/**/*.{ts,tsx}', 'lib/render/**/*.{ts,tsx}', 'lib/design/**/*.{ts,tsx}'],
+    rules: tokensOnly,
+  },
+
+  {
+    // tokens.ts *is* the palette — it is the one file allowed to spell colors out.
+    files: ['lib/design/tokens.ts'],
+    rules: { 'no-restricted-syntax': 'off' },
+  },
+
+  {
+    // Stories are documentation: fixture prose, long class lists and deliberate edge cases.
+    files: ['**/*.stories.tsx', '.storybook/**/*.{ts,tsx}'],
+    rules: {
+      'better-tailwindcss/no-unknown-classes': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
   },
 
   {

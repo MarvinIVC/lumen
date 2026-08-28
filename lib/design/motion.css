@@ -1,0 +1,158 @@
+/**
+ * Motion (03-DESIGN.md §7). Durations and easing come from tokens.css; this file only says what
+ * moves. Everything here is transform/opacity so it stays cheap, and globals.css already
+ * neutralises all of it under `prefers-reduced-motion: reduce`.
+ */
+
+@keyframes lumen-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lumen-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Overlays: a hint of scale so they feel placed rather than pasted. */
+@keyframes lumen-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+@keyframes lumen-pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+/* Mobile sheets. */
+@keyframes lumen-slide-up-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes lumen-slide-up-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes lumen-slide-left-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes lumen-slide-left-out {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* The streaming reveal: each section fades up 8px as its first block arrives. */
+@keyframes lumen-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* The completion "settle": one soft pulse near the title, then done. No confetti. */
+@keyframes lumen-settle {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* The progress hairline under the top bar while generation runs. */
+@keyframes lumen-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+/* Skeleton dots and bars breathe rather than shimmer — a shimmer sweep reads as "loading forever". */
+@keyframes lumen-breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@utility animate-fade-in {
+  animation: lumen-fade-in var(--dur-base) var(--ease);
+}
+
+@utility animate-reveal {
+  animation: lumen-reveal var(--dur-slow) var(--ease) both;
+}
+
+@utility animate-settle {
+  animation: lumen-settle var(--dur-slow) var(--ease) both;
+}
+
+@utility animate-breathe {
+  animation: lumen-breathe 1.6s var(--ease) infinite;
+}
+
+@utility animate-indeterminate {
+  animation: lumen-indeterminate 1.4s var(--ease) infinite;
+}
+
+/*
+ * Radix drives enter/exit with `data-state`, so the animation is attached to the state rather
+ * than to a wrapper component. One place to change how every overlay enters.
+ */
+@utility overlay-motion {
+  &[data-state='open'] {
+    animation: lumen-fade-in var(--dur-base) var(--ease);
+  }
+  &[data-state='closed'] {
+    animation: lumen-fade-out var(--dur-base) var(--ease);
+  }
+}
+
+@utility popover-motion {
+  &[data-state='open'] {
+    animation: lumen-pop-in var(--dur-base) var(--ease);
+  }
+  &[data-state='closed'] {
+    animation: lumen-pop-out var(--dur-fast) var(--ease);
+  }
+}
+
+@utility sheet-motion-bottom {
+  &[data-state='open'] {
+    animation: lumen-slide-up-in var(--dur-base) var(--ease);
+  }
+  &[data-state='closed'] {
+    animation: lumen-slide-up-out var(--dur-base) var(--ease);
+  }
+}
+
+@utility sheet-motion-left {
+  &[data-state='open'] {
+    animation: lumen-slide-left-in var(--dur-base) var(--ease);
+  }
+  &[data-state='closed'] {
+    animation: lumen-slide-left-out var(--dur-base) var(--ease);
+  }
+}

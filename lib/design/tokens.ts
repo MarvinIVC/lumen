@@ -72,6 +72,7 @@ export const light = {
   '--accent': '#2f5d50',
   '--accent-hover': '#264a40',
   '--accent-weak': '#e7efeb',
+  '--accent-fg': '#fcfbf8',
   '--link': '#1f5fa8',
 
   '--origin-student': 'transparent',
@@ -84,6 +85,8 @@ export const light = {
   '--success': '#2f7d4f',
   '--warning': '#b4741f',
   '--danger': '#a6402f',
+  '--danger-hover': '#8c3527',
+  '--danger-fg': '#fcfbf8',
 
   '--shadow-1': '0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px rgb(0 0 0 / 0.06)',
   '--shadow-2': '0 2px 4px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.1)',
@@ -104,6 +107,7 @@ export const dark = {
   '--accent': '#6fbfa6',
   '--accent-hover': '#8ad0b9',
   '--accent-weak': '#22302b',
+  '--accent-fg': '#171613',
   '--link': '#7fb2e6',
 
   '--origin-student': 'transparent',
@@ -116,6 +120,8 @@ export const dark = {
   '--success': '#6fbf8f',
   '--warning': '#e0a860',
   '--danger': '#e08a78',
+  '--danger-hover': '#eaa294',
+  '--danger-fg': '#171613',
 
   '--shadow-1': '0 1px 2px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.24)',
   '--shadow-2': '0 2px 4px rgb(0 0 0 / 0.36), 0 12px 32px rgb(0 0 0 / 0.32)',

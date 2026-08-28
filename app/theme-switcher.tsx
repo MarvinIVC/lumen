@@ -30,7 +30,7 @@ export function ThemeSwitcher() {
             aria-checked={selected}
             onClick={() => setTheme(option)}
             className={cn(
-              'rounded-sm px-3 py-1 text-sm transition-colors duration-[--dur-fast] ease-lumen',
+              'rounded-sm px-3 py-1 text-sm transition-colors duration-(--dur-fast) ease-lumen',
               selected
                 ? 'bg-accent-weak font-medium text-accent'
                 : 'text-text-muted hover:text-text',

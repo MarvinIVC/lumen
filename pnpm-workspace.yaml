@@ -1,5 +1,8 @@
 allowBuilds:
   '@sentry/cli': true
+  # Both only print a funding banner on install; nothing is compiled.
+  core-js: false
+  es5-ext: false
   esbuild: true
   supabase: true
   unrs-resolver: true
