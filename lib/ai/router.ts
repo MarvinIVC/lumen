@@ -4,7 +4,9 @@
  *
  * Order of business, and it matters:
  *   1. BYOK present and valid → use it. Skip quota. Skip the global cap.
- *   2. Otherwise, in this order: kill switch → global daily cap → per-tier quota.
+ *   2. Otherwise, in this order: kill switch → monthly ceiling → daily burst cap → per-tier
+ *      quota. The monthly cap is the ceiling from 00-BRIEF.md §5.2; the daily one is a burst
+ *      guard, so a runaway is caught in hours rather than at month end.
  *   3. Primary = deepseek-v4-flash. On timeout >90s / 5xx / rate-limit / invalid-after-repair,
  *      fall back to gemini-2.5-flash exactly once.
  *   4. On fallback failure → partial + resumable error, and do NOT charge a full credit.
@@ -58,6 +60,9 @@ export type PricingTable = Record<string, ModelPricing> & {
 
 export interface AppConfig {
   enhance_enabled: boolean;
+  /** The ceiling from 00-BRIEF.md §5.2, checked against this month's summed `daily_cost`. */
+  monthly_cap_cny: number;
+  /** Burst guard at ~2x the realistic daily average — catches a runaway within hours. */
   daily_cap_cny: number;
   quota: Record<Tier, QuotaTier>;
   credit_weights: Record<string, number>;
@@ -74,7 +79,16 @@ export interface AppConfig {
 }
 
 export type RefusalReason =
-  'kill-switch' | 'community-limit' | 'quota' | 'not-study-notes' | 'too-large' | 'rate-limited';
+  | 'kill-switch'
+  // Both caps read the same to the student ("we've hit today's community limit — bring your own
+  // key, or try tomorrow"), but they stay distinct so the admin dashboard and the 60%/90% alerts
+  // can tell a burst apart from a month that is genuinely running out.
+  | 'monthly-cap'
+  | 'daily-cap'
+  | 'quota'
+  | 'not-study-notes'
+  | 'too-large'
+  | 'rate-limited';
 
 export interface RouteRefusal {
   ok: false;

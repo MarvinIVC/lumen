@@ -315,20 +315,27 @@ insert into public.app_config (key, value) values
   -- Layer 3, the kill switch. Flip to false to disable every shared-key call instantly.
   ('enhance_enabled', 'true'::jsonb),
 
-  -- Layer 2, the hard global cap. Seeded at the spec's 8 CNY/day.
+  -- Layer 2, the hard global spend cap. Two numbers, because one cannot do this job.
   --
-  -- WARNING — this needs a decision before any shared key goes live. 8 CNY/day is about
-  -- 240 CNY/month, which is already over the <=100 CNY/month non-negotiable in 00-BRIEF.md
-  -- §5.2. The spec picked it as headroom over an ~82 CNY/month estimate that assumed pricing
-  -- about 4.7x cheaper on output than DeepSeek actually charges (see `pricing` below).
-  -- Recomputed at verified rates, the same pessimistic assumptions give roughly 289 CNY/month
-  -- at peak and 145 off-peak; the realistic case (10 enhancements/student/month, lighter
-  -- output) lands near 91 CNY/month at peak. The ceiling is now genuinely reachable, and this
-  -- cap would not catch it. Lowering this to 3 makes the hard cap enforce the stated ceiling.
+  -- 00-BRIEF.md §5.2 states the ceiling as a MONTHLY figure (<=100 CNY at 200 active students),
+  -- but §7 only gives a daily cap. A daily cap alone cannot enforce a monthly ceiling without
+  -- being brittle: at verified pricing the realistic case averages ~2.9 CNY/day, so any cap low
+  -- enough to hold ~100/month trips during the exam-week bursts that are exactly when students
+  -- need this most. Losing the product the night before a test is the worst possible failure.
   --
-  -- Output tokens are ~86% of the cost at these rates, so `limits.max_tokens` per mode is a
-  -- far bigger lever than prefix caching. BYOK is unaffected by this cap.
-  ('daily_cap_cny', '8'::jsonb),
+  -- So: `monthly_cap_cny` IS the ceiling from the brief, checked against the running sum of
+  -- `daily_cost` for the current month. `daily_cap_cny` is a burst guard at roughly 2x the
+  -- realistic daily average — it catches a runaway loop or an abuse spike within hours rather
+  -- than at month end, and leaves normal cramming alone.
+  --
+  -- The spec's original 8 CNY/day (~240/month) was headroom over an ~82 CNY/month estimate that
+  -- assumed pricing ~4.7x cheaper on output than DeepSeek actually charges (see `pricing`), so
+  -- it would not have caught an overrun at real prices.
+  --
+  -- Output tokens are ~86% of the cost at these rates, so `limits.max_tokens` per mode is a far
+  -- bigger lever than prompt caching. BYOK is unaffected by both caps.
+  ('monthly_cap_cny', '100'::jsonb),
+  ('daily_cap_cny', '6'::jsonb),
 
   -- Alert at 60% and 90% of the cap.
   ('alert_thresholds', '[0.6, 0.9]'::jsonb),
