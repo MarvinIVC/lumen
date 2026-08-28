@@ -315,8 +315,19 @@ insert into public.app_config (key, value) values
   -- Layer 3, the kill switch. Flip to false to disable every shared-key call instantly.
   ('enhance_enabled', 'true'::jsonb),
 
-  -- Layer 2, the hard global cap. ~8 CNY/day ≈ 240/month, comfortable headroom over the
-  -- ~82 CNY/month pessimistic estimate. BYOK is unaffected by this.
+  -- Layer 2, the hard global cap. Seeded at the spec's 8 CNY/day.
+  --
+  -- WARNING — this needs a decision before any shared key goes live. 8 CNY/day is about
+  -- 240 CNY/month, which is already over the <=100 CNY/month non-negotiable in 00-BRIEF.md
+  -- §5.2. The spec picked it as headroom over an ~82 CNY/month estimate that assumed pricing
+  -- about 4.7x cheaper on output than DeepSeek actually charges (see `pricing` below).
+  -- Recomputed at verified rates, the same pessimistic assumptions give roughly 289 CNY/month
+  -- at peak and 145 off-peak; the realistic case (10 enhancements/student/month, lighter
+  -- output) lands near 91 CNY/month at peak. The ceiling is now genuinely reachable, and this
+  -- cap would not catch it. Lowering this to 3 makes the hard cap enforce the stated ceiling.
+  --
+  -- Output tokens are ~86% of the cost at these rates, so `limits.max_tokens` per mode is a
+  -- far bigger lever than prefix caching. BYOK is unaffected by this cap.
   ('daily_cap_cny', '8'::jsonb),
 
   -- Alert at 60% and 90% of the cap.
@@ -333,21 +344,55 @@ insert into public.app_config (key, value) values
     "tidy": 0.6, "complete": 1.0, "study_guide": 1.4, "ocr_page": 0.15, "regen": 0.25
   }$json$::jsonb),
 
-  -- CNY per million tokens. VERIFY AGAINST LIVE PROVIDER PRICING BEFORE PRODUCTION and update
-  -- this row rather than the code — the ledger and the cost estimates both read it.
-  -- Seeded from 02-ARCHITECTURE.md §7 ($0.14 / $0.28 per M tok for flash, at ~7.1 CNY/USD).
+  -- CNY per million tokens. VERIFIED against api-docs.deepseek.com on 2026-08-28 at
+  -- USD/CNY 6.72, and materially higher than the estimate in 02-ARCHITECTURE.md §7, which
+  -- assumed $0.14 in / $0.28 out for flash. Real peak rates are $0.44 cache-miss in and
+  -- $1.32 out — roughly 3x on input and 4.7x on output. See the note on daily_cap_cny above.
+  --
+  -- DeepSeek bills peak and off-peak separately (peak = 01:00-04:00 and 06:00-10:00 UTC,
+  -- Mon-Fri; off-peak is exactly half), and a cache hit is ~31x cheaper than a miss rather
+  -- than the ~50x the spec assumed. Both are stored explicitly so the ledger records what was
+  -- actually charged instead of applying a single divisor.
+  --
+  -- Re-verify whenever a model or a price changes. Edit this row in production rather than
+  -- the code; that is what app_config is for.
   ('pricing', $json${
-    "deepseek-v4-flash":   { "in": 1.0,  "out": 2.0,  "cached_in_divisor": 50 },
-    "deepseek-v4-pro":     { "in": 4.0,  "out": 8.0,  "cached_in_divisor": 50 },
-    "deepseek-vision-exp": { "in": 1.0,  "out": 2.0,  "cached_in_divisor": 50 },
-    "gemini-2.5-flash":      { "in": 0.0, "out": 0.0, "cached_in_divisor": 1 },
-    "gemini-2.5-flash-lite": { "in": 0.0, "out": 0.0, "cached_in_divisor": 1 }
+    "_meta": {
+      "currency": "CNY",
+      "unit": "per_million_tokens",
+      "fx_usd_cny": 6.72,
+      "verified_on": "2026-08-28",
+      "source": "https://api-docs.deepseek.com/quick_start/pricing",
+      "peak_hours_utc": "01:00-04:00 and 06:00-10:00, Mon-Fri"
+    },
+    "deepseek-v4-flash": {
+      "peak":     { "in_miss": 2.9568, "in_hit": 0.09408, "out": 8.8704 },
+      "off_peak": { "in_miss": 1.4784, "in_hit": 0.04704, "out": 4.4352 }
+    },
+    "deepseek-v4-pro": {
+      "peak":     { "in_miss": 8.8704, "in_hit": 0.29568, "out": 26.6112 },
+      "off_peak": { "in_miss": 4.4352, "in_hit": 0.14784, "out": 13.3056 }
+    },
+    "deepseek-v4-flash-vision-exp": {
+      "peak":     { "in_miss": 2.9568, "in_hit": 0.09408, "out": 8.8704 },
+      "off_peak": { "in_miss": 1.4784, "in_hit": 0.04704, "out": 4.4352 }
+    },
+    "gemini-2.5-flash": {
+      "peak":     { "in_miss": 0, "in_hit": 0, "out": 0 },
+      "off_peak": { "in_miss": 0, "in_hit": 0, "out": 0 }
+    },
+    "gemini-2.5-flash-lite": {
+      "peak":     { "in_miss": 0, "in_hit": 0, "out": 0 },
+      "off_peak": { "in_miss": 0, "in_hit": 0, "out": 0 }
+    }
   }$json$::jsonb),
 
+  -- Model ids verified 2026-08-28. Note the vision one: 02-ARCHITECTURE.md §2 calls it
+  -- `deepseek-vision-exp`, which is not a published id. The real one is below.
   ('models', $json${
     "primary":  "deepseek-v4-flash",
     "verify":   "deepseek-v4-pro",
-    "vision":   "deepseek-vision-exp",
+    "vision":   "deepseek-v4-flash-vision-exp",
     "fallback": "gemini-2.5-flash"
   }$json$::jsonb),
 

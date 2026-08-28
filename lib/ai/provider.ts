@@ -67,7 +67,11 @@ export interface LLMProvider {
   id: ProviderId;
   model: string;
   supportsVision: boolean;
-  /** CNY per million tokens, read from `app_config.pricing` — used for the ledger and estimates. */
+  /**
+   * CNY per million tokens, resolved from `app_config.pricing` when the provider is constructed:
+   * the peak or off-peak card for the current time, cache-miss rate for input. The ledger
+   * recomputes exact cost from the provider's reported cached/uncached split.
+   */
   pricePerMTokIn: number;
   pricePerMTokOut: number;
   chat(req: ChatRequest): AsyncIterable<ChatChunk>;

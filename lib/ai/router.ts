@@ -34,12 +34,34 @@ export interface QuotaTier {
   ocr_per_day?: number;
 }
 
+/**
+ * CNY per million tokens, seeded and kept current in `app_config.pricing`.
+ *
+ * DeepSeek bills peak and off-peak separately (off-peak is exactly half), and prices a cached
+ * input token ~31x below a fresh one, so the ledger records the rate that actually applied
+ * rather than deriving it. Verified 2026-08-28; see the migration for the source.
+ */
+export interface RateCard {
+  in_miss: number;
+  in_hit: number;
+  out: number;
+}
+
+export interface ModelPricing {
+  peak: RateCard;
+  off_peak: RateCard;
+}
+
+export type PricingTable = Record<string, ModelPricing> & {
+  _meta?: { currency: string; fx_usd_cny: number; verified_on: string; peak_hours_utc: string };
+};
+
 export interface AppConfig {
   enhance_enabled: boolean;
   daily_cap_cny: number;
   quota: Record<Tier, QuotaTier>;
   credit_weights: Record<string, number>;
-  pricing: Record<string, { in: number; out: number }>;
+  pricing: PricingTable;
   models: { primary: string; verify: string; vision: string; fallback: string };
   limits: {
     max_chars: number;
@@ -102,11 +124,21 @@ export interface UsageRecord {
 /** Step 5: append to `usage_event` and upsert `daily_cost`. The cost ceiling depends on this. */
 export declare function recordUsage(record: UsageRecord): Promise<void>;
 
-/** Cost in CNY for a call, from `app_config.pricing`. Cached input is billed at ~1/50. */
+/** True during DeepSeek's peak window (01:00-04:00 and 06:00-10:00 UTC, Mon-Fri). */
+export declare function isPeak(at: Date, pricing: PricingTable): boolean;
+
+/**
+ * Cost in CNY for one call. `cachedTokensIn` is billed at the far cheaper `in_hit` rate and is
+ * subtracted from `tokensIn`, so pass the provider's reported totals unmodified.
+ *
+ * At verified rates output is ~86% of the cost of a typical enhancement, which is why
+ * `limits.max_tokens` per mode does more for the ceiling than prompt caching does.
+ */
 export declare function estimateCost(
   model: string,
   tokensIn: number,
   tokensOut: number,
   cachedTokensIn: number,
-  pricing: AppConfig['pricing'],
+  pricing: PricingTable,
+  at?: Date,
 ): number;
