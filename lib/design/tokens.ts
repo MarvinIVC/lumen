@@ -24,6 +24,7 @@ export const scale = {
   '--fs-2xl': '1.875rem',
   '--fs-3xl': '2.5rem',
   '--fs-4xl': '3.5rem',
+  '--fs-inline': '0.9em',
 
   '--lh-tight': '1.2',
   '--lh-snug': '1.35',
@@ -53,6 +54,7 @@ export const scale = {
 
   '--measure': '68ch',
   '--margin-col': '15rem',
+  '--note-shell': 'calc(var(--measure) + 37rem)',
   '--focus-ring': '2px',
   '--focus-offset': '2px',
 } as const;

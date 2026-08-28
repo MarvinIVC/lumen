@@ -29,6 +29,8 @@
   --fs-2xl: 1.875rem;
   --fs-3xl: 2.5rem;
   --fs-4xl: 3.5rem;
+  /* Relative, not absolute: inline code and inline math track the text they sit inside. */
+  --fs-inline: 0.9em;
 
   --lh-tight: 1.2;
   --lh-snug: 1.35;
@@ -58,6 +60,12 @@
 
   --measure: 68ch;
   --margin-col: 15rem;
+  /*
+   * The whole note shell: the measure, the margin column beside it, the outline rail to its left,
+   * and the gutters between all three. Derived rather than guessed, so changing --measure or
+   * --margin-col cannot quietly clip the sidenotes.
+   */
+  --note-shell: calc(var(--measure) + 37rem);
   --focus-ring: 2px;
   --focus-offset: 2px;
   /* @tokens scale:end */

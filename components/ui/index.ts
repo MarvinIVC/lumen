@@ -40,6 +40,8 @@ export { Popover, PopoverAnchor, PopoverClose, PopoverContent, PopoverTrigger } 
 export { Progress } from './progress';
 export { Radio, RadioGroup } from './radio-group';
 export { ScrollArea } from './scroll-area';
+export { SegmentedControl } from './segmented-control';
+export type { SegmentedOption } from './segmented-control';
 export { Select, SelectGroup, SelectItem, SelectLabel, SelectSeparator } from './select';
 export { Separator } from './separator';
 export { Skeleton, SkeletonParagraph } from './skeleton';

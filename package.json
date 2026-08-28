@@ -25,6 +25,7 @@
     "build:storybook": "storybook build -o storybook-static",
     "test:stories": "vitest run --project storybook",
     "pack:validate": "node scripts/pack-validate.mjs",
+    "fixtures:build": "node scripts/build-fixture.mjs",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare deploy",

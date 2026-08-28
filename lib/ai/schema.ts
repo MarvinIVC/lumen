@@ -145,19 +145,59 @@ export interface WorkedExampleBlock extends Provenanced {
 
 export type DiagramEngine = 'mermaid' | 'chart';
 
-export interface ChartSeries {
-  label: string;
+/**
+ * Shared by every chart kind. `illustrative` is not decoration: 06 §1 requires the caption to
+ * say so whenever the numbers are made up, and the renderer refuses to imply precision we do
+ * not have.
+ */
+interface ChartBase {
+  /** True when the values are illustrative rather than measured. */
+  illustrative: boolean;
+}
+
+/** Axis titles are mandatory — a chart without them is not readable (06 §1). */
+interface AxisLabels {
+  x: string;
+  y: string;
+}
+
+/** Stick spectra, successive ionisation energies — a category per bar. */
+export interface BarsChartSpec extends ChartBase, AxisLabels {
+  kind: 'bars';
+  series: { label: string; value: number }[];
+  /** A one-line note under the plot, e.g. what the peaks mean. */
+  note?: string;
+}
+
+/** Titration curves, rate plots. Annotations mark an x of interest (an equivalence point). */
+export interface LineChartSpec extends ChartBase, AxisLabels {
+  kind: 'line';
+  points: { x: number; y: number }[];
+  annotations?: { x: number; label: string }[];
+}
+
+/** Photoelectron spectra, energy ladders — a step function rather than a curve. */
+export interface StepsChartSpec extends ChartBase, AxisLabels {
+  kind: 'steps';
   points: { x: number; y: number }[];
 }
 
-export interface ChartSpec {
-  kind: 'line' | 'bar' | 'scatter' | 'stem';
-  xLabel: string;
-  yLabel: string;
-  series: ChartSeries[];
-  /** True when values are illustrative rather than measured — the caption must say so. */
-  illustrative: boolean;
+/** Mixtures and percent composition. Fractions are 0–1 and should sum to about 1. */
+export interface CompositionChartSpec extends ChartBase {
+  kind: 'composition';
+  parts: { label: string; fraction: number }[];
 }
+
+/**
+ * The chart shapes the model may emit, per 06-RENDER-EXPORT-SAFETY.md §1.
+ *
+ * This union replaced an earlier `{ kind: 'line' | 'bar' | 'scatter' | 'stem', series[] }` shape
+ * that had been written here in phase-00: the two specs disagreed, and 06 §1 is the one the
+ * renderer and the prompt rubric are both written against. Phase-04 emits this shape.
+ */
+export type ChartSpec = BarsChartSpec | LineChartSpec | StepsChartSpec | CompositionChartSpec;
+
+export type ChartKind = ChartSpec['kind'];
 
 export interface DiagramBlock extends Provenanced {
   type: 'diagram';
@@ -326,6 +366,12 @@ export interface NoteDocument {
   factCheck: FactCheck;
   studyTools: StudyTools;
   glossary: GlossaryEntry[];
+  /**
+   * "Study next" — where to go after this note. 06 §1 lists it as the last thing the renderer
+   * draws, but phase-00 gave it no field; optional so documents written before it exist still
+   * validate.
+   */
+  furtherStudy?: string[];
   stats?: DocumentStats;
 }
 
