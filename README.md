@@ -13,6 +13,8 @@ anything structural.
 
 > **Status: phase-00.** Repository scaffold, tooling, CI, deploy pipeline, design tokens, and
 > stubs. The home page is a placeholder; the product starts at phase-01.
+>
+> **Live:** <https://lumen.marvinmaiwang.workers.dev>
 
 ---
 
@@ -56,6 +58,11 @@ will do.
 ```bash
 curl -X POST http://127.0.0.1:54321/functions/v1/enhance
 ```
+
+> **Do not run `supabase start` and `supabase functions serve` at the same time.** Both try to
+> create `supabase_edge_runtime_<project>`, and the race leaves the container wedged in Docker's
+> `removing` state, where even `docker rm -f` hangs — the only way out is restarting the Docker
+> daemon. Let `db:start` finish first, then run `db:serve` on its own.
 
 ## Commands
 
