@@ -17,7 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:unit": "vitest run --project unit",
-    "test:bundle": "vitest run --project unit tests/unit/no-client-secrets.test.ts",
+    "test:bundle": "REQUIRE_BUNDLE=1 vitest run --project unit tests/unit/no-client-secrets.test.ts",
     "test:unit:watch": "vitest --project unit",
     "test:ai": "vitest run --project ai-evals --passWithNoTests",
     "test:e2e": "playwright test",
