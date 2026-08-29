@@ -69,6 +69,11 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium webkit
 
+      # The phase-01 gate: axe over every story, in a real browser. Without this the
+      # accessibility bar is a convention rather than a check.
+      - name: Storybook accessibility
+        run: pnpm test:stories
+
       - name: Playwright smoke
         run: pnpm test:e2e
 
