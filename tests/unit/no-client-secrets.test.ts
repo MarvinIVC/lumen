@@ -12,9 +12,9 @@ import { SECRET_ENV_KEYS } from '@/lib/env.server';
  *   Source — nothing under app/, components/, or lib/ reads a non-public `process.env` value,
  *            outside an explicit server-only allowlist. This mirrors the ESLint rule so the
  *            guarantee survives someone disabling the rule inline.
- *   Bundle — the built client chunks contain no secret name and no secret value. This runs after
- *            `pnpm build` (CI calls it via `pnpm test:bundle`) and is skipped when there is no
- *            production build to inspect — but never in CI, where a skip would mean the whole
+ *   Bundle — the built client chunks contain no secret name and no secret value. This needs a
+ *            production build, so it is skipped when there is not one — except under
+ *            `pnpm test:bundle`, which exists precisely to run it and where a skip would mean the
  *            guarantee quietly stopped being checked.
  */
 
@@ -74,11 +74,15 @@ describe('built client bundle', () => {
   const built = existsSync(join(ROOT, '.next/BUILD_ID'));
   const chunks = built ? walk(join(ROOT, '.next/static'), ['.js']) : [];
 
-  it('has a production build to inspect, at least in CI', () => {
-    // Locally this is a note that `pnpm build` has not run. In CI it is a failure, because a
-    // silently skipped leak check is indistinguishable from a passing one.
-    if (process.env.CI) expect(built, 'run `pnpm build` before `pnpm test:bundle`').toBe(true);
-    else expect(true).toBe(true);
+  it('has a production build to inspect when one was asked for', () => {
+    // Keyed off the script, not off `CI`. This file is also picked up by the plain `pnpm test:unit`
+    // run, which in CI happens *before* `pnpm build` — so "we are in CI" is not the same question
+    // as "we meant to check the bundle". `pnpm test:bundle` sets the flag and is the step that
+    // runs after the build; there, a skipped leak check is a failure, because it is
+    // indistinguishable from a passing one.
+    if (process.env.REQUIRE_BUNDLE) {
+      expect(built, 'run `pnpm build` before `pnpm test:bundle`').toBe(true);
+    }
   });
 
   it.skipIf(!built)('produced chunks to inspect', () => {
