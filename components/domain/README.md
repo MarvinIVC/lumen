@@ -6,14 +6,14 @@ Product-specific components — the parts of Lumen that only make sense inside L
 Most of these are shells: the layout, the copy and the states are finished, and the data arrives in
 a later phase.
 
-| Component | Wired up in |
-|---|---|
-| `FileDropzone`, `ExtractionEditor` | phase-03 (ingestion) |
-| `ContextCard`, `OptionsPanel` | phase-04 (the AI engine) |
-| `StreamingDoc` | phase-05 (the note workspace) |
-| `NoteCard`, `LibraryTree`, `SubjectPicker`, `QuotaMeter`, `BYOKForm` | phase-06 (auth and library) |
-| `ExportMenu`, `ShareDialog`, `IntegrationButton` | phase-07 (integrations and export) |
-| `CostDashboard` | phase-10 (admin) |
+| Component                                                            | Wired up in                        |
+| -------------------------------------------------------------------- | ---------------------------------- |
+| `FileDropzone`, `ExtractionEditor`                                   | phase-03 (ingestion)               |
+| `ContextCard`, `OptionsPanel`                                        | phase-04 (the AI engine)           |
+| `StreamingDoc`                                                       | phase-05 (the note workspace)      |
+| `NoteCard`, `LibraryTree`, `SubjectPicker`, `QuotaMeter`, `BYOKForm` | phase-06 (auth and library)        |
+| `ExportMenu`, `ShareDialog`, `IntegrationButton`                     | phase-07 (integrations and export) |
+| `CostDashboard`                                                      | phase-10 (admin)                   |
 
 "Shell" means the data is missing, not that the thinking is. The states worth reading the code for:
 

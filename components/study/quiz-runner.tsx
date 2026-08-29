@@ -8,7 +8,7 @@ import { Radio, RadioGroup } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckIcon, XIcon } from '@/components/ui/icons';
 import { cn } from '@/lib/utils/cn';
-import { renderInline } from '@/lib/render/markdown/inline';
+import { renderInline, toSpokenText } from '@/lib/render/markdown/inline';
 import type { QuizItem } from '@/lib/ai/schema';
 
 export interface QuizRunnerProps {
@@ -68,7 +68,12 @@ export function QuizRunner({ items, className }: QuizRunnerProps) {
                 revealed && option === choice && option !== item.answer && 'bg-danger/10',
               )}
             >
-              <Radio value={option} label={renderInline(option, `opt-${option}`)} />
+              <Radio
+                value={option}
+                label={renderInline(option, `opt-${option}`)}
+                // The visible label is typeset maths; the name has to be sayable.
+                aria-label={toSpokenText(option)}
+              />
             </div>
           ))}
         </RadioGroup>
