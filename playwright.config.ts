@@ -13,6 +13,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+  // When something systemic breaks — the app not serving the routes under test, say — every test
+  // fails the same way, and with retries that is hundreds of thirty-second timeouts. It once ate
+  // a whole 25-minute job before reporting anything. Stop after a handful: the first few failures
+  // say everything the next two hundred would.
+  maxFailures: process.env.CI ? 8 : undefined,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
 
   use: {
