@@ -109,6 +109,22 @@ describe('blocks', () => {
     expect(blocks.some((block) => block.origin === 'ai-clarified')).toBe(true);
   });
 
+  it('keeps boxed answers balanced, so KaTeX can render them', () => {
+    // `\\boxed{\\ce{C10H14N2}}` nests, and a brace-counting regex silently drops the inner
+    // closing brace — which KaTeX then refuses, so the *answer* of a worked example renders as a
+    // raw-LaTeX chip. Every failure of this kind looks like a rendering problem and is a parsing
+    // one, so it is checked here rather than left to the eye.
+    const examples = blocks.filter((block) => block.type === 'workedExample');
+    expect(examples.length).toBeGreaterThan(0);
+    for (const example of examples) {
+      if (example.type !== 'workedExample' || !example.answerLatex) continue;
+      const opens = (example.answerLatex.match(/\{/g) ?? []).length;
+      const closes = (example.answerLatex.match(/\}/g) ?? []).length;
+      expect(opens, example.answerLatex).toBe(closes);
+      expect(example.answerLatex, example.answerLatex).not.toContain('\\boxed');
+    }
+  });
+
   it("attaches the student's own struck-through attempt to the example it belongs to", () => {
     const example = blocks.find(
       (block) => block.type === 'workedExample' && block.studentAttempt !== undefined,

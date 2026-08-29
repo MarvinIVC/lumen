@@ -532,27 +532,47 @@ function parseWorkedExample(body: string[], heading: string): WorkedExampleBlock
   }
 
   // The answer is whatever is boxed — usually a display equation of its own, but sometimes boxed
-  // inline at the end of the last step. Both are the answer; only the display form was being
-  // found, which left the answer box on screen and empty.
-  const boxed =
-    /\$\$\\boxed\{([\s\S]*?)\}\$\$/.exec(text) ??
-    /\\boxed\{([^}]*(?:\{[^}]*\}[^}]*)*)\}/.exec(text);
+  // inline at the end of the last step. Both count.
+  const boxed = extractBoxed(text);
   const mistake = /\*\*Common mistake:?\*\*\s*([\s\S]*?)(?:\n\n|$)/.exec(text);
 
   // Un-box it where it appeared in a step, so the value is not printed twice.
   for (const step of steps) {
-    if (step.latex) step.latex = step.latex.replace(/\\boxed\{([\s\S]*?)\}/, '$1');
+    const inner = step.latex ? extractBoxed(step.latex) : null;
+    if (step.latex && inner) step.latex = step.latex.replace(`\\boxed{${inner}}`, inner);
   }
 
   return {
     type: 'workedExample',
     problem: tidy(stripAnnotations(problem[1]!)),
     steps,
-    answer: boxed ? stripMath(boxed[1]!) : '',
-    ...(boxed ? { answerLatex: boxed[1]!.trim() } : {}),
+    answer: boxed ? stripMath(boxed) : '',
+    ...(boxed ? { answerLatex: boxed.trim() } : {}),
     commonMistake: mistake ? tidy(stripAnnotations(mistake[1]!)) : '',
     origin,
   };
+}
+
+/**
+ * The contents of `\\boxed{…}`, matching braces by depth.
+ *
+ * A regex cannot do this. `\\boxed{\\ce{C10H14N2}}` has a nested group, and any `[^}]*`-shaped
+ * pattern stops at the first closing brace — yielding `\\ce{C10H14N2` with the brace missing,
+ * which KaTeX then refuses and the note renders as a raw-LaTeX chip where the answer should be.
+ */
+function extractBoxed(text: string): string | null {
+  const start = text.indexOf('\\boxed{');
+  if (start === -1) return null;
+
+  let depth = 0;
+  for (let index = start + '\\boxed{'.length - 1; index < text.length; index += 1) {
+    if (text[index] === '{') depth += 1;
+    else if (text[index] === '}') {
+      depth -= 1;
+      if (depth === 0) return text.slice(start + '\\boxed{'.length, index);
+    }
+  }
+  return null;
 }
 
 /**

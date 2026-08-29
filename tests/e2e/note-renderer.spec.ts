@@ -115,3 +115,96 @@ test.describe('at 375px', () => {
     await expect(page.getByRole('dialog', { name: 'Sections' })).toBeHidden();
   });
 });
+
+test.describe('print', () => {
+  // paged.js measures once, after fonts and KaTeX; give it room on a cold cache.
+  test.slow();
+
+  test('lays the note into pages with a running header and folios', async ({ page }) => {
+    await page.goto('/dev/note/print');
+    await expect(page.locator('.pagedjs_page').first()).toBeVisible({ timeout: 30_000 });
+    await expect.poll(() => page.locator('.pagedjs_page').count()).toBeGreaterThan(6);
+
+    // paged.js fills its margin boxes through a CSS `content:` pseudo-element, so the header and
+    // the folio are not in `textContent` at all — `toContainText` reports an empty page while the
+    // header sits plainly on screen. Read the computed content.
+    const boxes = await page.evaluate(() => {
+      const second = document.querySelectorAll('.pagedjs_page')[1];
+      const read = (selector: string) => {
+        const element = second?.querySelector(`${selector} .pagedjs_margin-content`);
+        return element ? getComputedStyle(element, '::after').content : '';
+      };
+      return {
+        header: read('.pagedjs_margin-top-left'),
+        folio: read('.pagedjs_margin-bottom-right'),
+      };
+    });
+
+    // The header comes from the course line via `string-set`, and resolves to real text.
+    expect(boxes.header).toContain('AP Chemistry');
+    // The folio is a counter, which `getComputedStyle` reports unevaluated — so the check is that
+    // the box exists and carries the rule, which is the part that can actually regress.
+    expect(boxes.folio).toContain('counter(page)');
+  });
+
+  test('resolves margin notes into numbered endnotes', async ({ page }) => {
+    await page.goto('/dev/note/print');
+    await expect(page.locator('.pagedjs_page').first()).toBeVisible({ timeout: 30_000 });
+
+    // The `<details>` shell must not survive into print, and the note must still be findable.
+    await expect(page.locator('[data-margin-note]')).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Notes', exact: true })).toBeVisible();
+    await expect(page.locator('#endnote-1')).toContainText('Have No Fear Of Ice Cold Beer');
+  });
+
+  test('renders every formula as maths rather than as raw LaTeX', async ({ page }) => {
+    await page.goto('/dev/note/print');
+    await expect(page.locator('.pagedjs_page').first()).toBeVisible({ timeout: 30_000 });
+
+    // A boxed answer that reaches the page as `\ce{...}` in a mono chip is the failure mode this
+    // catches — it looks like a rendering bug and is a parsing one.
+    const raw = await page.evaluate(() =>
+      [...document.querySelectorAll('code')]
+        .map((element) => element.textContent ?? '')
+        .filter((text) => text.includes('\\')),
+    );
+    expect(raw).toEqual([]);
+  });
+});
+
+test.describe('reduced motion', () => {
+  test('nothing animates — state changes are instant (03-DESIGN.md §7)', async ({ page }) => {
+    // `emulateMedia` rather than `test.use({ reducedMotion })`: the fixture form is silently
+    // overridden by the device preset in playwright.config.ts, and a preference that is not
+    // actually set makes this test pass for the wrong reason.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/dev/note');
+    await expect(page.locator('.katex').first()).toBeVisible();
+
+    // §7 is explicit that reduced motion means *no* motion rather than less of it, so the check
+    // is that every animation and transition on the page is effectively zero — not merely short.
+    expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(
+      true,
+    );
+
+    const moving = await page.evaluate(() =>
+      [...document.querySelectorAll('*')]
+        .map((element) => {
+          const style = getComputedStyle(element);
+          return {
+            tag: element.tagName,
+            animation: style.animationDuration,
+            transition: style.transitionDuration,
+          };
+        })
+        .filter((entry) => {
+          const seconds = (value: string) =>
+            value.split(',').some((part) => Number.parseFloat(part) > 0.001);
+          return seconds(entry.animation) || seconds(entry.transition);
+        })
+        .slice(0, 5),
+    );
+
+    expect(moving).toEqual([]);
+  });
+});

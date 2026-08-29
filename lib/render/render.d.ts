@@ -6,4 +6,6 @@
  * a stylesheet chunk alongside the katex chunk.
  */
 declare module 'katex/contrib/mhchem';
+// paged.js ships no types; `lib/render/paged.ts` declares the slice of Previewer it uses.
+declare module 'pagedjs';
 declare module '*.css';
