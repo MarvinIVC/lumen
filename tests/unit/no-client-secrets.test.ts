@@ -14,7 +14,8 @@ import { SECRET_ENV_KEYS } from '@/lib/env.server';
  *            guarantee survives someone disabling the rule inline.
  *   Bundle — the built client chunks contain no secret name and no secret value. This runs after
  *            `pnpm build` (CI calls it via `pnpm test:bundle`) and is skipped when there is no
- *            build to inspect.
+ *            production build to inspect — but never in CI, where a skip would mean the whole
+ *            guarantee quietly stopped being checked.
  */
 
 const ROOT = resolve(import.meta.dirname, '../..');
@@ -66,9 +67,19 @@ describe('source', () => {
 });
 
 describe('built client bundle', () => {
-  const staticDir = join(ROOT, '.next/static');
-  const built = existsSync(staticDir);
-  const chunks = built ? walk(staticDir, ['.js']) : [];
+  // `.next/BUILD_ID` is written by `next build` and not by `next dev`. Testing for the directory
+  // instead let a stale dev build stand in for a production one: the chunks are named and bundled
+  // differently, so the checks below ran, found nothing, and reported green against the wrong
+  // input. CI caught what a local run had said was fine.
+  const built = existsSync(join(ROOT, '.next/BUILD_ID'));
+  const chunks = built ? walk(join(ROOT, '.next/static'), ['.js']) : [];
+
+  it('has a production build to inspect, at least in CI', () => {
+    // Locally this is a note that `pnpm build` has not run. In CI it is a failure, because a
+    // silently skipped leak check is indistinguishable from a passing one.
+    if (process.env.CI) expect(built, 'run `pnpm build` before `pnpm test:bundle`').toBe(true);
+    else expect(true).toBe(true);
+  });
 
   it.skipIf(!built)('produced chunks to inspect', () => {
     expect(chunks.length).toBeGreaterThan(0);
@@ -79,7 +90,12 @@ describe('built client bundle', () => {
     for (const chunk of chunks) {
       const content = readFileSync(chunk, 'utf8');
       for (const key of SECRET_ENV_KEYS) {
-        if (content.includes(key)) offenders.push(`${relative(ROOT, chunk)} mentions ${key}`);
+        // Whole identifier, not substring. `SENTRY_DSN` is a secret and `NEXT_PUBLIC_SENTRY_DSN`
+        // is the public one the browser SDK is *supposed* to have — a plain `includes` reports
+        // the second as the first, and a leak test that cries wolf gets switched off.
+        if (new RegExp(`(?<![A-Za-z0-9_])${key}(?![A-Za-z0-9_])`).test(content)) {
+          offenders.push(`${relative(ROOT, chunk)} mentions ${key}`);
+        }
       }
     }
     expect(offenders).toEqual([]);
