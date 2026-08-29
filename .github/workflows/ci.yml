@@ -22,7 +22,9 @@ jobs:
   build:
     name: typecheck · lint · test · build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # The job gained the Storybook accessibility run (114 stories in a real browser) on top of
+    # build, OpenNext build, Playwright and three Lighthouse passes.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
 

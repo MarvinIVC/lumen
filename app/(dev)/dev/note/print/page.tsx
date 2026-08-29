@@ -8,6 +8,22 @@ import { goldFixture } from '@/lib/render/fixture/gold';
 import { paginate } from '@/lib/render/paged';
 
 /**
+ * Resolves once `count()` has stopped changing — the dynamic renderers have all landed and the
+ * DOM is done growing. Gives up after `limit` so a page that never settles still prints.
+ */
+async function settled(count: () => number, step = 120, limit = 8000): Promise<void> {
+  const deadline = Date.now() + limit;
+  let previous = -1;
+
+  while (Date.now() < deadline) {
+    const current = count();
+    if (current > 0 && current === previous) return;
+    previous = current;
+    await new Promise((resolve) => window.setTimeout(resolve, step));
+  }
+}
+
+/**
  * The `/print` variant (06 §2). Same renderer, `forPrint` on, and paged.js laying it into real
  * pages so the running header, the folios and the page breaks are visible on screen before anyone
  * reaches for Ctrl-P.
@@ -33,13 +49,26 @@ export default function PrintPage() {
     const to = target.current;
     if (!from || !to) return;
 
-    // Fonts and KaTeX both change line breaking, and paged.js measures once. Laying out before
-    // they land produces pages that are subtly wrong in a way nobody notices until it is printed.
-    const timer = window.setTimeout(() => {
-      void document.fonts.ready.then(() => paginate(from, to)).then(() => setReady(true));
-    }, 800);
+    let cancelled = false;
 
-    return () => window.clearTimeout(timer);
+    // Fonts and KaTeX both change line breaking, and paged.js measures once — laying out before
+    // they land produces pages that are subtly wrong in a way nobody notices until it is printed.
+    //
+    // This used to be a flat 800ms, which is a guess that is both too long on a fast machine and
+    // too short on a slow one: on CI it paginated nothing at all. Waiting for the rendered
+    // content to stop growing is the actual condition, and it scales with the machine.
+    void settled(
+      () => from.querySelectorAll('.katex, .lumen-diagram svg, svg.lumen-structure').length,
+    )
+      .then(() => document.fonts.ready)
+      .then(() => (cancelled ? undefined : paginate(from, to)))
+      .then(() => {
+        if (!cancelled) setReady(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
