@@ -68,9 +68,11 @@ jobs:
       - name: Comment the preview URL
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
+        # Step-level, not inside `with:` — `env` is a step key, and nesting it under `with` makes
+        # the whole workflow fail to parse.
+        env:
+          APP_URL: ${{ env.NEXT_PUBLIC_APP_URL }}
         with:
-          env:
-            APP_URL: ${{ env.NEXT_PUBLIC_APP_URL }}
           script: |
             // Derived, not guessed. A preview alias lives at
             // `<alias>-<worker>.<account-subdomain>.workers.dev`, and the account subdomain was
