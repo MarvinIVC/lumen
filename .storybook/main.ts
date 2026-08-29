@@ -10,6 +10,7 @@ const config: StorybookConfig = {
     '../components/**/*.mdx',
     '../components/**/*.stories.@(ts|tsx)',
     '../lib/render/**/*.stories.@(ts|tsx)',
+    '../lib/marketing/**/*.stories.@(ts|tsx)',
   ],
   addons: [
     '@storybook/addon-docs',

@@ -43,3 +43,7 @@ blob-report/
 
 # Storybook static build
 storybook-static/
+
+# Local visual review output (scripts/shoot-marketing.mjs).
+screenshots/
+.lighthouseci-mobile/

@@ -1,5 +1,10 @@
 allowBuilds:
+  # Both arrived with next-intl and both ship prebuilt binaries for every platform this project
+  # builds on; their install scripts are only the compile-from-source fallback. @parcel/watcher is
+  # used by next-intl's dev-time message watcher and never at build time.
+  '@parcel/watcher': false
   '@sentry/cli': true
+  '@swc/core': false
   # Both only print a funding banner on install; nothing is compiled.
   core-js: false
   es5-ext: false

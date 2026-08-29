@@ -8,8 +8,12 @@ import { cn } from '@/lib/utils/cn';
 const LABELS: Record<Theme, string> = { light: 'Light', dark: 'Dark', system: 'System' };
 
 /**
- * A plain segmented control. Deliberately not a design-system component — the primitives land in
- * phase-01. It exists so the theme controller is verifiable on the placeholder page.
+ * A plain segmented control over the theme.
+ *
+ * Written in phase-00 to prove the theme controller worked on the placeholder home page, and moved
+ * here in phase-02 when that page became the marketing site — which deliberately carries no theme
+ * toggle, because it follows the reader's device and every kilobyte of client JavaScript on `/` is
+ * spoken for (02-ARCHITECTURE.md §8). Its home is Settings → Appearance, in phase-05.
  */
 export function ThemeSwitcher() {
   const { theme, resolvedTheme, setTheme } = useTheme();

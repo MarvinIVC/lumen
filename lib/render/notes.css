@@ -94,8 +94,9 @@ svg.lumen-structure .sub {
   font-size: var(--fs-md);
   line-height: var(--lh-note);
   color: var(--text);
-  /* Newsreader carries optical sizing; letting the browser use it is most of why it looks
-     bookish at 18px and still holds together at 40px. */
+  /* Inert since phase-02: the served Newsreader no longer carries the `opsz` axis, because it
+     doubled the file and the headline is the marketing pages' LCP element (see lib/design/fonts.ts).
+     Kept as a one-line declaration so optical sizing comes back the moment the axis does. */
   font-optical-sizing: auto;
 }
 

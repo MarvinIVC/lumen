@@ -1,0 +1,276 @@
+/*
+ * The marketing hero's before/after wipe (03-DESIGN.md §8.1).
+ *
+ * The whole transition is CSS. That is not showing off — the landing page has roughly eight
+ * kilobytes of JavaScript to spend above the app-router floor (02-ARCHITECTURE.md §8), and an
+ * animation loop written in React would eat a meaningful slice of it to do what a keyframe does
+ * for free. It also means the wipe still plays with JavaScript disabled, which is the one state
+ * where a static marketing page has to keep working.
+ *
+ * The JavaScript island adds exactly one capability on top: a real control you can drag.
+ */
+
+/*
+ * A custom property has to be registered before it can be interpolated — without this the
+ * keyframes below would jump between the two values instead of sweeping between them.
+ * Firefox before 128 does not support @property; there the wipe holds at its initial value and
+ * the draggable handle still works, which is a reasonable floor rather than a broken page.
+ */
+@property --wipe {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 62%;
+}
+
+@layer components {
+  /*
+   * Layout constants for the hero, named rather than sprinkled. These are geometry, not palette:
+   * the grip is sized to the 44px touch-target minimum (03-DESIGN.md §5) and the rule spacing is
+   * the leading of the raw page's type.
+   */
+  :root {
+    --wipe-grip: 2.75rem;
+    --wipe-gap: 1.5rem;
+    --raw-rule: 1.5rem;
+  }
+
+  .lumen-wipe {
+    /*
+     * Both panels occupy the same grid cell, so the box is as tall as the taller document and
+     * neither panel needs absolute positioning to line up. Stacking them with `position: absolute`
+     * would collapse the container's height and make the whole hero depend on a magic number.
+     */
+    display: grid;
+    position: relative;
+    isolation: isolate;
+    animation: lumen-wipe-sweep 4s var(--ease) infinite alternate;
+  }
+
+  .lumen-wipe > * {
+    grid-area: 1 / 1;
+    min-width: 0;
+  }
+
+  /* The finished note is on top, revealed from the right as --wipe shrinks. */
+  .lumen-wipe__after {
+    clip-path: inset(0 0 0 var(--wipe));
+    z-index: 1;
+  }
+
+  .lumen-wipe__before {
+    clip-path: inset(0 calc(100% - var(--wipe)) 0 0);
+  }
+
+  /*
+   * The seam, and the grip that rides it.
+   *
+   * The grip is drawn here rather than on the range input's own thumb for one reason: during the
+   * autoplay the seam is driven by keyframes and the input's value never changes, so a native thumb
+   * would sit still while the wipe moved beneath it. Anchoring both to `--wipe` means the handle is
+   * always exactly where the join is, whoever is moving it.
+   */
+  .lumen-wipe__seam {
+    position: absolute;
+    inset-block: 0;
+    left: var(--wipe);
+    width: 2px;
+    margin-left: -1px;
+    background: var(--accent);
+    z-index: 2;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lumen-wipe__grip {
+    width: var(--wipe-grip);
+    height: var(--wipe-grip);
+    flex: none;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+    background: var(--bg-raised);
+    box-shadow: var(--shadow-2);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-sm);
+    line-height: 1;
+  }
+
+  /* The seam only earns a grip once there is something to grab. */
+  .lumen-wipe:not([data-interactive='true']) .lumen-wipe__grip {
+    display: none;
+  }
+
+  /* Pinned to the outer corners, outside both clipped panels, so neither label is ever half-wiped. */
+  .lumen-wipe__labels {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: var(--space-4);
+    pointer-events: none;
+  }
+
+  /*
+   * The control: a real <input type="range">, stretched over the whole comparison and stripped of
+   * its track. Because it is the native element, it drags with a mouse, drags with a finger, moves
+   * with the arrow keys, jumps with Home and End, and announces itself as a slider to a screen
+   * reader — none of which a <div role="slider"> gets without a great deal of code to go wrong.
+   */
+  .lumen-wipe__handle {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    appearance: none;
+    cursor: ew-resize;
+  }
+
+  .lumen-wipe__handle::-webkit-slider-runnable-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .lumen-wipe__handle::-moz-range-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  /* The native thumb is invisible: `.lumen-wipe__grip` is what the reader sees. */
+  .lumen-wipe__handle::-webkit-slider-thumb {
+    appearance: none;
+    width: var(--wipe-grip);
+    height: var(--wipe-grip);
+    background: transparent;
+    border: 0;
+    cursor: ew-resize;
+  }
+
+  .lumen-wipe__handle::-moz-range-thumb {
+    width: var(--wipe-grip);
+    height: var(--wipe-grip);
+    background: transparent;
+    border: 0;
+    cursor: ew-resize;
+  }
+
+  /* Focus belongs on the grip, which is the thing that looks like the control. */
+  .lumen-wipe__handle:focus-visible + .lumen-wipe__seam .lumen-wipe__grip {
+    outline: var(--focus-ring) solid var(--accent);
+    outline-offset: var(--focus-offset);
+  }
+
+  /*
+   * Once the reader takes hold of the slider the autoplay stops for good. `animation: none` rather
+   * than `paused`, because a paused animation still owns --wipe and would fight the value the
+   * island writes.
+   */
+  .lumen-wipe[data-paused='true'] {
+    animation: none;
+  }
+
+  @keyframes lumen-wipe-sweep {
+    from {
+      --wipe: 76%;
+    }
+    to {
+      --wipe: 14%;
+    }
+  }
+
+  /*
+   * Reduced motion: no sweep, no seam, no control — the two documents simply sit side by side and
+   * the comparison is made by looking left and right (03-DESIGN.md §7). Hiding the handle in CSS
+   * rather than in the island keeps this true before hydration as well as after.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .lumen-wipe {
+      animation: none;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--wipe-gap);
+    }
+
+    .lumen-wipe > * {
+      grid-area: auto;
+      clip-path: none;
+    }
+
+    .lumen-wipe__seam,
+    .lumen-wipe__handle {
+      display: none;
+    }
+  }
+
+  /*
+   * Narrow screens get the same treatment as reduced motion, stacked rather than columned: a wipe
+   * across 320px of width shows two slivers and reads as a glitch.
+   */
+  @media (width < 40rem) {
+    .lumen-wipe {
+      animation: none;
+      grid-template-rows: auto auto;
+      gap: var(--wipe-gap);
+    }
+
+    .lumen-wipe > * {
+      grid-area: auto;
+      clip-path: none;
+    }
+
+    .lumen-wipe__seam,
+    .lumen-wipe__handle {
+      display: none;
+    }
+  }
+
+  /*
+   * The raw notes, styled as the page they came off: a typed .docx with the leading squeezed and
+   * the indentation inconsistent. Not handwriting — the real file was typed, and faking a
+   * handwriting font would be a lie about the input as well as an illustration cliché
+   * (03-DESIGN.md §1).
+   */
+  .lumen-raw-page {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent calc(var(--raw-rule) - 1px),
+      var(--border) calc(var(--raw-rule) - 1px),
+      var(--border) var(--raw-rule)
+    );
+    /*
+     * Offset by the block's own top padding so a rule lands at the *bottom* of each line box
+     * rather than on the baseline. Get this wrong by a few pixels and every rule reads as a
+     * strikethrough through the student's words, which is both ugly and the opposite of the
+     * point. It only holds because every line in `RawLine` is exactly one --raw-rule tall.
+     */
+    background-position: 0 var(--space-3);
+  }
+
+  /* A stacked fraction with no maths library behind it. */
+  .lumen-frac {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: -0.55em;
+    line-height: 1.15;
+    margin-inline: 0.15em;
+  }
+
+  .lumen-frac > span:first-child {
+    padding-inline: 0.3em;
+  }
+
+  .lumen-frac > span:last-child {
+    border-top: 1px solid currentColor;
+    padding-inline: 0.3em;
+  }
+}

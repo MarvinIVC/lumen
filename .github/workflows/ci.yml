@@ -28,9 +28,10 @@ jobs:
   build:
     name: typecheck · lint · test · build
     runs-on: ubuntu-latest
-    # The job gained the Storybook accessibility run (114 stories in a real browser) on top of
-    # build, OpenNext build, Playwright and three Lighthouse passes.
-    timeout-minutes: 25
+    # The job gained the Storybook accessibility run (117 stories in a real browser) on top of
+    # build, OpenNext build, Playwright, and now two Lighthouse suites — desktop and mobile — of
+    # three passes over two URLs each.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 
@@ -67,6 +68,12 @@ jobs:
       - name: No secrets in the client bundle
         run: pnpm test:bundle
 
+      # The marketing routes have a first-load JavaScript ceiling (02-ARCHITECTURE.md §8). The
+      # number is printed by `next build`, and a number printed in a log nobody reads is not a
+      # budget — the demo embed and the maths libraries are one careless static import away.
+      - name: First-load JS budget
+        run: pnpm test:budget
+
       - name: OpenNext (Cloudflare) build
         run: pnpm cf:build
 
@@ -88,14 +95,22 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-      - name: Lighthouse budget
+      - name: Lighthouse budget (desktop)
         run: pnpm exec lhci autorun --config=lighthouserc.json
+
+      # The definition of done asks for LCP under 1.8s on emulated 4G, which is a *mobile*
+      # condition the desktop preset above was never testing. The config carries the throttling
+      # profile and the reasoning behind it.
+      - name: Lighthouse budget (mobile, emulated 4G)
+        run: pnpm exec lhci autorun --config=lighthouserc.mobile.cjs
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: lighthouse-report
-          path: .lighthouseci/
+          path: |
+            .lighthouseci/
+            .lighthouseci-mobile/
           retention-days: 7
 
   ai-evals:

@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-
-# Shared notes are unlisted by default (allow_index defaults to false).
-Disallow: /s/
-Disallow: /app/

@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs';
 import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+import createNextIntlPlugin from 'next-intl/plugin';
 
 // Gives `next dev` the same Cloudflare bindings the deployed Worker gets. Storybook and Vitest
 // also load this config, and starting a workerd process for them wedges the run — so the guard
@@ -19,8 +20,9 @@ const nextConfig: NextConfig = {
   eslint: { ignoreDuringBuilds: false },
 
   experimental: {
-    // Keeps the marketing bundle under the 90 KB budget (02-ARCHITECTURE.md §8) by tree-shaking
-    // barrel imports from the packages that have them.
+    // Keeps the marketing bundle under the 120 KB budget (02-ARCHITECTURE.md §8) by tree-shaking
+    // barrel imports from the packages that have them. `scripts/check-route-budget.mjs` is what
+    // actually enforces the number.
     optimizePackageImports: ['radix-ui', '@tanstack/react-query'],
   },
 
@@ -44,10 +46,14 @@ const nextConfig: NextConfig = {
   },
 };
 
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+
 const sentryEnabled = process.env.NEXT_PUBLIC_SENTRY_ENABLED === 'true';
 
+const withIntl = withNextIntl(nextConfig);
+
 export default sentryEnabled
-  ? withSentryConfig(nextConfig, {
+  ? withSentryConfig(withIntl, {
       org: process.env.SENTRY_ORG,
       project: process.env.SENTRY_PROJECT,
       silent: true,
@@ -56,4 +62,4 @@ export default sentryEnabled
       tunnelRoute: '/monitoring',
       disableLogger: true,
     })
-  : nextConfig;
+  : withIntl;

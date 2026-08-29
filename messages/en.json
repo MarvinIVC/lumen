@@ -1,0 +1,356 @@
+{
+  "meta": {
+    "home": {
+      "title": "{app} — turn your messy notes into a study guide you'll actually reread",
+      "description": "Upload the class notes you already have — .docx, .pdf, photos, or pasted text — and get them back complete, fact-checked, and typeset. Free, no signup."
+    },
+    "howItWorks": {
+      "title": "How it works",
+      "description": "What {app} does to your notes: local parsing, curriculum-aligned completion, flagged corrections, and exports to PDF, Word, Anki, Notion and Drive."
+    },
+    "about": {
+      "title": "About",
+      "description": "{app} is a free study tool made by students. It started with one messy AP Chemistry file and the wish that someone had finished it."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "What leaves your device, what we store, what we never do. In plain language."
+    },
+    "terms": {
+      "title": "Terms",
+      "description": "The short, readable version: {app} is a study aid, your notes are yours, and the output needs checking."
+    }
+  },
+  "nav": {
+    "skipToContent": "Skip to content",
+    "howItWorks": "How it works",
+    "about": "About",
+    "cta": "Try it",
+    "primaryLabel": "Main"
+  },
+  "hero": {
+    "headline": "Turn your messy notes into a study guide you'll actually reread.",
+    "sub": "Upload the notes you already have. Get them back complete, correct, and beautiful. Free.",
+    "ctaPrimary": "Try it with your notes",
+    "ctaGhost": "See it on a real lesson",
+    "noCard": "No signup. No card. Nothing to install.",
+    "beforeLabel": "What you took",
+    "afterLabel": "What you get",
+    "sourceNote": "Real file, real output: AP Chemistry Unit 1 — the notes this project started from.",
+    "scrubberLabel": "Wipe between the original notes and the finished study guide",
+    "scrubberHint": "Drag, or use the arrow keys.",
+    "scrubberValue": "{percent}% finished study guide, {rest}% original notes",
+    "correctedLabel": "corrected",
+    "beforeCaption": "AP Chem Notes.docx",
+    "afterCaption": "Atomic Structure & Properties — The Mole, Isotopes, and Formulas"
+  },
+  "problem": {
+    "heading": "Everyone's notes look like this.",
+    "lede": "Every line below is lifted straight out of one real file — the AP Chemistry notes this project started from. Nothing is invented, and nothing has been made worse for effect.",
+    "items": [
+      {
+        "label": "The example that stops",
+        "quote": "Given the empirical formula C5H7N, molar mass 162.26 g/mol",
+        "caption": "That is the last line in the file. Mid-example, mid-thought — the bell went."
+      },
+      {
+        "label": "The thing that is almost true",
+        "quote": "Atomic mass = molar mass",
+        "caption": "Numerically, sure. Conceptually, that shortcut is the exact one the exam is built to catch."
+      },
+      {
+        "label": "The wall of one-liners",
+        "quote": "Formulas express the ratio of elements in a chemical.\nWhen the formula shows the true number of atoms its called a molecular formula.\nWhen the formula is in lowest terms it is called an empirical formula.\nThe molecular formula is a multiple of an empirical formula\nIn some cases empirical formula is the true formula",
+        "caption": "Five true sentences in a row, and not one of them tells you what to do with the other four."
+      }
+    ],
+    "closer": "None of this is a bad student. It is what taking notes at the speed of a teacher talking actually produces."
+  },
+  "steps": {
+    "heading": "Three steps, and the notes stay yours.",
+    "items": [
+      {
+        "id": "upload",
+        "kicker": "Step one",
+        "title": "Upload what you've got",
+        "body": ".docx, .pdf, a photo of the page, or paste it straight in. Parsing runs in your browser — nothing leaves your device until you press the button.",
+        "detail": "Handwriting goes through OCR first, and you get to fix the transcription before anything is sent."
+      },
+      {
+        "id": "check",
+        "kicker": "Step two",
+        "title": "We complete it, then check it",
+        "body": "Gaps filled, terms defined, the cut-off example finished — and every error flagged rather than quietly patched. Everything we added is marked, so you always know which sentences are yours.",
+        "detail": "This is the part worth judging us on. Below is the real thing, not a picture of it."
+      },
+      {
+        "id": "save",
+        "kicker": "Step three",
+        "title": "Save it anywhere",
+        "body": "Read it, edit it, export to PDF, Word or Anki, or push it into Notion or Drive. It is your document, in your library, in your account or just in your browser.",
+        "detail": "Flashcards, a self-quiz and a glossary come out of the finished note at the same time."
+      }
+    ],
+    "provenanceCaption": "A block we corrected, exactly as it appears in the app.",
+    "correctionsCaption": "And the panel that tells you what to relearn — because a correction you never read is not a correction.",
+    "loading": "Loading the live example…"
+  },
+  "demo": {
+    "heading": "See it on a real lesson.",
+    "lede": "This is the whole thing — the notes from the top of this page, finished. Scroll it, open the outline, turn the AI marks up. No signup, no upload, no account: it is simply here.",
+    "frameLabel": "The finished study guide, scrollable",
+    "ribbonClaim": "This is real output.",
+    "ribbonCta": "Try your own",
+    "loading": "Loading the note…",
+    "noScript": "This note is interactive with JavaScript on. Without it, here is how it opens:",
+    "expandLabel": "Load the full note"
+  },
+  "subjects": {
+    "heading": "Every subject you take notes in.",
+    "curriculaLabel": "Curricula",
+    "subjectsLabel": "Subjects",
+    "curricula": ["AP", "IB Diploma", "A-Level", "IGCSE", "Your school's own course"],
+    "subjects": [
+      "Chemistry",
+      "Biology",
+      "Physics",
+      "Mathematics",
+      "Computer Science",
+      "Economics",
+      "History",
+      "Geography",
+      "English Literature",
+      "Chinese",
+      "Psychology",
+      "Environmental Systems"
+    ],
+    "closer": "If you take notes on it, {app} cleans it up.",
+    "caveat": "Chemistry is tuned first, and the rest of the curriculum packs land course by course. Everything else runs in generic mode — still a long way from the file you started with."
+  },
+  "free": {
+    "heading": "Free, and here is why that is not a trick.",
+    "paragraphs": [
+      "Turning one file into a study guide costs a fraction of a penny in model time. Across a few hundred students that is a couple of coffees a month — less than the hosting bill. There is no paid tier waiting behind a curtain, because there is nothing expensive enough to put there.",
+      "If you want to run it hard — a whole semester in one evening, the night before a mock — put your own API key in Settings and you are not sharing anyone's daily quota.",
+      "Your notes are yours. Signed out, they never leave your browser at all. Signed in, they are stored under your account and nobody else's. We do not sell them, we do not show ads against them, and we do not train models on them."
+    ],
+    "link": "How that actually works, in detail"
+  },
+  "footer": {
+    "tagline": "Made by students, for students.",
+    "github": "GitHub",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "about": "About",
+    "howItWorks": "How it works",
+    "languageLabel": "Language",
+    "navLabel": "Footer",
+    "disclaimer": "AP®, IB®, Cambridge/CIE® and Edexcel® are trademarks of the College Board, the International Baccalaureate Organization, Cambridge University Press & Assessment, and Pearson respectively. None of them endorse, sponsor, or are affiliated with this project. Curriculum packs are aligned to the publicly published syllabus.",
+    "openSource": "{app} is open source."
+  },
+  "howItWorks": {
+    "title": "How it works",
+    "lede": "The whole pipeline, without the marketing verbs. If something here does not match what the app does, the page is wrong and we want to know.",
+    "stagesHeading": "The three stages",
+    "trustHeading": "How you know what to trust",
+    "trustBody": "An AI that quietly rewrites your notes is worse than no AI, because you cannot tell what changed. So the finished note shows its seams: anything added, clarified or corrected carries a mark, hovering one shows what you originally wrote, and a panel at the end lists every correction with the reason it matters. Turn the marks up when you want to audit it; turn them down when you just want to read.",
+    "limitsHeading": "What it cannot do",
+    "limitsBody": "It is checked, not guaranteed. A model can be confidently wrong, and a curriculum pack only knows the syllabus that was published, not what your teacher said on Tuesday. Anything it is unsure about goes into \"Confirm with your teacher\" rather than being smoothed over. Treat the output the way you would treat a very good classmate's notes: worth having, still worth checking.",
+    "faqHeading": "Questions people actually ask",
+    "faq": [
+      {
+        "q": "Is it really free?",
+        "a": "Yes, with a daily quota so one person cannot spend the shared budget. If you hit the quota, you can add your own API key and carry on immediately. There is no paid plan."
+      },
+      {
+        "q": "What can I upload?",
+        "a": "Word documents, PDFs, photos of handwritten or printed pages, and plain pasted text. Photos go through OCR and you get to correct the transcription before anything is sent for processing."
+      },
+      {
+        "q": "Do you train AI models on my notes?",
+        "a": "No. We do not train models, full stop. Your text is passed to a model provider to produce your study guide and is not kept for training by us. The Google Gemini free tier does allow Google to use submitted content to improve its products, so that route is opt-in and clearly labelled — the default path is not it."
+      },
+      {
+        "q": "Do I need an account?",
+        "a": "No. Signed out, everything is stored in your browser and works fine. An account exists so your library follows you between devices, and so exports to Notion and Drive have somewhere to authenticate."
+      },
+      {
+        "q": "How accurate is it?",
+        "a": "Good enough to be useful, not good enough to trust blindly — which is why every correction is shown rather than applied silently, and why uncertain claims are surfaced as open questions instead of confident sentences. Always check anything that will end up in an exam answer."
+      },
+      {
+        "q": "Which curricula does it know?",
+        "a": "AP Chemistry is tuned first and is the deepest. Other AP, IB, A-Level and IGCSE courses arrive as curriculum packs, one at a time. Anything without a pack runs in generic mode, which still completes, checks and typesets your notes — it just cannot say \"this is topic 1.3\"."
+      },
+      {
+        "q": "Can I edit what comes back?",
+        "a": "All of it. The finished note is a real editable document, not a screenshot. Your voice, your examples and your mnemonics are kept deliberately; delete anything we added that you do not want."
+      },
+      {
+        "q": "What happens to my files afterwards?",
+        "a": "Parsing happens locally, so the original file itself usually never moves. The extracted text is processed to make your guide and is not logged with your content — we keep token counts and cost for the budget ledger, not what you wrote. Delete a note and the rows and stored files go with it."
+      },
+      {
+        "q": "Can I use my own API key?",
+        "a": "Yes, in Settings. It stays on your device, your usage is governed by your provider's terms, and you are no longer limited by the shared daily quota."
+      }
+    ],
+    "ctaHeading": "That is the whole pitch.",
+    "ctaBody": "The fastest way to find out whether it is any good is to give it the worst file you have."
+  },
+  "about": {
+    "title": "About",
+    "lede": "{app} exists because of one file.",
+    "paragraphs": [
+      "It was called \"AP Chem Notes.docx\" and it was a mess — not because the person taking it was careless, but because a teacher talks faster than anyone writes. Definitions half-finished. A worked example that stopped mid-line when the bell went. One sentence that said \"atomic mass = molar mass\", which is the kind of almost-true that costs you a mark in May.",
+      "Cleaning it up by hand took an evening, and the result was genuinely good — the version you would actually reread the night before the test. That is the whole product: the study guide the student wishes they had taken, made out of the notes they actually took.",
+      "It is free because it is nearly free to run, and it is open source because a tool that reads your schoolwork should let you check what it does with it. It is built by students, in the gaps between the courses it is being built for, which explains both the care and the pace."
+    ],
+    "valuesHeading": "What it will not do",
+    "values": [
+      "Rewrite your notes into someone else's voice. Your examples and your mnemonics stay.",
+      "Hide its own edits. Everything added or corrected is marked, always.",
+      "Promise accuracy it cannot deliver. \"Checked\" is the honest word, and it is the one we use.",
+      "Grow a paid tier by making the free one worse."
+    ],
+    "contactHeading": "Say something",
+    "contactBody": "Bugs, wrong chemistry, a curriculum pack you want next — the issue tracker is the fastest route.",
+    "contactCta": "Open an issue on GitHub"
+  },
+  "privacy": {
+    "title": "Privacy",
+    "updated": "Last updated {date}",
+    "lede": "The version that fits in your head: your notes stay in your browser unless you ask otherwise, we never train models on them, there are no ads and no trackers, and nothing is sold. The detail is below, in the same plain language.",
+    "sections": [
+      {
+        "id": "what-leaves",
+        "heading": "What leaves your device, and when",
+        "body": [
+          "Reading your file happens entirely in your browser. Opening a .docx, pulling text out of a PDF, resizing a photo — all of it is local, and none of it involves us.",
+          "Content is sent away exactly twice, and only when you press a button: when you choose \"Run OCR\" (the images go to be read) and when you choose \"Create study guide\" (the extracted text goes to be processed). That request goes to our edge function and on to the AI provider you are using. Nothing else about the file is transmitted."
+        ]
+      },
+      {
+        "id": "storage",
+        "heading": "Where your notes are stored",
+        "body": [
+          "Signed out, a note lives only in your own browser, in its local database. Clearing your browser data deletes it, and we could not retrieve it for you if we wanted to — we never had it.",
+          "Signed in, notes are stored in our database under your account, protected by row-level security so that your rows are readable only by you. Sharing a note is off by default; a shared link is unlisted and search engines are told not to index it."
+        ]
+      },
+      {
+        "id": "training",
+        "heading": "Training",
+        "body": [
+          "We do not train models. We have no model to train.",
+          "The providers we send text to have their own policies, so here they are plainly. The default path is a paid API, where submitted content is not used for training and is subject to that provider's published retention policy. The Google Gemini free tier is different: Google may use content submitted through it to improve their products. Because of that, the Gemini route is opt-in and labelled wherever you can choose it — it is never the silent default. If you bring your own API key, your usage is governed by your agreement with that provider, not ours."
+        ]
+      },
+      {
+        "id": "logs",
+        "heading": "What we keep in logs",
+        "body": [
+          "Processing requests are recorded for cost accounting: how many tokens, which model, what it cost. The note text itself is not written to that ledger.",
+          "Error reports are scrubbed of note content before they are sent — we get the shape of the failure (which block type, how many sections) and not what the block said. There are no advertising trackers and no third-party analytics that follow you between sites."
+        ]
+      },
+      {
+        "id": "deletion",
+        "heading": "Deleting things",
+        "body": [
+          "Deleting a note removes its rows and any stored files as part of that request, not on a cleanup job that runs some time later.",
+          "\"Delete everything\" in Settings wipes your profile, every note, every uploaded asset and every connected integration, and confirms by email so that a stolen session cannot do it to you."
+        ]
+      },
+      {
+        "id": "young-people",
+        "heading": "If you are under 16",
+        "body": [
+          "A lot of the people this is built for are. So we collect as little as possible: an email address, and only if you want an account at all. No phone number, no school, no birthday, no address book, no contacts.",
+          "There are no ads anywhere in this product, nothing is sold to anyone, and there is no third-party tracking. If a parent or teacher wants to know what happens to your work, this page is the answer, and the source code is the proof."
+        ]
+      },
+      {
+        "id": "location",
+        "heading": "Where the data sits",
+        "body": [
+          "Accounts and saved notes are held in a managed database in a single region, chosen to suit where most users are. AI processing happens wherever the model provider operates, which for the default provider is outside the EU and the UK."
+        ]
+      },
+      {
+        "id": "contact",
+        "heading": "Questions",
+        "body": [
+          "Open an issue on GitHub, or use the contact link there if it should not be public. There is no privacy department; there is a person who reads them."
+        ]
+      }
+    ]
+  },
+  "terms": {
+    "title": "Terms",
+    "updated": "Last updated {date}",
+    "lede": "A free tool made by students, offered honestly. This is the whole agreement, and it is written to be read rather than clicked past.",
+    "sections": [
+      {
+        "id": "study-aid",
+        "heading": "It is a study aid",
+        "body": [
+          "{app} produces AI-generated study material. It can be wrong, and sometimes it will be confidently wrong. It is not a replacement for your course materials, your teacher, or checking things yourself.",
+          "We say \"checked\", never \"guaranteed\", and we mean the difference. Anything that is going into an exam answer deserves a second look at the source."
+        ]
+      },
+      {
+        "id": "uploads",
+        "heading": "What you upload",
+        "body": [
+          "By uploading something you are confirming you are allowed to: your own notes, or material you may use for private study. Do not upload other people's copyrighted material in order to redistribute it.",
+          "We process what you upload transiently, to produce your study guide. We do not publish it, share it, or put it in front of anyone else."
+        ]
+      },
+      {
+        "id": "output",
+        "heading": "What comes back is yours",
+        "body": [
+          "The finished study guide is yours to use, edit, export, print and share. We claim nothing over it and place no restrictions on what you do with it."
+        ]
+      },
+      {
+        "id": "trademarks",
+        "heading": "Curriculum names",
+        "body": [
+          "AP®, IB®, Cambridge/CIE® and Edexcel® are trademarks of their respective owners. {app} is independent, and is not endorsed by, sponsored by, or affiliated with any of them. Curriculum packs are aligned to the publicly published syllabus for a course; they are not official materials and they are not a substitute for the specification."
+        ]
+      },
+      {
+        "id": "fair-use",
+        "heading": "Using it fairly",
+        "body": [
+          "The free tier is shared, so: no scraping, no reselling access, no bulk or automated processing through it, and no attempts to extract the system prompts to build the same thing somewhere else.",
+          "If you need heavy or automated use, bring your own API key. That is exactly what the option is there for, and nobody minds."
+        ]
+      },
+      {
+        "id": "warranty",
+        "heading": "No warranty",
+        "body": [
+          "This is a free tool provided as it is, with no warranty of any kind, and liability is limited to the extent the law allows. It might be unavailable, it might lose something, and there is no service-level agreement behind it. Keep exports of anything that matters — the export buttons exist for that reason."
+        ]
+      },
+      {
+        "id": "age",
+        "heading": "Age",
+        "body": [
+          "You need to be 13 or older to use {app}, or 16 where local law requires it. If you are under the age of majority where you live, use it with a parent's or teacher's awareness."
+        ]
+      },
+      {
+        "id": "changes",
+        "heading": "Changes and contact",
+        "body": [
+          "If these terms change in a way that matters, the date at the top changes and the change is described in the repository's history — which is public, so you can see exactly what moved.",
+          "Questions go to the GitHub issue tracker."
+        ]
+      }
+    ]
+  }
+}
