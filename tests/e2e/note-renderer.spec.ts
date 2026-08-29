@@ -116,13 +116,28 @@ test.describe('at 375px', () => {
   });
 });
 
+/**
+ * One test, not three, and chromium only.
+ *
+ * Paginating the whole gold fixture is the single most expensive thing this suite does — about
+ * eleven pages through paged.js, after KaTeX, Mermaid and smiles-drawer have all landed. Three
+ * separate tests meant three paginations per browser, and with retries that is up to eighteen
+ * runs of it: enough to blow a 20-minute CI job on its own, which is exactly what happened.
+ * Printing is also a desktop action, so running the whole layout again under mobile WebKit was
+ * testing the cost and not the behaviour.
+ */
 test.describe('print', () => {
-  // paged.js measures once, after fonts and KaTeX; give it room on a cold cache.
+  test.skip(
+    ({ browserName }) => browserName !== 'chromium',
+    'pagination is expensive and engine-independent; chromium is enough',
+  );
   test.slow();
 
-  test('lays the note into pages with a running header and folios', async ({ page }) => {
+  test('lays the note into pages, with headers, folios, endnotes and real maths', async ({
+    page,
+  }) => {
     await page.goto('/dev/note/print');
-    await expect(page.locator('.pagedjs_page').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('.pagedjs_page').first()).toBeVisible({ timeout: 60_000 });
     await expect.poll(() => page.locator('.pagedjs_page').count()).toBeGreaterThan(6);
 
     // paged.js fills its margin boxes through a CSS `content:` pseudo-element, so the header and
@@ -145,23 +160,14 @@ test.describe('print', () => {
     // The folio is a counter, which `getComputedStyle` reports unevaluated — so the check is that
     // the box exists and carries the rule, which is the part that can actually regress.
     expect(boxes.folio).toContain('counter(page)');
-  });
 
-  test('resolves margin notes into numbered endnotes', async ({ page }) => {
-    await page.goto('/dev/note/print');
-    await expect(page.locator('.pagedjs_page').first()).toBeVisible({ timeout: 30_000 });
-
-    // The `<details>` shell must not survive into print, and the note must still be findable.
+    // Sidenotes resolve to endnotes: the `<details>` shell must not survive into print, and the
+    // note must still be findable.
     await expect(page.locator('[data-margin-note]')).toBeHidden();
     await expect(page.getByRole('heading', { name: 'Notes', exact: true })).toBeVisible();
     await expect(page.locator('#endnote-1')).toContainText('Have No Fear Of Ice Cold Beer');
-  });
 
-  test('renders every formula as maths rather than as raw LaTeX', async ({ page }) => {
-    await page.goto('/dev/note/print');
-    await expect(page.locator('.pagedjs_page').first()).toBeVisible({ timeout: 30_000 });
-
-    // A boxed answer that reaches the page as `\ce{...}` in a mono chip is the failure mode this
+    // A boxed answer that reaches the page as `\ce{...}` in a mono chip is the failure this
     // catches — it looks like a rendering bug and is a parsing one.
     const raw = await page.evaluate(() =>
       [...document.querySelectorAll('code')]
