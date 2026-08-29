@@ -69,8 +69,17 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
+          env:
+            APP_URL: ${{ env.NEXT_PUBLIC_APP_URL }}
           script: |
-            const url = `https://pr-${context.issue.number}-lumen.workers.dev`;
+            // Derived, not guessed. A preview alias lives at
+            // `<alias>-<worker>.<account-subdomain>.workers.dev`, and the account subdomain was
+            // missing — so every preview comment so far pointed at a hostname that does not
+            // resolve. The production URL already carries the right subdomain, so take it from
+            // there: `lumen.acme.workers.dev` → `pr-7-lumen.acme.workers.dev`.
+            const host = new URL(process.env.APP_URL).host;
+            const [worker, ...rest] = host.split('.');
+            const url = `https://pr-${context.issue.number}-${worker}.${rest.join('.')}`;
             const marker = '<!-- lumen-preview -->';
             const body = `${marker}\n**Preview:** ${url}`;
             const { data: comments } = await github.rest.issues.listComments({
