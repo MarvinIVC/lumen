@@ -22,10 +22,16 @@ export const CURRICULUM_DISCLAIMER =
   'Organization, which do not endorse and are not affiliated with this project.';
 
 /**
- * The phase-01 design harness at /dev. Available whenever the build is not production, and in a
- * production build only when NEXT_PUBLIC_DEV_SCREENS is set — which is what lets the end-to-end
- * suite exercise the note renderer against `next start` without the screens reaching the live site.
+ * The phase-01 design harness at /dev: on for `next dev`, and in any other build only when
+ * NEXT_PUBLIC_DEV_SCREENS is set — which is what lets the end-to-end suite exercise the note
+ * renderer against `next start` without the screens reaching the live site.
+ *
+ * `=== 'development'`, not `!== 'production'`. Both behave identically today — NODE_ENV really is
+ * `'production'` in the build's render workers, so nothing was leaking. But a gate that decides
+ * what ships should name the one case it opens rather than every case it fails to close:
+ * `!== 'production'` also says yes to `'test'` and to an unset value, neither of which anyone
+ * chose. Same behaviour now, narrower blast radius later.
  */
 export function devScreensEnabled(): boolean {
-  return process.env.NODE_ENV !== 'production' || clientEnv.NEXT_PUBLIC_DEV_SCREENS;
+  return process.env.NODE_ENV === 'development' || clientEnv.NEXT_PUBLIC_DEV_SCREENS;
 }

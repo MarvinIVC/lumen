@@ -17,6 +17,12 @@ env:
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key-0000000000000000000000000
   NEXT_PUBLIC_ENV: preview
   NEXT_TELEMETRY_DISABLED: '1'
+  # Serves the /dev design harness so the end-to-end suite can exercise the note renderer against
+  # a real production build. Workflow-level on purpose: `opennextjs-cloudflare build` runs its own
+  # `next build` and overwrites .next, so setting this on the Build step alone left Playwright
+  # serving a bundle with the harness compiled out — every /dev route 404'd and 31 tests timed out.
+  # The deploy workflow does not set it, so the live site still has no such page.
+  NEXT_PUBLIC_DEV_SCREENS: '1'
 
 jobs:
   build:
@@ -56,10 +62,6 @@ jobs:
 
       - name: Build
         run: pnpm build
-        env:
-          # Lets the Playwright suite reach the /dev design harness in a production build. The
-          # deploy workflow does not set it, so the live site still 404s those routes.
-          NEXT_PUBLIC_DEV_SCREENS: '1'
 
       # Runs after the build so it can inspect the real client chunks, not just the source.
       - name: No secrets in the client bundle
