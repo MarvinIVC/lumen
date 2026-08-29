@@ -74,13 +74,19 @@ export function Button({
       // A button inside a form defaults to submitting it, which is almost never what the caller
       // meant. `asChild` has no implicit type to correct.
       type={asChild ? undefined : (type ?? 'button')}
+      // `disabled` is not a valid attribute on an anchor, so with `asChild` the styling would say
+      // disabled and the element would still be clickable and still be in the tab order. The
+      // ARIA equivalent plus the class below is what actually holds.
       disabled={asChild ? undefined : disabled || loading}
+      aria-disabled={asChild && (disabled || loading) ? true : undefined}
+      tabIndex={asChild && (disabled || loading) ? -1 : undefined}
       aria-busy={loading || undefined}
       data-loading={loading || undefined}
       className={cn(
         'inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none',
         'font-medium transition-colors duration-(--dur-fast) ease-lumen',
         'disabled:pointer-events-none disabled:opacity-50',
+        'aria-disabled:pointer-events-none aria-disabled:opacity-50',
         SIZES[size],
         VARIANTS[variant],
         fullWidth && 'w-full',

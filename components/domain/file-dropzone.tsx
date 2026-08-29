@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { DragEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -58,7 +58,6 @@ export function FileDropzone({
   accept = ACCEPT,
   className,
 }: FileDropzoneProps) {
-  const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
   const handleDrop = useCallback(
@@ -105,7 +104,6 @@ export function FileDropzone({
           <span>Browse files</span>
         </Button>
         <input
-          ref={input}
           type="file"
           multiple
           accept={accept}

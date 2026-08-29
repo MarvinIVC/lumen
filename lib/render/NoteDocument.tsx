@@ -26,7 +26,8 @@ export interface NoteDocumentProps {
   doc: NoteDocumentType;
   /**
    * Streaming: the document is still arriving, so appendices that are only meaningful when
-   * complete (corrections, glossary) stay hidden rather than flickering in half-finished.
+   * complete (corrections, glossary) stay hidden rather than flickering in half-finished — and
+   * each section fades up as it lands (03-DESIGN.md §7).
    */
   partial?: boolean;
   /** Hides the chrome the print stylesheet replaces: the outline rail and the reading toggle. */
@@ -127,6 +128,7 @@ function NoteBody({
               figureNumbers={figureNumbers}
               endnoteNumbers={endnoteNumbers}
               shouldRender={shouldRender}
+              reveal={partial}
             />
           ))}
 
@@ -177,12 +179,15 @@ function SectionView({
   figureNumbers,
   endnoteNumbers,
   shouldRender,
+  reveal,
 }: {
   section: Section;
   flags: NoteDocumentType['factCheck']['flags'];
   figureNumbers: Map<Block, number>;
   endnoteNumbers: Map<MarginNoteBlock, number>;
   shouldRender: (origin: Block['origin']) => boolean;
+  /** Fade the section up as it arrives. Only while streaming — the finished note is just there. */
+  reveal: boolean;
 }) {
   const rows = groupBlocks(section.blocks.filter((block) => shouldRender(block.origin)));
   const Heading = section.level === 2 ? 'h2' : 'h3';
@@ -192,7 +197,12 @@ function SectionView({
   if (rows.length === 0) return null;
 
   return (
-    <section aria-labelledby={section.id} className="mt-12 first:mt-0">
+    // A CSS animation, not a JS one: it runs once when the element mounts, which *is* "as its
+    // first block arrives", and globals.css already neutralises it under reduced motion.
+    <section
+      aria-labelledby={section.id}
+      className={cn('mt-12 first:mt-0', reveal && 'animate-reveal')}
+    >
       <Heading
         id={section.id}
         className={cn(

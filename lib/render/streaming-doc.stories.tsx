@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import { expect, waitFor } from 'storybook/test';
 
 import { StreamingDoc } from '@/components/domain/streaming-doc';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -40,6 +41,13 @@ const NARRATION = [
   'Collecting the glossary…',
 ];
 
+/** Counts the sections currently running the reveal animation. */
+function revealing(root: HTMLElement): number {
+  return [...root.querySelectorAll('section[aria-labelledby]')].filter(
+    (section) => getComputedStyle(section).animationName !== 'none',
+  ).length;
+}
+
 /** Frozen part-way, so the skeletons and the narration line can be looked at properly. */
 export const Arriving: Story = {
   args: {
@@ -47,10 +55,20 @@ export const Arriving: Story = {
     expectedSections: full.sections.length,
     status: NARRATION[3],
   },
+  // The reveal was written once and left unwired — the CSS existed, the component existed, and
+  // nothing connected them, which is invisible in a screenshot of a static story. So it is
+  // asserted: sections fade up while the note is arriving.
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(revealing(canvasElement)).toBeGreaterThan(0));
+  },
 };
 
 export const Finished: Story = {
   args: { doc: full, expectedSections: full.sections.length, done: true },
+  // And they do not once it has: a finished note is simply there, not perpetually arriving.
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(revealing(canvasElement)).toBe(0));
+  },
 };
 
 /** The whole sequence, on a loop. */
