@@ -133,6 +133,33 @@ function splice(
   return [...parse(before, `${key}-<`), build(match), ...parse(after, `${key}->`)];
 }
 
+/**
+ * A speakable version of a string that may be mostly maths.
+ *
+ * KaTeX emits MathML for screen readers, which is the right thing on a page — but it is *inside*
+ * the element, and an accessible name computed from contents does not reach into it. A control
+ * whose entire label is an equation therefore ends up with no name at all. Where a name is needed
+ * as an attribute rather than as content, this is what to pass.
+ *
+ * It is not a LaTeX-to-speech engine and does not try to be: it turns the handful of constructs
+ * that actually appear in a chemistry note into something a screen reader can pronounce, and
+ * drops the rest rather than spelling out backslashes.
+ */
+export function toSpokenText(text: string): string {
+  return stripInline(text)
+    .replace(/\\ce\{([^}]*)\}/g, '$1')
+    .replace(/\\text\{([^}]*)\}/g, '$1')
+    .replace(/\\d?frac\{([^}]*)\}\{([^}]*)\}/g, '$1 over $2')
+    .replace(/\\times/g, ' × ')
+    .replace(/\\approx/g, ' approximately ')
+    .replace(/\^\{?(-?[\dA-Za-z+-]+)\}?/g, ' to the power $1')
+    .replace(/_\{?(-?[\dA-Za-z+-]+)\}?/g, ' $1')
+    .replace(/\\[a-zA-Z]+/g, ' ')
+    .replace(/[{}\\$]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 /** Strips the inline syntax — for alt text, `<title>` elements and the outline rail. */
 export function stripInline(text: string): string {
   return text

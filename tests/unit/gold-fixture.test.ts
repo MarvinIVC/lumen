@@ -178,6 +178,18 @@ describe('appendices', () => {
     expect(doc.glossary.every((entry) => entry.term && entry.definition)).toBe(true);
     expect(doc.studyTools.flashcards).toHaveLength(5);
     expect(doc.studyTools.quiz).toHaveLength(3);
+
+    // A multiple-choice item whose options stay inside the prompt renders as a text box with the
+    // options read out as part of the question — which is how a quiz silently stops being one.
+    const multipleChoice = doc.studyTools.quiz.filter((item) => item.kind === 'multiple-choice');
+    expect(multipleChoice.length).toBeGreaterThan(0);
+    for (const item of multipleChoice) {
+      expect(item.choices?.length, item.prompt).toBe(4);
+      expect(item.prompt, item.prompt).not.toMatch(/\bA\)/);
+      // The answer is the option's own text, not a letter pointing at a list.
+      expect(item.answer).not.toMatch(/^\*\*[A-D]\*\*/);
+      expect(item.choices).toContain(item.answer);
+    }
     expect(doc.furtherStudy).toHaveLength(3);
   });
 

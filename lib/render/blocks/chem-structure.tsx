@@ -51,7 +51,7 @@ export function ChemStructure({
         ref={svgRef}
         role="img"
         aria-label={block.alt}
-        className="lumen-structure h-auto w-full max-w-xs"
+        className="lumen-structure h-auto w-full max-w-sm"
       />
     </FigureWithCaption>
   );

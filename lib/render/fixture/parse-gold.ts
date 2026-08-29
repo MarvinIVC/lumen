@@ -696,20 +696,42 @@ function parseFlashcards(body: string[]): Flashcard[] {
 
 function parseQuiz(body: string[]): QuizItem[] {
   return numberedItems(body).map((item) => {
-    const clean = item.replace(/^\d+\.\s*/, '');
+    const clean = tidy(item.replace(/^\d+\.\s*/, '')).replace(/\*\(from[^)]*\)\*/, '');
     const multipleChoice = /\*\(MC\)\*/.test(clean);
-    const [prompt, tail] = splitOnce(clean.replace(/\*\((?:MC|short)\)\*\s*/, ''), '—');
-    const choices = [...(tail ?? '').matchAll(/([A-D])\)\s*([^A-D)]+)/g)].map((m) => tidy(m[2]!));
+    const withoutKind = clean.replace(/\*\((?:MC|short)\)\*\s*/, '');
+
+    // The answer follows an em dash at the end. Splitting on the *first* one would cut the
+    // question in half whenever the question itself contains a dash — which chemistry prose does
+    // constantly ("mass ↔ mole — pick your start").
+    const split = withoutKind.lastIndexOf('—');
+    const question = tidy(split === -1 ? withoutKind : withoutKind.slice(0, split));
+    const answer = tidy(split === -1 ? '' : withoutKind.slice(split + 1));
+
+    // Options are lettered and live in the question half, not after the dash. Leaving them in the
+    // prompt turns a multiple-choice item into a short-answer box with the options read out as
+    // part of the question.
+    const options = [...question.matchAll(/\b([A-D])\)\s*(.+?)(?=\s+[A-D]\)|$)/g)];
+    const choices = options.map((match) => tidy(match[2]!));
+    const prompt = options.length ? tidy(question.slice(0, options[0]!.index)) : question;
 
     return {
       kind: multipleChoice ? 'multiple-choice' : 'short-answer',
-      prompt: tidy(prompt ?? clean),
+      prompt,
       ...(choices.length ? { choices } : {}),
-      answer: tidy((tail ?? '').replace(/\*\(from[^)]*\)\*/, '')),
-      explanation: '',
+      // For a lettered answer ("**B** (3.0 × 2 × N_A)"), the useful answer text is the option
+      // itself; the letter is a pointer into a list the reader can already see.
+      answer: resolveLetteredAnswer(answer, choices),
+      explanation: choices.length ? answer : '',
       sectionId: '',
     } satisfies QuizItem;
   });
+}
+
+/** "**B** (…)" → the text of option B, so the answer stands on its own. */
+function resolveLetteredAnswer(answer: string, choices: string[]): string {
+  const letter = /^\*\*([A-D])\*\*/.exec(answer)?.[1];
+  if (!letter || !choices.length) return answer;
+  return choices[letter.charCodeAt(0) - 'A'.charCodeAt(0)] ?? answer;
 }
 
 /* -------------------------------------------------------------------------- *

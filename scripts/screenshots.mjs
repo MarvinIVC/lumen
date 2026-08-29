@@ -16,7 +16,7 @@ const outDir = resolve(root, 'docs/screenshots');
 mkdirSync(outDir, { recursive: true });
 
 const base = process.env.SCREENSHOT_BASE_URL ?? 'http://localhost:3000';
-const pages = (process.argv[2] ?? 'note,new,error').split(',');
+const pages = (process.argv[2] ?? 'note,new,error,study').split(',');
 
 const viewports = [
   { name: 'desktop', width: 1440, height: 1000 },

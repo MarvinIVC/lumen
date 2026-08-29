@@ -65,8 +65,12 @@
  * smiles-drawer — SVG output, colored through its theme object; the
  * background it paints is the one thing the theme cannot remove.
  * ---------------------------------------------------------------- */
+/*
+ * No `max-width` here on purpose. notes.css is unlayered, so it beats Tailwind's `@layer
+ * utilities` — a `max-width: 100%` in this rule silently overrode the `max-w-sm` on the element
+ * and the molecule filled the column, three times the size a structure wants to be.
+ */
 svg.lumen-structure {
-  max-width: 100%;
   height: auto;
   background: transparent;
 }
