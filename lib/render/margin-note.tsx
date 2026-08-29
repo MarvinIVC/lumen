@@ -58,7 +58,8 @@ export function MarginNote({
       className={cn(
         'group/note my-3 border-l-2 border-border-strong pl-3 font-sans',
         // In the margin column the disclosure triangle is noise — there is nothing to disclose.
-        wide && 'lg:my-0',
+        // `note:`, not `lg:` — 1100px is where the margin column appears, and `lg:` is 1024.
+        wide && 'note:my-0',
         className,
       )}
     >

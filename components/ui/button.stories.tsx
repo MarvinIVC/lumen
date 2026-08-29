@@ -96,9 +96,16 @@ export const States: Story = {
 
 /** A link that should read as a button — the anchor keeps its own semantics. */
 export const AsLink: Story = {
+  parameters: { layout: 'padded' },
   render: () => (
-    <Button asChild variant="primary">
-      <a href="#try">Try it with your notes</a>
-    </Button>
+    <Row>
+      <Button asChild variant="primary">
+        <a href="#try">Try it with your notes</a>
+      </Button>
+      {/* An anchor cannot be `disabled`, so this has to hold through aria and the tab order. */}
+      <Button asChild disabled>
+        <a href="#unavailable">Not available yet</a>
+      </Button>
+    </Row>
   ),
 };

@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-
 import { Progress } from '@/components/ui/progress';
 import { CheckIcon } from '@/components/ui/icons';
 import { Skeleton, SkeletonParagraph } from '@/components/ui/skeleton';
@@ -120,23 +118,5 @@ function SettleMark({ reduced }: { reduced: boolean }) {
     >
       <CheckIcon className="size-2.5" />
     </span>
-  );
-}
-
-/**
- * Reveals its children with a fade-up as they arrive (§7). A section uses one of these; blocks
- * inside it do not, because staggering every paragraph turns reading into waiting.
- */
-export function Reveal({ children, className }: { children: React.ReactNode; className?: string }) {
-  const reduced = useReducedMotion();
-  const [seen, setSeen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => setSeen(true), []);
-
-  return (
-    <div ref={ref} className={cn(!reduced && !seen && 'animate-reveal', className)}>
-      {children}
-    </div>
   );
 }
