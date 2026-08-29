@@ -2,6 +2,7 @@
 @import '../lib/design/tokens.css';
 @import '../lib/design/motion.css';
 @import '../lib/render/notes.css';
+@import '../lib/render/print.css';
 
 /*
  * Tailwind v4 reads our CSS variables through `@theme inline`, so every utility resolves to a

@@ -11,6 +11,7 @@ import type {
 } from '@/lib/ai/schema';
 
 import { CorrectionsPanel } from './corrections-panel';
+import { EndNotes } from './end-notes';
 import { GlossaryList } from './glossary-list';
 import { OpenQuestionsPanel } from './open-questions-panel';
 import { OutlineRail, buildOutline } from './outline-rail';
@@ -65,15 +66,20 @@ function NoteBody({
   const { shouldRender } = useReadingMode();
   const outline = buildOutline(doc);
   const figureNumbers = assignFigureNumbers(doc.sections);
+  // Printing turns every margin note into a numbered endnote; on screen the map is empty and the
+  // notes render in the margin as usual.
+  const endnotes = forPrint ? collectMarginNotes(doc.sections) : [];
+  const endnoteNumbers = new Map(endnotes.map((note, index) => [note, index + 1]));
 
   return (
     <div className={cn('lumen-note mx-auto w-full max-w-(--note-shell) px-5 py-10', className)}>
-      <div className="gap-12 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)]">
+      <div data-note-layout="shell" className="gap-12 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)]">
         {forPrint ? null : <OutlineRail entries={outline} />}
 
         <article className="min-w-0">
           <header className="mb-10">
-            <p className="font-sans text-sm tracking-wide text-text-muted">
+            {/* `string-set` in print.css lifts this into the running header on every page. */}
+            <p data-print-course className="font-sans text-sm tracking-wide text-text-muted">
               {[doc.context.course, doc.context.unit].filter(Boolean).join(' · ')}
             </p>
             <h1 className="mt-2 max-w-(--measure) font-serif text-3xl leading-tight font-semibold text-balance text-text">
@@ -119,12 +125,14 @@ function NoteBody({
               section={section}
               flags={doc.factCheck.flags.filter((flag) => flag.sectionId === section.id)}
               figureNumbers={figureNumbers}
+              endnoteNumbers={endnoteNumbers}
               shouldRender={shouldRender}
             />
           ))}
 
           {partial ? null : (
             <div className="max-w-(--measure)">
+              <EndNotes notes={endnotes} />
               <CorrectionsPanel corrections={doc.corrections} />
               <OpenQuestionsPanel questions={doc.openQuestions} />
               <GlossaryList entries={doc.glossary} />
@@ -167,11 +175,13 @@ function SectionView({
   section,
   flags,
   figureNumbers,
+  endnoteNumbers,
   shouldRender,
 }: {
   section: Section;
   flags: NoteDocumentType['factCheck']['flags'];
   figureNumbers: Map<Block, number>;
+  endnoteNumbers: Map<MarginNoteBlock, number>;
   shouldRender: (origin: Block['origin']) => boolean;
 }) {
   const rows = groupBlocks(section.blocks.filter((block) => shouldRender(block.origin)));
@@ -200,6 +210,7 @@ function SectionView({
       ) : null}
 
       <div
+        data-note-layout="section"
         className={cn(
           'mt-4 grid grid-cols-1 gap-x-10',
           'note:grid-cols-[minmax(0,var(--measure))_var(--margin-col)]',
@@ -207,7 +218,7 @@ function SectionView({
       >
         {rows.map((row, index) => {
           const notes = row.notes.map((note, noteIndex) => (
-            <MarginNote key={noteIndex} block={note} />
+            <MarginNote key={noteIndex} block={note} printNumber={endnoteNumbers.get(note)} />
           ));
 
           // Figures take the measure *and* the margin column. A five-node flowchart squeezed into
@@ -266,6 +277,13 @@ function groupBlocks(blocks: Block[]): BlockRow[] {
     return orphans.map((note) => ({ block: note, notes: [] }));
   }
   return rows;
+}
+
+/** Margin notes in reading order, for the printed endnote list. */
+function collectMarginNotes(sections: Section[]): MarginNoteBlock[] {
+  return sections.flatMap((section) =>
+    section.blocks.filter((block): block is MarginNoteBlock => block.type === 'marginNote'),
+  );
 }
 
 /** Figures are numbered across the whole document, not per section — the way a textbook does it. */

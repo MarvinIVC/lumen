@@ -24,8 +24,32 @@ const KIND_LABELS: Record<MarginNoteKind, string> = {
  *
  * Before hydration it renders open, because a note briefly visible beats a note briefly missing.
  */
-export function MarginNote({ block, className }: { block: MarginNoteBlock; className?: string }) {
+export function MarginNote({
+  block,
+  className,
+  printNumber,
+}: {
+  block: MarginNoteBlock;
+  className?: string;
+  /**
+   * Set when printing: the note becomes a numbered reference in the text and its body moves to
+   * the endnotes. A sidenote in a margin is a screen affordance; on paper the margin belongs to
+   * the page box, so the note has to go somewhere it can be found again.
+   */
+  printNumber?: number;
+}) {
   const wide = useWideNoteLayout();
+
+  if (printNumber !== undefined) {
+    return (
+      <sup className="ml-0.5 font-sans text-xs text-accent tabular-nums">
+        <a href={`#endnote-${printNumber}`} className="no-underline">
+          {printNumber}
+          <span className="sr-only"> — {KIND_LABELS[block.kind]}</span>
+        </a>
+      </sup>
+    );
+  }
 
   return (
     <details
