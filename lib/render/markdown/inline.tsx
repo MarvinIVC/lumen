@@ -2,6 +2,9 @@ import { Fragment } from 'react';
 import type { ReactNode } from 'react';
 
 import { InlineMath } from '../math/inline-math';
+import { stripInline } from './strip';
+
+export { stripInline };
 
 /**
  * The restricted inline renderer (06 §1). Deliberately not a markdown library: the model's output
@@ -157,17 +160,5 @@ export function toSpokenText(text: string): string {
     .replace(/\\[a-zA-Z]+/g, ' ')
     .replace(/[{}\\$]/g, '')
     .replace(/\s{2,}/g, ' ')
-    .trim();
-}
-
-/** Strips the inline syntax — for alt text, `<title>` elements and the outline rail. */
-export function stripInline(text: string): string {
-  return text
-    .replace(/`([^`]+?)`/g, '$1')
-    .replace(/\*\*([^*]+?)\*\*/g, '$1')
-    .replace(/\*([^*]+?)\*/g, '$1')
-    .replace(/_([^_]+?)_/g, '$1')
-    .replace(/\[([^\]]+?)\]\([^)\s]+\)/g, '$1')
-    .replace(/\$([^$]+?)\$/g, '$1')
     .trim();
 }

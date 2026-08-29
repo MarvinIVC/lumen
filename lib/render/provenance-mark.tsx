@@ -6,6 +6,11 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils/cn';
 import type { Origin } from '@/lib/ai/schema';
 
+import {
+  PROVENANCE_BLOCK,
+  PROVENANCE_LABELS as LABELS,
+  PROVENANCE_SURFACES as SURFACES,
+} from './provenance-styles';
 import { useReadingMode } from './reading-mode';
 
 /**
@@ -19,27 +24,6 @@ import { useReadingMode } from './reading-mode';
  * Corrections are the exception: they stay visible in every mode, because they are the learning
  * surface. Framed as "here's what to relearn", never as a scold.
  */
-
-const LABELS: Record<Exclude<Origin, 'student'>, string> = {
-  'ai-added': 'added',
-  'ai-clarified': 'clarified',
-  'ai-corrected': 'corrected',
-};
-
-const SURFACES: Record<Exclude<Origin, 'student'>, { calm: string; loud: string }> = {
-  'ai-added': {
-    calm: 'border-l-2 border-ai-added-rule bg-ai-added/50',
-    loud: 'border-l-2 border-ai-added-rule bg-ai-added',
-  },
-  'ai-clarified': {
-    calm: 'border-l-2 border-link/40 bg-ai-clarified/60',
-    loud: 'border-l-2 border-link bg-ai-clarified',
-  },
-  'ai-corrected': {
-    calm: 'border-l-2 border-ai-corrected-mark/70 bg-ai-corrected/70',
-    loud: 'border-l-2 border-ai-corrected-mark bg-ai-corrected',
-  },
-};
 
 export interface ProvenanceBlockProps {
   origin: Origin;
@@ -62,11 +46,7 @@ export function ProvenanceBlock({ origin, children, className }: ProvenanceBlock
   return (
     <div
       data-origin={origin}
-      className={cn(
-        'group/prov relative rounded-r-note py-1 pr-3 pl-4',
-        loud ? surface.loud : surface.calm,
-        className,
-      )}
+      className={cn(PROVENANCE_BLOCK, loud ? surface.loud : surface.calm, className)}
     >
       <span
         className={cn(

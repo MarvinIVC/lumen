@@ -7,6 +7,7 @@ export { Badge } from './badge';
 export type { BadgeTone } from './badge';
 export { Button } from './button';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './button';
+export { buttonClass } from './button-styles';
 export { Card } from './card';
 export { Checkbox } from './checkbox';
 export { Chip } from './chip';

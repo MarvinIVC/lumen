@@ -5,28 +5,11 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '@/lib/utils/cn';
 
+import { BUTTON_BASE, BUTTON_SIZES, BUTTON_VARIANTS } from './button-styles';
+import type { ButtonSize, ButtonVariant } from './button-styles';
 import { Spinner } from './spinner';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
-
-/**
- * Four variants, and the restraint is the design (03-DESIGN.md §1): one filled accent button per
- * screen, secondary carries a hairline, ghost carries nothing until you point at it.
- */
-const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-accent-fg hover:bg-accent-hover active:bg-accent-hover',
-  secondary:
-    'border border-border-strong bg-bg-raised text-text hover:bg-bg-sunken active:bg-bg-sunken',
-  ghost: 'text-text-muted hover:bg-bg-sunken hover:text-text active:bg-bg-sunken',
-  danger: 'bg-danger text-danger-fg hover:bg-danger-hover active:bg-danger-hover',
-};
-
-const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-8 gap-1.5 rounded-sm px-3 text-sm',
-  md: 'h-10 gap-2 rounded-md px-4 text-sm',
-  lg: 'h-12 gap-2 rounded-md px-5 text-base',
-};
+export type { ButtonSize, ButtonVariant };
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -83,12 +66,9 @@ export function Button({
       aria-busy={loading || undefined}
       data-loading={loading || undefined}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center whitespace-nowrap select-none',
-        'font-medium transition-colors duration-(--dur-fast) ease-lumen',
-        'disabled:pointer-events-none disabled:opacity-50',
-        'aria-disabled:pointer-events-none aria-disabled:opacity-50',
-        SIZES[size],
-        VARIANTS[variant],
+        BUTTON_BASE,
+        BUTTON_SIZES[size],
+        BUTTON_VARIANTS[variant],
         fullWidth && 'w-full',
         className,
       )}

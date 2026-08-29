@@ -14,6 +14,7 @@ const config = {
         'design',
         'export',
         'ingest',
+        'marketing',
         'render',
         'store',
         'supabase',
