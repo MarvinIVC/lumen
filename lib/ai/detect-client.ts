@@ -7,12 +7,13 @@
  * the whole of phase-03 that spends anything, and it fires solely when the local heuristic scores
  * under 0.7. Everything else about ingestion and review is free and local.
  *
- * The `detect` edge function is phase-04's. Until it exists this reports itself unavailable and
- * the review screen falls back to what the heuristic found, shown as a question the student
- * answers rather than an answer we assert. That fallback is not a placeholder — it is what
- * happens for a student who is offline, and it has to be good on its own.
+ * The `detect` edge function ships with phase-04, so this is live. The fallback below it is not a
+ * placeholder and never was: `detectRemote` returns `null` on any failure, and the review screen
+ * shows what the local heuristic found as a question the student answers rather than an answer we
+ * assert. That is also exactly what a student who is offline sees, and it has to be good on its own.
  */
 import { clientEnv } from '@/lib/env';
+import { anonHeaders, captureAnonId } from './anon-id';
 import type { DetectionResult } from './schema';
 
 /** Characters of context the classify prompt takes: the first 1500 and the last 500 (§3). */
@@ -25,11 +26,14 @@ export function detectExcerpt(text: string): string {
 }
 
 /**
- * Whether the classify function is deployed. Phase-04 flips this to a real check against the
- * function's health, and the review screen already handles both answers.
+ * Whether the classify call can be made at all.
+ *
+ * It is a configuration check, not a health check: asking the function whether it is up would cost
+ * a round trip on a screen that has to be instant, and the answer to "it is down" is identical to
+ * the answer to "it returned nothing" — the student fills the field in themselves.
  */
 export function isDetectAvailable(): boolean {
-  return false;
+  return Boolean(clientEnv.NEXT_PUBLIC_SUPABASE_URL);
 }
 
 export function detectEndpoint(): string {
@@ -54,7 +58,11 @@ export async function detectRemote(
   try {
     const response = await fetch(detectEndpoint(), {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        apikey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        ...anonHeaders(),
+      },
       body: JSON.stringify({
         extract: detectExcerpt(text),
         turnstileToken: options.turnstileToken ?? null,
@@ -62,7 +70,10 @@ export async function detectRemote(
       ...(options.signal ? { signal: options.signal } : {}),
     });
     if (!response.ok) return null;
-    return (await response.json()) as DetectionResult;
+    captureAnonId(response);
+    // The function answers 200 with `null` when it could not classify — a supported answer, not an
+    // error, and the difference matters to the screen that reads it.
+    return (await response.json()) as DetectionResult | null;
   } catch {
     return null;
   }

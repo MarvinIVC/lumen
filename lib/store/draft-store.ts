@@ -638,6 +638,7 @@ export const useDraftStore = create<DraftState>((set, get) => {
           ocrPages: blocks.filter((block) => block.needsOCR).length,
         },
         doc: { blocks, meta: counted.meta },
+        turnstileToken: draft.turnstileToken,
       };
 
       await saveNote(note);

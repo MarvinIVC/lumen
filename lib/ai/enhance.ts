@@ -100,6 +100,8 @@ async function* streamCall(
   let error: ProviderError | null = null;
   let finishReason: CallResult['finishReason'] = 'stop';
 
+  let announcedKey: string | null = null;
+
   for await (const chunk of provider.chat(request)) {
     if (chunk.type === 'text') {
       text += chunk.text;
@@ -108,6 +110,14 @@ async function* streamCall(
       if (update.head) yield { type: 'head', head: update.head };
       for (const section of update.sections) {
         yield { type: 'section', index: section.index, section: section.section };
+      }
+      // §7: the narration line is derived from which top-level key is being written. The client
+      // could infer some of it from the events above, but not the tail — corrections, the fact
+      // check and the study tools all arrive after the last section and would otherwise show as
+      // one long silence at the end.
+      if (update.currentKey && update.currentKey !== announcedKey) {
+        announcedKey = update.currentKey;
+        yield { type: 'status', phase: 'generating', key: announcedKey };
       }
     } else if (chunk.type === 'usage') {
       usage = chunk.usage;
