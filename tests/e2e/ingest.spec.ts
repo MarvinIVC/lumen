@@ -283,23 +283,44 @@ test.describe('caps', () => {
   });
 
   test('a 5 MB photo is downscaled to the 2000px cap', async ({ page }) => {
+    // Twelve megapixels is a lot to hand a two-core CI runner, even quickly.
+    test.slow();
     await openNew(page);
 
-    // 4000 × 3000 of random 3px blocks — about 5 MB of PNG, and drawn in the page so a
-    // multi-megabyte binary does not have to be committed to the repository. Random rather than
-    // patterned: a gradient compresses to a few kilobytes and would test nothing.
+    // About 5 MB of PNG at 4000 × 3000, drawn in the page so a multi-megabyte binary does not
+    // have to be committed.
+    //
+    // Built by scaling a small sheet of random pixels up with smoothing off, rather than by
+    // painting 1.3 million little rectangles. Same blocky noise, same file size — and the first
+    // version of this took **15 seconds** to generate on a throttled CPU, which is what failed
+    // this test on CI. (For the record, the thing under test is not slow: parsing and downscaling
+    // the result takes 1.6 s at 4x throttle.) Random rather than patterned because a gradient
+    // compresses to a few kilobytes and would test nothing.
     const png = await page.evaluate(async () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 4000;
-      canvas.height = 3000;
-      const context = canvas.getContext('2d')!;
-      for (let y = 0; y < canvas.height; y += 3) {
-        for (let x = 0; x < canvas.width; x += 3) {
-          const [r, g, b] = crypto.getRandomValues(new Uint8Array(3));
-          context.fillStyle = `rgb(${r},${g},${b})`;
-          context.fillRect(x, y, 3, 3);
-        }
+      const BLOCK = 3;
+      const width = 4000;
+      const height = 3000;
+
+      const seed = document.createElement('canvas');
+      seed.width = Math.ceil(width / BLOCK);
+      seed.height = Math.ceil(height / BLOCK);
+      const seedContext = seed.getContext('2d')!;
+      const pixels = seedContext.createImageData(seed.width, seed.height);
+      // `getRandomValues` refuses anything over 64 KiB in one call.
+      for (let offset = 0; offset < pixels.data.length; offset += 65536) {
+        crypto.getRandomValues(pixels.data.subarray(offset, offset + 65536));
       }
+      // getRandomValues also randomised the alpha channel; opaque, or the PNG is mostly nothing.
+      for (let i = 3; i < pixels.data.length; i += 4) pixels.data[i] = 255;
+      seedContext.putImageData(pixels, 0, 0);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d')!;
+      context.imageSmoothingEnabled = false;
+      context.drawImage(seed, 0, 0, width, height);
+
       const blob = await new Promise<Blob>((resolve) =>
         canvas.toBlob((result) => resolve(result!), 'image/png'),
       );

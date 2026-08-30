@@ -295,6 +295,14 @@ by design.
 
 **Gotchas**
 
+- **A test that builds its own fixture has to be cheap to build.** The 5 MB-photo test painted 1.3
+  million 3-pixel rectangles, which took **15 s on a throttled CPU** and was the one thing that
+  failed on `main` after the merge, having passed on the branch, on the preview and locally.
+  Scaling a small sheet of random pixels up with `imageSmoothingEnabled = false` gives the same
+  blocky noise and the same file size for a couple of operations. Worth recording that the _product_
+  was never the slow part: parsing and downscaling a 12-megapixel photo takes 1.6 s at 4× throttle
+  and 2.1 s at 6×. Measure before optimising the wrong thing. (`crypto.getRandomValues` also
+  refuses more than 64 KiB per call.)
 - **`pnpm check:worker` now covers `/app/*`.** `/app/note/[id]` is the first route in this project
   that is server-rendered on demand rather than prerendered.
 - **Playwright loads specs as CommonJS here**, so `import.meta.dirname` is not available in
