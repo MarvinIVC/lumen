@@ -15,18 +15,18 @@
  *
  * Anything that changes a string here must bump PROMPT_VERSION and re-run `pnpm test:ai` (§10).
  */
-import type { ChatMessage } from '../provider';
-import type { CurriculumPackBlock } from '@/lib/curriculum/load';
-import type { DomainFamily, EnhanceOptions, NoteContext } from '../schema';
+import type { ChatMessage } from '../provider.ts';
+import type { CurriculumPackBlock } from '../../curriculum/load.ts';
+import type { DomainFamily, EnhanceOptions, NoteContext } from '../schema.ts';
 
-import { DOMAIN_TEMPLATE_BLOCKS, domainTemplateBlock } from './domains';
-import { DETECT_SYSTEM } from './detect';
-import { RUBRIC_SYSTEM } from './rubric';
-import { VERIFY_SYSTEM, verifySystem } from './verify';
+import { DOMAIN_TEMPLATE_BLOCKS, domainTemplateBlock } from './domains.ts';
+import { DETECT_SYSTEM } from './detect.ts';
+import { RUBRIC_SYSTEM } from './rubric.ts';
+import { VERIFY_SYSTEM, verifySystem } from './verify.ts';
 
-export { PROMPT_VERSION } from '../versions';
+export { PROMPT_VERSION } from '../versions.ts';
 export { RUBRIC_SYSTEM, DOMAIN_TEMPLATE_BLOCKS, DETECT_SYSTEM, VERIFY_SYSTEM, verifySystem };
-export { SCHEMA_BLOCK } from './schema-block';
+export { SCHEMA_BLOCK } from './schema-block.ts';
 
 export interface BuildEnhancePromptInput {
   context: NoteContext;

@@ -12,9 +12,9 @@
  * shapeless output the validator exists to reject. The rubric plus the schema block do that job
  * better here.
  */
-import { errorFromException, errorFromStatus } from './errors';
-import { readSse } from './sse';
-import { TIMEOUT_MS } from './openai-compatible';
+import { errorFromException, errorFromStatus } from './errors.ts';
+import { readSse } from './sse.ts';
+import { TIMEOUT_MS } from './openai-compatible.ts';
 import type {
   ChatChunk,
   ChatMessage,
@@ -22,7 +22,7 @@ import type {
   ChatUsage,
   LLMProvider,
   ProviderConfig,
-} from '../provider';
+} from '../provider.ts';
 
 export const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com';
 

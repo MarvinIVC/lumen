@@ -12,8 +12,8 @@
  * model itself added produces neither — it is our error, not theirs, and putting it in their
  * corrections panel would be both confusing and slightly dishonest.
  */
-import { computeStats } from './validate';
-import type { Block, Correction, FactCheckFlag, NoteDocument, Section } from './schema';
+import { computeStats } from './validate.ts';
+import type { Block, Correction, FactCheckFlag, NoteDocument, Section } from './schema.ts';
 
 export interface VerifyPatch {
   sectionId: string;

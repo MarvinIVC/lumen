@@ -11,9 +11,9 @@
  *   the stable prefix. That is the same boundary the prompt builder draws (§4.1), so the two
  *   agree by construction rather than by coincidence.
  */
-import { errorFromException, errorFromStatus } from './errors';
-import { readSse } from './sse';
-import { TIMEOUT_MS } from './openai-compatible';
+import { errorFromException, errorFromStatus } from './errors.ts';
+import { readSse } from './sse.ts';
+import { TIMEOUT_MS } from './openai-compatible.ts';
 import type {
   ChatChunk,
   ChatMessage,
@@ -21,7 +21,7 @@ import type {
   ChatUsage,
   LLMProvider,
   ProviderConfig,
-} from '../provider';
+} from '../provider.ts';
 
 export const ANTHROPIC_BASE_URL = 'https://api.anthropic.com';
 const ANTHROPIC_VERSION = '2023-06-01';

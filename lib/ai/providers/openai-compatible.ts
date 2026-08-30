@@ -6,8 +6,8 @@
  * implementation covers three of the four providers. `fetch` only: the same file runs in Node under
  * vitest, in Deno inside the edge function, and never in the browser.
  */
-import { errorFromException, errorFromStatus } from './errors';
-import { readSse } from './sse';
+import { errorFromException, errorFromStatus } from './errors.ts';
+import { readSse } from './sse.ts';
 import type {
   ChatChunk,
   ChatRequest,
@@ -15,7 +15,7 @@ import type {
   LLMProvider,
   MultimodalPart,
   ProviderConfig,
-} from '../provider';
+} from '../provider.ts';
 
 /** 04 §2 step 3: a call that has not answered in 90 s is a failure the fallback should get. */
 export const TIMEOUT_MS = 90_000;

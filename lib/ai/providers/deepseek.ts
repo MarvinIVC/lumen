@@ -12,8 +12,8 @@
  *   `response_format: { type: 'json_object' }` is not full JSON-Schema, and DeepSeek requires the
  *   word "json" to appear in the prompt. Both are satisfied by the rubric and the schema block.
  */
-import { createOpenAICompatibleProvider } from './openai-compatible';
-import type { LLMProvider, ProviderConfig } from '../provider';
+import { createOpenAICompatibleProvider } from './openai-compatible.ts';
+import type { LLMProvider, ProviderConfig } from '../provider.ts';
 
 export const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
 

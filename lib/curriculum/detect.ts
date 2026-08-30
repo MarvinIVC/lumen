@@ -9,8 +9,8 @@
  * Everything here is pure and synchronous, so it runs on mount with no loading state, and so the
  * unit suite can hold it to the fixture's expected answer.
  */
-import { detectLanguage } from './language';
-import type { Curriculum, DetectionResult, DomainFamily } from '@/lib/ai/schema';
+import { detectLanguage } from './language.ts';
+import type { Curriculum, DetectionResult, DomainFamily } from '../ai/schema.ts';
 
 export interface HeuristicDetection {
   subject: string | null;
@@ -242,7 +242,7 @@ const DOMAIN_FAMILIES: Record<string, DomainFamily> = {
   'English Literature': 'literature-language-arts',
 };
 
-export { detectLanguage } from './language';
+export { detectLanguage } from './language.ts';
 
 export function domainFamilyFor(subject: string, _curriculum: Curriculum): DomainFamily {
   return DOMAIN_FAMILIES[subject] ?? 'generic';

@@ -8,11 +8,11 @@
  * `lib/ai/stream-parse.ts`, and both are kept out of this module so importing a type never pulls
  * their code into a bundle.
  */
-import { SCHEMA_VERSION } from './versions';
-import type { PromptVersion, SchemaVersion } from './versions';
+import { SCHEMA_VERSION } from './versions.ts';
+import type { PromptVersion, SchemaVersion } from './versions.ts';
 
 export { SCHEMA_VERSION };
-export { PROMPT_VERSION } from './versions';
+export { PROMPT_VERSION } from './versions.ts';
 
 /* -------------------------------------------------------------------------- *
  * Context & options

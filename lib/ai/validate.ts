@@ -21,8 +21,8 @@
  * flashcard costs a student nothing; silently losing "double-check this claim" costs them the
  * promise the product is built on (06 §5).
  */
-import { lintMermaid, lintSmiles } from './lint';
-import { PROMPT_VERSION, SCHEMA_VERSION } from './versions';
+import { lintMermaid, lintSmiles } from './lint.ts';
+import { PROMPT_VERSION, SCHEMA_VERSION } from './versions.ts';
 import type {
   Block,
   ChartSpec,
@@ -31,7 +31,7 @@ import type {
   Section,
   ValidationIssue,
   ValidationResult,
-} from './schema';
+} from './schema.ts';
 
 /** Above this share of dropped blocks the document is not repairable, it is broken. */
 const MAX_DROPPED_SHARE = 0.4;
