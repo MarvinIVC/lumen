@@ -7,26 +7,26 @@
  *   user[1] = DOMAIN_TEMPLATE_BLOCK    (per domain family, small)                      ← cached
  *   user[2] = RUN_INSTRUCTION          (options + context + the extracted notes)       ← volatile
  *
- * The prompt bodies themselves are written in phase-04. Anything that changes a string here must
- * bump PROMPT_VERSION and re-run `pnpm test:ai`.
+ * The cache boundary is the start of `user[2]`, and the rule that keeps it working is negative:
+ * nothing above it may contain a timestamp, a note id, a title, a filename or a formatted date.
+ * That is why `buildEnhancePrompt` takes no clock and no id, and why
+ * `tests/unit/prompt-cache.test.ts` asserts two different notes on the same course produce a
+ * byte-identical prefix. A regression there is invisible in the output and costs ~31x on input.
+ *
+ * Anything that changes a string here must bump PROMPT_VERSION and re-run `pnpm test:ai` (§10).
  */
 import type { ChatMessage } from '../provider';
 import type { CurriculumPackBlock } from '@/lib/curriculum/load';
 import type { DomainFamily, EnhanceOptions, NoteContext } from '../schema';
 
+import { DOMAIN_TEMPLATE_BLOCKS, domainTemplateBlock } from './domains';
+import { DETECT_SYSTEM } from './detect';
+import { RUBRIC_SYSTEM } from './rubric';
+import { VERIFY_SYSTEM, verifySystem } from './verify';
+
 export { PROMPT_VERSION } from '../versions';
-
-/** The standing instruction — 04-AI-ENGINE.md §4.2. Written in phase-04. */
-export declare const RUBRIC_SYSTEM: string;
-
-/** Per-family structure guidance that also restates the JSON schema — §4.3. */
-export declare const DOMAIN_TEMPLATE_BLOCKS: Record<DomainFamily, string>;
-
-/** Stage A classifier prompt — §3. */
-export declare const DETECT_SYSTEM: string;
-
-/** Stage C examiner prompt — §6. */
-export declare const VERIFY_SYSTEM: string;
+export { RUBRIC_SYSTEM, DOMAIN_TEMPLATE_BLOCKS, DETECT_SYSTEM, VERIFY_SYSTEM, verifySystem };
+export { SCHEMA_BLOCK } from './schema-block';
 
 export interface BuildEnhancePromptInput {
   context: NoteContext;
@@ -44,16 +44,100 @@ export interface BuiltPrompt {
   cachePrefix: string;
 }
 
-export declare function buildEnhancePrompt(input: BuildEnhancePromptInput): BuiltPrompt;
+/** Human-readable option lines. Deliberately terse — the model reads these last and literally. */
+const MODE_NOTE: Record<EnhanceOptions['mode'], string> = {
+  tidy: 'tidy — structure, correct and complete what is already there. Add nothing new beyond fixes and definitions.',
+  complete:
+    'complete — rebuild the lesson: fill the gaps a teacher would expect, finish every example, add the visuals that help.',
+  study_guide:
+    'study_guide — complete, plus the fullest set of study tools and a revision-ready structure.',
+};
 
-export declare function buildDetectPrompt(extract: string): BuiltPrompt;
+const DEPTH_NOTE: Record<EnhanceOptions['depth'], string> = {
+  match: 'match — mirror the depth the student was actually taught at.',
+  thorough: 'thorough — go one level deeper than the notes, still within the syllabus scope.',
+  brief: 'brief — the shortest treatment that is still complete and correct.',
+};
 
-export declare function buildVerifyPrompt(input: {
+const VISUALS_NOTE: Record<EnhanceOptions['visuals'], string> = {
+  auto: 'auto — add a visual only where it genuinely aids understanding.',
+  more: 'more — prefer a diagram, chart or structure wherever one would help at all.',
+  none: 'none — no diagram, chart or structure blocks at all.',
+};
+
+const VOICE_NOTE: Record<EnhanceOptions['voice'], string> = {
+  'keep-mine':
+    "keep-mine — tighten the student's phrasing, do not replace it. Their words stay theirs.",
+  textbook: 'textbook — rewrite in a clean textbook register, while keeping their examples.',
+};
+
+/**
+ * §4.5 — the volatile tail. Kept separate so tests can assert nothing stable leaks into it, and
+ * more importantly that nothing volatile leaks *out* of it into the cached prefix.
+ */
+export function buildRunInstruction(input: BuildEnhancePromptInput): string {
+  const { context, options, titleHint, extract } = input;
+  const lines = [
+    `CONTEXT: subject=${context.subject} curriculum=${context.curriculum} course=${context.course} unit=${context.unit ?? '—'} topic=${context.topic ?? '—'} language=${context.language}`,
+    `OPTIONS: mode=${options.mode} depth=${options.depth} visuals=${options.visuals} voice=${options.voice}`,
+    `  mode: ${MODE_NOTE[options.mode]}`,
+    `  depth: ${DEPTH_NOTE[options.depth]}`,
+    `  visuals: ${VISUALS_NOTE[options.visuals]}`,
+    `  voice: ${VOICE_NOTE[options.voice]}`,
+  ];
+  if (titleHint) lines.push(`TITLE HINT: ${titleHint}`);
+  lines.push(
+    '--- BEGIN STUDENT NOTES (verbatim, may include [IMAGE: alt/ocr]) ---',
+    extract,
+    '--- END STUDENT NOTES ---',
+    'Produce the NoteDocument json now.',
+  );
+  return lines.join('\n');
+}
+
+export function buildEnhancePrompt(input: BuildEnhancePromptInput): BuiltPrompt {
+  const packText = input.packBlock?.text ?? '';
+  const domainText = domainTemplateBlock(input.context.domainFamily as DomainFamily | undefined);
+  const cachePrefix = [RUBRIC_SYSTEM, packText, domainText].join('\n\n');
+
+  return {
+    system: RUBRIC_SYSTEM,
+    messages: [
+      { role: 'user', content: packText },
+      { role: 'user', content: domainText },
+      { role: 'user', content: buildRunInstruction(input) },
+    ],
+    cachePrefix,
+  };
+}
+
+export function buildDetectPrompt(extract: string): BuiltPrompt {
+  return {
+    system: DETECT_SYSTEM,
+    messages: [{ role: 'user', content: extract }],
+    cachePrefix: DETECT_SYSTEM,
+  };
+}
+
+export function buildVerifyPrompt(input: {
   syllabusBlock: string;
   originalNotes: string;
   draftJson: string;
   subject: string;
-}): BuiltPrompt;
-
-/** §4.5 — the volatile tail. Kept separate so tests can assert nothing stable leaks into it. */
-export declare function buildRunInstruction(input: BuildEnhancePromptInput): string;
+}): BuiltPrompt {
+  const system = verifySystem(input.subject);
+  return {
+    system,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          `SYLLABUS BLOCK:\n${input.syllabusBlock || '(no pack — judge against standard treatment at this level)'}`,
+          `ORIGINAL NOTES:\n${input.originalNotes}`,
+          `DRAFT DOCUMENT JSON:\n${input.draftJson}`,
+        ].join('\n\n'),
+      },
+    ],
+    cachePrefix: system,
+  };
+}

@@ -89,19 +89,15 @@ export interface ProviderConfig {
 }
 
 /* -------------------------------------------------------------------------- *
- * Implementations — phase-04. Signatures only.
+ * Implementations
+ *
+ * They live in `lib/ai/providers/`, not here. This module is imported for its types by code that
+ * ends up in the browser bundle; a value export would drag four provider implementations — and
+ * the exact shape of our requests to paid APIs — along with it.
+ *
+ *   createDeepSeekProvider           providers/deepseek.ts
+ *   createGeminiProvider             providers/gemini.ts
+ *   createOpenAICompatibleProvider   providers/openai-compatible.ts   (BYOK)
+ *   createAnthropicProvider          providers/anthropic.ts           (BYOK)
+ *   createProvider                   providers/index.ts
  * -------------------------------------------------------------------------- */
-
-/** OpenAI-compatible, baseURL https://api.deepseek.com. Prefix caching is automatic server-side. */
-export declare function createDeepSeekProvider(config: ProviderConfig): LLMProvider;
-
-/** Native Gemini API. Uses responseMimeType + responseSchema for JSON. */
-export declare function createGeminiProvider(config: ProviderConfig): LLMProvider;
-
-/** BYOK: OpenRouter, Groq, Together, Moonshot, Zhipu, DeepSeek-personal, LM Studio tunnels… */
-export declare function createOpenAICompatibleProvider(config: ProviderConfig): LLMProvider;
-
-/** BYOK native Anthropic. JSON is mapped via tool-use or an assistant prefill. */
-export declare function createAnthropicProvider(config: ProviderConfig): LLMProvider;
-
-export declare function createProvider(config: ProviderConfig): LLMProvider;

@@ -1,0 +1,714 @@
+{
+  "$schema": "../pack.schema.json",
+  "id": "ap-chemistry",
+  "version": "2026.1",
+  "subject": "Chemistry",
+  "curriculum": "AP",
+  "displayName": "AP Chemistry",
+  "language": "en",
+  "domainFamily": "stem-quantitative",
+  "authority": "College Board AP Chemistry Course and Exam Description (publicly published)",
+  "disclaimer": "Aligned to the publicly published AP Chemistry curriculum. Independent; not endorsed by or affiliated with the College Board. AP® is a trademark of the College Board.",
+  "status": "stable",
+  "maintainers": ["@lumen"],
+
+  "globalConventions": {
+    "notation": [
+      "Use IUPAC names and symbols throughout.",
+      "Write every species and equation with mhchem, e.g. \\ce{^{35}_{17}Cl}, \\ce{Ca^2+}, \\ce{2H2 + O2 -> 2H2O}.",
+      "State phase labels on every species in an equation: (s), (l), (g), (aq).",
+      "Put units on every quantity, including intermediate steps of a calculation.",
+      "Propagate significant figures and state them in the final answer; a calculator does not decide them.",
+      "Use scientific notation for very large or very small numbers."
+    ],
+    "commandTerms": {
+      "Justify": "Make the claim, give the evidence, and give the reasoning that links them — usually a particulate-level argument.",
+      "Explain": "Give the cause and the mechanism, not only the observation.",
+      "Represent": "Draw or complete the diagram, particulate picture or equation asked for.",
+      "Calculate": "Show the setup as well as the number; an unsupported answer earns little.",
+      "Identify": "Name it briefly; no reasoning required.",
+      "State": "Give the fact in one line; no reasoning required."
+    },
+    "providedReference": ["periodic table", "formula and constants sheet (see equationsSheet)"],
+    "mustMemorise": [
+      "common polyatomic ion names and charges",
+      "solubility rules",
+      "the strong acids and strong bases",
+      "common oxidation states",
+      "the seven diatomic elements",
+      "colours of common ions and precipitates"
+    ],
+    "penalisedShortcuts": [
+      "'atomic mass = molar mass' without the amu-versus-g·mol⁻¹ distinction",
+      "dropping units from intermediate steps",
+      "quoting more significant figures than the data supports",
+      "calling every bond simply 'ionic or covalent' with no reference to polarity or the bonding continuum",
+      "'electrons want a full octet' offered as a cause — teleology is not a mechanism"
+    ]
+  },
+
+  "equationsSheet": [
+    "n = m/M",
+    "n = N/N_A",
+    "N_A = 6.022e23 mol^-1",
+    "PV = nRT, R = 8.314 J mol^-1 K^-1 = 0.08206 L atm mol^-1 K^-1",
+    "c = n/V",
+    "A = εbc",
+    "q = mcΔT",
+    "ΔH°rxn = ΣΔH°f(products) − ΣΔH°f(reactants)",
+    "ΔG° = ΔH° − TΔS°",
+    "ΔG° = −RT ln K",
+    "pH = −log[H3O+]",
+    "Kw = 1.0e-14 at 25 °C",
+    "ln(k) = −Ea/RT + ln A",
+    "half-life forms for zero, first and second order"
+  ],
+
+  "units": [
+    {
+      "id": "unit-1",
+      "name": "Atomic Structure and Properties",
+      "bigIdeas": ["SPQ — Scale, Proportion, and Quantity", "SAP — Structure and Properties"],
+      "summary": "The unit that makes chemistry countable. It builds the bridge between what a balance measures and what a particle weighs (the mole), explains why the periodic table's masses are not whole numbers (isotopes and mass spectrometry), turns composition data into formulas, and then goes inside the atom — electron configuration, photoelectron spectroscopy and the periodic trends that every later unit reasons with.",
+      "topics": [
+        {
+          "id": "1.1",
+          "name": "Moles and Molar Mass",
+          "objectiveCodes": ["SPQ-1.A"],
+          "scope": "Interconvert mass, moles and number of particles by dimensional analysis.",
+          "mustDefine": [
+            "mole",
+            "molar mass",
+            "Avogadro constant",
+            "atomic mass unit (u / amu)",
+            "relative atomic mass"
+          ],
+          "requiredDepth": "Distinguish the mass of one particle (u) from the mass of one mole (g·mol⁻¹): numerically equal, conceptually and dimensionally different. Treat the mole as a count, not a mass. Every conversion is a chain of conversion factors with units cancelling.",
+          "commonMisconceptions": [
+            "'Atomic mass = molar mass' taken as identical rather than numerically equal with different units and referents.",
+            "Treating the mole as a mass rather than a count.",
+            "Using 'molecular mass', 'formula mass' and 'molar mass' interchangeably without noticing when each applies."
+          ],
+          "workedExamplePatterns": [
+            "density and volume → mass → moles → number of atoms",
+            "number of particles → moles → mass"
+          ],
+          "visualsThatHelp": ["a mass ↔ moles ↔ particles conversion map (mermaid flowchart)"],
+          "connections": [
+            "1.3 elemental composition",
+            "3.x solution concentration",
+            "4.x stoichiometry"
+          ]
+        },
+        {
+          "id": "1.2",
+          "name": "Mass Spectrometry of Elements",
+          "objectiveCodes": ["SPQ-1.B"],
+          "scope": "Read a mass spectrum to obtain relative isotopic abundances, calculate a relative atomic mass from them, and explain what isotopes are.",
+          "mustDefine": [
+            "isotope",
+            "mass number",
+            "relative abundance",
+            "mass spectrometer",
+            "m/z"
+          ],
+          "requiredDepth": "Average atomic mass = Σ(isotope mass × fractional abundance). Read a labelled spectrum: x-axis m/z, y-axis relative abundance. Isotopes share a proton number and differ in neutrons, so they differ in mass and are near-identical chemically.",
+          "commonMisconceptions": [
+            "'Isotopes are different elements.'",
+            "Averaging isotope masses without weighting by abundance.",
+            "Reading abundance as a raw count rather than a fraction of the sample."
+          ],
+          "workedExamplePatterns": [
+            "given labelled peaks → weighted average atomic mass",
+            "given the average mass and two isotope masses → percentage abundances"
+          ],
+          "visualsThatHelp": [
+            "a labelled example mass spectrum (chart: x = m/z, y = relative abundance %)"
+          ],
+          "connections": ["1.1 molar mass", "1.5 atomic structure"]
+        },
+        {
+          "id": "1.3",
+          "name": "Elemental Composition of Pure Substances",
+          "objectiveCodes": ["SPQ-2.A"],
+          "scope": "Calculate percent composition by mass, and determine empirical and molecular formulas from composition data.",
+          "mustDefine": [
+            "pure substance",
+            "percent composition",
+            "empirical formula",
+            "molecular formula",
+            "law of definite proportions"
+          ],
+          "requiredDepth": "Empirical formula is the simplest whole-number ratio of atoms; the molecular formula is (empirical)ₙ where n = M(molecular) / M(empirical). A pure substance has a fixed composition, which is what the law of definite proportions asserts.",
+          "commonMisconceptions": [
+            "Assuming the empirical formula is always the molecular formula.",
+            "Forgetting the percent → grams → moles → ratio chain.",
+            "Rounding the mole ratio before it is safe to round."
+          ],
+          "workedExamplePatterns": [
+            "percent composition → moles of each element → divide by smallest → whole-number ratio → empirical formula",
+            "empirical formula plus molar mass → molecular formula (e.g. M(C5H7N) = 81.12 g·mol⁻¹, so for M = 162.26 g·mol⁻¹, n = 2 and the molecular formula is C10H14N2)"
+          ],
+          "visualsThatHelp": [
+            "a flowchart: % mass → ÷ molar mass → ÷ smallest → × to whole numbers → empirical formula"
+          ],
+          "connections": ["1.1 moles", "1.4 mixtures", "4.x stoichiometry"]
+        },
+        {
+          "id": "1.4",
+          "name": "Composition of Mixtures",
+          "objectiveCodes": ["SPQ-2.B"],
+          "scope": "Apply mole and mass reasoning to mixtures, and interpret elemental analysis data for a mixture.",
+          "mustDefine": ["mixture (homogeneous and heterogeneous)", "mass fraction", "component"],
+          "requiredDepth": "A mixture has variable composition — the contrast with the fixed composition of a pure substance in 1.3 is the point. Analyse per component: the mass of an element in the mixture is the sum of its contributions from each component.",
+          "commonMisconceptions": [
+            "Treating a mixture as a compound with one fixed formula.",
+            "Assuming percentages given for a mixture refer to moles rather than mass unless stated."
+          ],
+          "workedExamplePatterns": [
+            "mass of an element from its percentage in a mixture",
+            "back-calculate the mass of one component from elemental analysis"
+          ],
+          "visualsThatHelp": [
+            "a composition chart (pie or stacked bar) of the mixture's components"
+          ],
+          "connections": ["1.3 pure substances", "3.x solutions"]
+        },
+        {
+          "id": "1.5",
+          "name": "Atomic Structure and Electron Configuration",
+          "objectiveCodes": ["SAP-1.A"],
+          "scope": "Write full and condensed electron configurations and orbital diagrams, and relate them to an element's position in the periodic table.",
+          "mustDefine": [
+            "shell",
+            "subshell",
+            "orbital",
+            "Aufbau principle",
+            "Pauli exclusion principle",
+            "Hund's rule",
+            "core electrons",
+            "valence electrons"
+          ],
+          "requiredDepth": "Order the subshells by energy with a Coulombic argument rather than a memorised diagram alone: n and ℓ, penetration, shielding and electron–electron repulsion. Distinguish ground from excited states. Note the chromium and copper anomalies; do not drill them.",
+          "commonMisconceptions": [
+            "Electrons 'orbit' the nucleus like planets.",
+            "Filling 4s completely before any 3d with no mention of why the ordering shifts.",
+            "Ignoring electron–electron repulsion when explaining orbital energies."
+          ],
+          "workedExamplePatterns": [
+            "write the configuration for a neutral atom and for its common ion",
+            "identify an element from a given configuration"
+          ],
+          "visualsThatHelp": [
+            "an orbital energy ladder (steps chart)",
+            "a periodic-table block map (s, p, d, f)"
+          ],
+          "connections": ["1.6 PES", "1.7 periodic trends", "2.x bonding"]
+        },
+        {
+          "id": "1.6",
+          "name": "Photoelectron Spectroscopy",
+          "objectiveCodes": ["SAP-2.A"],
+          "scope": "Interpret and sketch photoelectron spectra, relating peak position to binding energy and peak height to the number of electrons in a subshell.",
+          "mustDefine": ["photoelectron spectroscopy (PES)", "binding energy", "subshell peak"],
+          "requiredDepth": "The x-axis is binding energy in MJ·mol⁻¹ and by AP convention increases to the left, so electrons closer to the nucleus appear further left. One peak per subshell; peak height is proportional to the number of electrons in that subshell. Higher binding energy follows from greater effective nuclear charge, less shielding and more penetration.",
+          "commonMisconceptions": [
+            "Reading peak height as an energy rather than as a relative electron count.",
+            "Forgetting that height is a ratio, so it is the relative heights that identify the subshells.",
+            "Confusing a PES spectrum with a mass spectrum."
+          ],
+          "workedExamplePatterns": [
+            "given a spectrum → identify the element or ion",
+            "given a configuration → sketch the expected spectrum"
+          ],
+          "visualsThatHelp": [
+            "an annotated PES spectrum with peaks labelled 1s, 2s, 2p… (steps chart)"
+          ],
+          "connections": ["1.5 electron configuration", "1.7 periodic trends"]
+        },
+        {
+          "id": "1.7",
+          "name": "Periodic Trends",
+          "objectiveCodes": ["SAP-3.A"],
+          "scope": "Explain the trends in atomic radius, ionisation energy, electron affinity and electronegativity using Coulomb's law, effective nuclear charge, shielding and principal quantum number.",
+          "mustDefine": [
+            "effective nuclear charge (Zeff)",
+            "shielding",
+            "atomic radius",
+            "ionic radius",
+            "ionisation energy",
+            "electronegativity"
+          ],
+          "requiredDepth": "Every trend is the same argument: the Coulombic attraction between a valence electron and the nucleus, set by Zeff and by n. Successive ionisation energies jump when a core shell is broken into. In radius, cation < neutral atom < anion.",
+          "commonMisconceptions": [
+            "Explaining a trend by 'the octet rule' rather than by attraction.",
+            "'Radius grows because there are more shells' with no mention of Zeff.",
+            "Treating the first and second ionisation energies as interchangeable."
+          ],
+          "workedExamplePatterns": [
+            "rank species by radius or by ionisation energy, with a justification",
+            "identify an element from a table of successive ionisation energies"
+          ],
+          "visualsThatHelp": [
+            "trend arrows on a schematic periodic table",
+            "a successive-ionisation-energy bar chart on a log scale"
+          ],
+          "connections": ["1.5 configuration", "1.8 ionic compounds", "2.x bonding"]
+        },
+        {
+          "id": "1.8",
+          "name": "Valence Electrons and Ionic Compounds",
+          "objectiveCodes": ["SAP-3.B"],
+          "scope": "Use valence electron configuration and Coulomb's law to predict ionic charges, formula units, and trends in lattice energy.",
+          "mustDefine": [
+            "valence electrons",
+            "ion",
+            "cation",
+            "anion",
+            "formula unit",
+            "lattice energy"
+          ],
+          "requiredDepth": "Predict ionic charge from the valence configuration and Zeff. Lattice energy scales with q₁q₂ / r, which is what drives the melting-point and hardness trends. An ionic solid has formula units, not molecules.",
+          "commonMisconceptions": [
+            "Describing ionic compounds as molecules — 'a molecule of NaCl'.",
+            "Assuming lattice energy depends on charge alone and ignoring ionic radius."
+          ],
+          "workedExamplePatterns": [
+            "predict the formula of an ionic compound from the two elements",
+            "rank lattice energies (e.g. MgO, NaF, NaCl) with a Coulombic justification"
+          ],
+          "visualsThatHelp": [
+            "a Coulomb comparison table of charge, radius and lattice energy",
+            "a sketch of an ionic lattice"
+          ],
+          "connections": ["1.7 trends", "2.x bonding continuum", "3.x IMFs"]
+        }
+      ]
+    },
+
+    {
+      "id": "unit-2",
+      "name": "Compound Structure and Properties",
+      "bigIdeas": ["SAP — Structure and Properties"],
+      "summary": "Bonding treated as a continuum rather than a set of boxes, and the structural models that let a student predict a molecule's shape and behaviour from its formula.",
+      "topics": [
+        {
+          "id": "2.1",
+          "name": "Types of Bonding",
+          "scope": "Place a bond on the ionic–polar covalent–nonpolar covalent continuum, and describe metallic bonding.",
+          "mustDefine": [
+            "ionic bond",
+            "covalent bond",
+            "metallic bond",
+            "electronegativity difference",
+            "bond polarity"
+          ],
+          "requiredDepth": "Bond type follows from electronegativity difference and from the elements' positions; the boundaries are conventions, not physical lines.",
+          "commonMisconceptions": [
+            "Bond type is a category with hard edges.",
+            "A polar bond always makes a polar molecule."
+          ]
+        },
+        {
+          "id": "2.2",
+          "name": "Lewis Structures, Formal Charge and Resonance",
+          "scope": "Draw Lewis structures, assign formal charges, and represent resonance where a single structure will not do.",
+          "mustDefine": ["Lewis structure", "formal charge", "resonance", "expanded octet"],
+          "requiredDepth": "Use formal charge to choose between candidate structures. Resonance describes one delocalised structure, not a molecule flipping between forms.",
+          "commonMisconceptions": [
+            "Resonance means the molecule oscillates between structures.",
+            "The octet rule is a cause rather than a pattern."
+          ]
+        },
+        {
+          "id": "2.3",
+          "name": "VSEPR, Geometry and Hybridisation",
+          "scope": "Predict electron-domain and molecular geometry, bond angles, and molecular polarity; assign hybridisation.",
+          "mustDefine": [
+            "electron domain",
+            "molecular geometry",
+            "bond angle",
+            "hybridisation",
+            "dipole moment"
+          ],
+          "requiredDepth": "Lone pairs occupy more space than bonding pairs, which is what distorts the ideal angles. Molecular polarity is the vector sum of bond dipoles over the geometry.",
+          "commonMisconceptions": [
+            "Reading geometry off the number of atoms rather than the number of electron domains.",
+            "Assuming symmetric molecules with polar bonds are polar."
+          ]
+        },
+        {
+          "id": "2.4",
+          "name": "Bond Order, Length and Energy",
+          "scope": "Relate bond order to bond length and bond energy, and use the relationship to compare species.",
+          "mustDefine": ["bond order", "bond length", "bond energy"],
+          "requiredDepth": "Higher bond order means a shorter, stronger bond between the same pair of atoms; comparisons across different atom pairs also involve size.",
+          "commonMisconceptions": [
+            "Comparing bond lengths across different element pairs as though only order mattered."
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "unit-3",
+      "name": "Properties of Substances and Mixtures — Intermolecular Forces",
+      "bigIdeas": ["SAP — Structure and Properties"],
+      "summary": "Why substances melt, boil, dissolve and separate the way they do: the forces between particles, and the models — solutions, chromatography, the gas laws — that depend on them.",
+      "topics": [
+        {
+          "id": "3.1",
+          "name": "Intermolecular Forces",
+          "scope": "Identify and rank London dispersion, dipole–dipole, hydrogen bonding and ion–dipole forces for given species.",
+          "mustDefine": [
+            "London dispersion force",
+            "dipole–dipole force",
+            "hydrogen bonding",
+            "ion–dipole force",
+            "polarisability"
+          ],
+          "requiredDepth": "Dispersion forces exist in everything and grow with polarisability; hydrogen bonding requires H bonded to N, O or F and a lone pair to point at.",
+          "commonMisconceptions": [
+            "Any compound containing hydrogen hydrogen-bonds.",
+            "Boiling breaks covalent bonds."
+          ]
+        },
+        {
+          "id": "3.2",
+          "name": "Properties That Follow from IMFs",
+          "scope": "Explain melting and boiling points, viscosity, surface tension and vapour pressure in terms of intermolecular forces.",
+          "mustDefine": ["vapour pressure", "viscosity", "surface tension", "volatility"],
+          "requiredDepth": "Stronger intermolecular forces mean a higher boiling point and a lower vapour pressure; argue from the forces, not from a memorised list.",
+          "commonMisconceptions": [
+            "Confusing the strength of intermolecular forces with the strength of covalent bonds."
+          ]
+        },
+        {
+          "id": "3.3",
+          "name": "Solutions and Separation",
+          "scope": "Explain dissolution in terms of competing interactions, calculate concentrations, and explain chromatography and distillation.",
+          "mustDefine": ["solute", "solvent", "molarity", "chromatography", "distillation"],
+          "requiredDepth": "'Like dissolves like' is shorthand for a comparison of solute–solute, solvent–solvent and solute–solvent interactions. Separation techniques exploit differences in those interactions or in volatility.",
+          "commonMisconceptions": [
+            "Dissolving is a chemical reaction.",
+            "Concentration and amount are the same thing."
+          ]
+        },
+        {
+          "id": "3.4",
+          "name": "Gases and the Kinetic Molecular Theory",
+          "scope": "Apply the ideal gas law and partial pressures, and explain deviations from ideal behaviour.",
+          "mustDefine": [
+            "ideal gas",
+            "partial pressure",
+            "kinetic molecular theory",
+            "root-mean-square speed"
+          ],
+          "requiredDepth": "Real gases deviate at high pressure and low temperature because molecules have volume and attract one another. Temperature sets the distribution of speeds, not one speed.",
+          "commonMisconceptions": [
+            "All molecules in a gas move at the same speed.",
+            "Ideal behaviour is a property of the gas rather than of the conditions."
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "unit-4",
+      "name": "Chemical Reactions",
+      "bigIdeas": ["TRA — Transformations"],
+      "summary": "Classifying what a reaction does, writing it correctly, and counting what it consumes and produces.",
+      "topics": [
+        {
+          "id": "4.1",
+          "name": "Physical and Chemical Change; Net Ionic Equations",
+          "scope": "Distinguish physical from chemical change and write balanced molecular, complete ionic and net ionic equations.",
+          "mustDefine": [
+            "physical change",
+            "chemical change",
+            "spectator ion",
+            "net ionic equation"
+          ],
+          "requiredDepth": "Balance by changing coefficients only. Spectator ions are omitted because they are unchanged, which is a statement about the chemistry rather than tidiness.",
+          "commonMisconceptions": [
+            "Balancing by changing subscripts.",
+            "Spectator ions can be ignored when calculating amounts."
+          ]
+        },
+        {
+          "id": "4.2",
+          "name": "Reaction Types",
+          "scope": "Identify precipitation, acid–base and redox reactions and predict their products.",
+          "mustDefine": [
+            "precipitation",
+            "acid–base reaction",
+            "oxidation",
+            "reduction",
+            "oxidation number"
+          ],
+          "requiredDepth": "Assign oxidation numbers systematically and use them to identify what is oxidised and what is reduced, including the oxidising and reducing agents.",
+          "commonMisconceptions": [
+            "Oxidation always involves oxygen.",
+            "Solubility rules are guesses rather than a memorised table."
+          ]
+        },
+        {
+          "id": "4.3",
+          "name": "Stoichiometry, Limiting Reagent and Yield",
+          "scope": "Calculate amounts from a balanced equation, identify the limiting reagent, and compute percent yield.",
+          "mustDefine": [
+            "stoichiometric ratio",
+            "limiting reagent",
+            "theoretical yield",
+            "percent yield"
+          ],
+          "requiredDepth": "Compare moles available against the stoichiometric ratio; the reagent that runs out first fixes the yield. Percent yield compares an actual to a theoretical mass or amount.",
+          "commonMisconceptions": [
+            "The reagent with the smaller mass is limiting.",
+            "Percent yield can exceed 100% without an error or impurity."
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "unit-5",
+      "name": "Kinetics",
+      "bigIdeas": ["TRA — Transformations"],
+      "summary": "How fast a reaction goes and what that reveals about the steps it actually takes.",
+      "topics": [
+        {
+          "id": "5.1",
+          "name": "Rate Laws from Data",
+          "scope": "Determine a rate law and rate constant by the method of initial rates.",
+          "mustDefine": ["reaction rate", "rate law", "rate constant", "reaction order"],
+          "requiredDepth": "Order is determined experimentally, not read off the balanced equation. The units of k follow from the overall order.",
+          "commonMisconceptions": ["Reaction order equals the stoichiometric coefficient."]
+        },
+        {
+          "id": "5.2",
+          "name": "Integrated Rate Laws and Half-Life",
+          "scope": "Use integrated rate laws and half-life relationships to find concentrations and times, and identify order from linearised plots.",
+          "mustDefine": ["integrated rate law", "half-life"],
+          "requiredDepth": "Only a first-order half-life is independent of concentration; the linear plot that straightens the data identifies the order.",
+          "commonMisconceptions": ["Half-life is constant for every order."]
+        },
+        {
+          "id": "5.3",
+          "name": "Mechanisms, Catalysis and Energy Profiles",
+          "scope": "Relate elementary steps and the rate-determining step to the observed rate law; use the Arrhenius relationship; explain catalysis on an energy profile.",
+          "mustDefine": [
+            "elementary step",
+            "molecularity",
+            "rate-determining step",
+            "intermediate",
+            "catalyst",
+            "activation energy"
+          ],
+          "requiredDepth": "A mechanism must sum to the overall equation and be consistent with the observed rate law. A catalyst provides a different path with a lower activation energy; it does not change ΔH or the equilibrium position.",
+          "commonMisconceptions": [
+            "A catalyst changes ΔH.",
+            "Raising the temperature only increases the collision frequency."
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "unit-6",
+      "name": "Thermodynamics — Thermochemistry",
+      "bigIdeas": ["ENE — Energy"],
+      "summary": "Energy accounting for chemical change: where the heat goes, how it is measured, and how enthalpies are combined.",
+      "topics": [
+        {
+          "id": "6.1",
+          "name": "Energy, Heat and Temperature",
+          "scope": "Distinguish system from surroundings, heat from temperature, and endothermic from exothermic processes with correct signs.",
+          "mustDefine": [
+            "system",
+            "surroundings",
+            "heat",
+            "temperature",
+            "endothermic",
+            "exothermic"
+          ],
+          "requiredDepth": "Sign conventions are from the system's point of view. Temperature measures average kinetic energy; heat is energy transferred.",
+          "commonMisconceptions": [
+            "Cold objects contain no heat.",
+            "Temperature and heat are the same quantity."
+          ]
+        },
+        {
+          "id": "6.2",
+          "name": "Calorimetry",
+          "scope": "Use q = mcΔT and calorimetry data to determine enthalpy changes.",
+          "mustDefine": ["specific heat capacity", "calorimeter", "heat capacity"],
+          "requiredDepth": "Account for what absorbs the heat, including the calorimeter where the question gives its capacity; keep signs consistent.",
+          "commonMisconceptions": [
+            "Using the mass of the reactant where the mass of the solution is meant."
+          ]
+        },
+        {
+          "id": "6.3",
+          "name": "Enthalpy, Hess's Law and Bond Enthalpies",
+          "scope": "Calculate ΔH from formation enthalpies, from Hess's law, and from bond enthalpies.",
+          "mustDefine": [
+            "enthalpy",
+            "standard enthalpy of formation",
+            "Hess's law",
+            "bond enthalpy"
+          ],
+          "requiredDepth": "Enthalpy is a state function, so the path does not matter. Bond-enthalpy estimates are approximate and apply to gases.",
+          "commonMisconceptions": [
+            "ΔH depends on the route taken.",
+            "Bond breaking releases energy."
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "unit-7",
+      "name": "Equilibrium",
+      "bigIdeas": ["SPQ — Scale, Proportion, and Quantity", "TRA — Transformations"],
+      "summary": "Reactions that do not finish: what stays constant, what shifts, and how to calculate the composition at balance.",
+      "topics": [
+        {
+          "id": "7.1",
+          "name": "Dynamic Equilibrium, K and Q",
+          "scope": "Write equilibrium expressions, compare Q with K, and predict the direction of change.",
+          "mustDefine": [
+            "dynamic equilibrium",
+            "equilibrium constant (Kc, Kp)",
+            "reaction quotient (Q)"
+          ],
+          "requiredDepth": "Rates are equal at equilibrium, not concentrations. Pure solids and liquids are omitted from K because their activity is fixed.",
+          "commonMisconceptions": [
+            "Concentrations are equal at equilibrium.",
+            "Including a pure solid in the equilibrium expression."
+          ]
+        },
+        {
+          "id": "7.2",
+          "name": "Le Châtelier's Principle",
+          "scope": "Predict the response of a system at equilibrium to changes in concentration, pressure and temperature.",
+          "mustDefine": ["Le Châtelier's principle"],
+          "requiredDepth": "Only a temperature change alters K itself; concentration and pressure changes shift the position at constant K. A catalyst shifts nothing.",
+          "commonMisconceptions": [
+            "A catalyst shifts the equilibrium position.",
+            "Adding an inert gas at constant volume shifts the equilibrium."
+          ]
+        },
+        {
+          "id": "7.3",
+          "name": "ICE Tables, Ksp and the Common-Ion Effect",
+          "scope": "Solve equilibrium problems with ICE tables, and apply Ksp and the common-ion effect to solubility.",
+          "mustDefine": [
+            "ICE table",
+            "solubility product (Ksp)",
+            "common-ion effect",
+            "molar solubility"
+          ],
+          "requiredDepth": "Know when the small-x approximation is justified and check it. Molar solubility and Ksp are related through the stoichiometry of dissolution.",
+          "commonMisconceptions": [
+            "Ksp is the same thing as solubility.",
+            "Applying the small-x approximation without checking it."
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "unit-8",
+      "name": "Acids and Bases",
+      "bigIdeas": ["SAP — Structure and Properties", "TRA — Transformations"],
+      "summary": "Proton transfer as a special case of equilibrium, and the calculations, curves and buffers that follow from it.",
+      "topics": [
+        {
+          "id": "8.1",
+          "name": "Brønsted–Lowry Acids and Bases",
+          "scope": "Identify conjugate acid–base pairs and relate acid strength to structure.",
+          "mustDefine": [
+            "Brønsted–Lowry acid",
+            "Brønsted–Lowry base",
+            "conjugate pair",
+            "amphoteric"
+          ],
+          "requiredDepth": "A stronger acid has a weaker conjugate base. Strength is about the position of the proton-transfer equilibrium, not about concentration.",
+          "commonMisconceptions": ["Strong means concentrated."]
+        },
+        {
+          "id": "8.2",
+          "name": "pH, Ka, Kb and Kw",
+          "scope": "Calculate pH and pOH for strong and weak acids and bases, and use Ka, Kb and Kw.",
+          "mustDefine": ["pH", "pOH", "Ka", "Kb", "Kw", "percent ionisation"],
+          "requiredDepth": "Ka × Kb = Kw for a conjugate pair. Neutral means [H₃O⁺] = [OH⁻], which is pH 7 only at 25 °C.",
+          "commonMisconceptions": [
+            "pH 7 is neutral at every temperature.",
+            "Weak acids ionise negligibly in every situation."
+          ]
+        },
+        {
+          "id": "8.3",
+          "name": "Titration Curves and Buffers",
+          "scope": "Interpret titration curves, identify equivalence and half-equivalence points, and use the Henderson–Hasselbalch relationship.",
+          "mustDefine": [
+            "equivalence point",
+            "half-equivalence point",
+            "buffer",
+            "buffer capacity",
+            "polyprotic acid"
+          ],
+          "requiredDepth": "At half-equivalence pH = pKa. A buffer resists change only within its capacity and only near its pKa. Polyprotic acids give one region per ionisable proton.",
+          "commonMisconceptions": [
+            "A buffer resists any change in pH.",
+            "The equivalence point is always at pH 7."
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": "unit-9",
+      "name": "Applications of Thermodynamics",
+      "bigIdeas": ["ENE — Energy", "TRA — Transformations"],
+      "summary": "What makes a change happen at all: entropy, free energy, and the electrochemistry that turns spontaneity into current.",
+      "topics": [
+        {
+          "id": "9.1",
+          "name": "Entropy",
+          "scope": "Predict the sign of ΔS° for a process and explain it in terms of dispersal of matter and energy.",
+          "mustDefine": ["entropy", "standard molar entropy"],
+          "requiredDepth": "Predict the sign from changes in phase, in the number of gas molecules, and in temperature.",
+          "commonMisconceptions": ["Entropy is disorder in the everyday sense."]
+        },
+        {
+          "id": "9.2",
+          "name": "Gibbs Free Energy and Spontaneity",
+          "scope": "Use ΔG° = ΔH° − TΔS° and ΔG° = −RT ln K to judge spontaneity and its temperature dependence.",
+          "mustDefine": ["Gibbs free energy", "thermodynamic favourability", "standard state"],
+          "requiredDepth": "Distinguish ΔG° from ΔG under non-standard conditions. Thermodynamic favourability says nothing about rate.",
+          "commonMisconceptions": ["Spontaneous means fast.", "ΔG° and ΔG are interchangeable."]
+        },
+        {
+          "id": "9.3",
+          "name": "Electrochemistry",
+          "scope": "Analyse galvanic and electrolytic cells, calculate E°cell, and relate charge to amount of substance.",
+          "mustDefine": [
+            "galvanic cell",
+            "electrolytic cell",
+            "anode",
+            "cathode",
+            "standard reduction potential",
+            "Faraday constant"
+          ],
+          "requiredDepth": "Oxidation is at the anode in both cell types; it is the sign of the electrode that differs. Relate ΔG° to nFE°cell, and use charge, time and current for the stoichiometry of electrolysis.",
+          "commonMisconceptions": [
+            "The cathode is always the positive electrode.",
+            "E°cell depends on how much of each substance is present."
+          ]
+        }
+      ]
+    }
+  ]
+}

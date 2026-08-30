@@ -4,8 +4,9 @@
  * This is the single artefact the whole product revolves around: the model returns it, the
  * renderer draws it, the editor mutates it, the exporters serialise it, and `note.doc` stores it.
  *
- * Types + validator signatures only in phase-00. The Zod schema, the tolerant streaming parser,
- * and the post-parse rules land in phase-04.
+ * Types only. The post-parse rules are `lib/ai/validate.ts`, the tolerant streaming parser is
+ * `lib/ai/stream-parse.ts`, and both are kept out of this module so importing a type never pulls
+ * their code into a bundle.
  */
 import { SCHEMA_VERSION } from './versions';
 import type { PromptVersion, SchemaVersion } from './versions';
@@ -406,15 +407,10 @@ export interface ValidationResult {
 }
 
 /**
- * Enforces the post-parse rules in 04-AI-ENGINE.md §5: every formula has units, every diagram and
- * structure has a caption and alt, every correction has a matching inline `ai-corrected`, every
- * referenced sectionId exists, no `student` block is contradicted by a correction, SMILES and
- * Mermaid parse.
+ * Enforces the post-parse rules in 04-AI-ENGINE.md §5, upgrades an older document, and recomputes
+ * the provenance counts.
+ *
+ * The implementations live in `lib/ai/validate.ts` rather than here. This module is imported for
+ * its types by most of the renderer, and a value export would drag the validator's ~500 lines into
+ * every one of those graphs for nothing — `import type` erases, `export … from` does not.
  */
-export declare function validateNoteDocument(input: unknown): ValidationResult;
-
-/** Upgrades a document written under an older SCHEMA_VERSION so the current renderer can draw it. */
-export declare function migrateNoteDocument(doc: NoteDocument): NoteDocument;
-
-/** Recomputes `stats` from the blocks. Cheap; call after any edit. */
-export declare function computeStats(doc: NoteDocument): DocumentStats;
