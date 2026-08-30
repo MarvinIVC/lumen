@@ -539,6 +539,27 @@ export const useDraftStore = create<DraftState>((set, get) => {
         : context;
       const match = await matchPack(resolved);
 
+      /*
+       * Detection must never overwrite what the student typed.
+       *
+       * Everything above this line can wait on the network — the pack manifest is a chunk, and the
+       * classify call in phase-04 is a request — and the student is looking at an editable form the
+       * whole time. On a deployed build that window is hundreds of milliseconds, long enough to
+       * land squarely on their first keystroke: they set the unit, the awaited detection resolved
+       * behind them, and their answer was replaced by the guess *and* marked unedited, so a reload
+       * showed an empty field. Locally the chunk is instant and the window is nothing, which is why
+       * only the run against the real Worker found it.
+       *
+       * If they have edited, their context stands and only the pack is re-matched — against what
+       * they said, not against what we guessed.
+       */
+      const after = get().draft;
+      if (!after || after.id !== draft.id) return;
+      if (after.detection.edited) {
+        await refreshPack(get, patch);
+        return;
+      }
+
       patch((current) => ({
         ...current,
         notesLanguage: resolved.language,
