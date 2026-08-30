@@ -17,9 +17,9 @@
  * reads the snapshot and constructs the providers. The Postgres side is
  * `supabase/functions/_shared/guardrails.ts`.
  */
-import { createDeepSeekProvider, createGeminiProvider, createProvider } from './providers';
-import type { LLMProvider, ProviderId } from './provider';
-import type { EnhanceOptions, NoteContext } from './schema';
+import { createDeepSeekProvider, createGeminiProvider, createProvider } from './providers/index.ts';
+import type { LLMProvider, ProviderId } from './provider.ts';
+import type { EnhanceOptions, NoteContext } from './schema.ts';
 
 export type Tier = 'anon' | 'verified' | 'byok';
 export type CallKind = 'enhance' | 'ocr' | 'regen' | 'detect' | 'verify';
@@ -153,6 +153,13 @@ export interface GuardrailStore {
 export interface ProviderKeys {
   deepseek?: string;
   gemini?: string;
+  /**
+   * Overrides `https://api.deepseek.com`. It exists for two reasons that are the same reason: the
+   * integration test points it at a scripted server so the guardrails, the ledger and the SSE
+   * contract can be exercised in CI without a paid call, and a deployment behind a proxy can point
+   * it at the proxy. Unset in production.
+   */
+  deepseekBaseUrl?: string;
 }
 
 export interface RouteContext {
@@ -280,13 +287,17 @@ export async function route(input: RouteInput, context: RouteContext): Promise<R
 
   if (input.caller.byok) {
     const byok = input.caller.byok;
+    // A BYOK DeepSeek key goes to whatever this deployment calls DeepSeek, which is the live API
+    // everywhere except an integration test. An explicit base URL from the student always wins.
+    const baseUrl =
+      byok.baseUrl ?? (byok.provider === 'deepseek' ? context.keys.deepseekBaseUrl : undefined);
     return {
       ok: true,
       provider: createProvider({
         id: byok.provider,
         model: byok.model,
         apiKey: byok.apiKey,
-        ...(byok.baseUrl ? { baseUrl: byok.baseUrl } : {}),
+        ...(baseUrl ? { baseUrl } : {}),
         // A student's own key is billed by their provider, not by us, so it carries no rate card.
         // `estimateCost` returns 0 for an unpriced model and `daily_cost` stays our spend only.
         pricePerMTokIn: 0,
@@ -317,6 +328,7 @@ export async function route(input: RouteInput, context: RouteContext): Promise<R
     id: 'deepseek',
     model,
     apiKey: context.keys.deepseek,
+    ...(context.keys.deepseekBaseUrl ? { baseUrl: context.keys.deepseekBaseUrl } : {}),
     pricePerMTokIn: rates.in_miss,
     pricePerMTokOut: rates.out,
     supportsVision: model === models.vision,
@@ -335,6 +347,32 @@ export async function route(input: RouteInput, context: RouteContext): Promise<R
     : null;
 
   return { ok: true, provider, fallback, credits: decision.credits, maxTokens, temperature };
+}
+
+/**
+ * The examiner for the verify pass (§6).
+ *
+ * Not a second `route()` call: the guardrails have already run for this generation and the verify
+ * pass is part of it, not a new thing to charge for. "Thorough" depth is what upgrades the model
+ * from flash to pro — the only place the dearer one is used.
+ */
+export function createVerifier(
+  config: AppConfig,
+  keys: ProviderKeys,
+  options: EnhanceOptions,
+  now: Date = new Date(),
+): LLMProvider | null {
+  if (!keys.deepseek) return null;
+  const model = options.depth === 'thorough' ? config.models.verify : config.models.primary;
+  const rates = rateCard(model, config.pricing, now);
+  return createDeepSeekProvider({
+    id: 'deepseek',
+    model,
+    apiKey: keys.deepseek,
+    ...(keys.deepseekBaseUrl ? { baseUrl: keys.deepseekBaseUrl } : {}),
+    pricePerMTokIn: rates.in_miss,
+    pricePerMTokOut: rates.out,
+  });
 }
 
 /** §2: 0.3 for enhance, 0.0 for detect and verify. */

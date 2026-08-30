@@ -13,12 +13,12 @@
  * the prompt text that phase-04 caches — see the note on TARGET_TOKENS below for why they take no
  * clock and no id.
  */
-import { approxTokens } from '@/lib/ai/tokens';
+import { approxTokens } from '../ai/tokens.ts';
 
-import type { CurriculumPack, PackTopic, PackUnit } from './types';
-import type { Curriculum, NoteContext } from '@/lib/ai/schema';
+import type { CurriculumPack, PackTopic, PackUnit } from './types.ts';
+import type { Curriculum, NoteContext } from '../ai/schema.ts';
 
-export type { CurriculumPack, PackTopic, PackUnit } from './types';
+export type { CurriculumPack, PackTopic, PackUnit } from './types.ts';
 
 export interface PackSummary {
   id: string;
@@ -45,6 +45,16 @@ interface Manifest {
  * "no pack for this course" is a supported, unremarkable state (05-CURRICULUM-PACKS.md §4), not a
  * degraded one, and the review screen says so in those words.
  */
+/**
+ * Where packs come from. The browser's implementation is below; the edge function passes
+ * `staticPackSource` from `registry.ts`, because a template-literal dynamic import of JSON cannot
+ * be resolved by Deno. Both go through the same matching code, which is the point of the seam.
+ */
+export interface PackSource {
+  list(): Promise<PackSummary[]>;
+  load(id: string): Promise<CurriculumPack | null>;
+}
+
 export async function listPacks(): Promise<PackSummary[]> {
   const manifest = (await import('./manifest.json')) as unknown as {
     default: Manifest;
@@ -79,8 +89,13 @@ export interface PackMatch {
  * Curriculum + subject first, then a fuzzy pass over the course name — a student who typed
  * "AP Chem" should still land on the AP Chemistry pack.
  */
-export async function matchPack(context: NoteContext): Promise<PackMatch | null> {
-  const packs = await listPacks();
+export const dynamicPackSource: PackSource = { list: listPacks, load: loadPack };
+
+export async function matchPack(
+  context: NoteContext,
+  source: PackSource = dynamicPackSource,
+): Promise<PackMatch | null> {
+  const packs = await source.list();
   if (packs.length === 0) return null;
 
   const course = context.course.toLowerCase();
@@ -103,7 +118,7 @@ export async function matchPack(context: NoteContext): Promise<PackMatch | null>
   const best = scored[0];
   if (!best || best.score < 0.5) return null;
 
-  const pack = await loadPack(best.summary.id);
+  const pack = await source.load(best.summary.id);
   if (!pack) return null;
 
   const unit = context.unit ? matchUnit(pack, context.unit) : null;

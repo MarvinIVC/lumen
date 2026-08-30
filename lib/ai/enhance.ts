@@ -20,13 +20,13 @@
  * Every branch that gives up produces a `document` or an `error`, never a throw, and the caller
  * decides what it costs. `charged` is false unless a real document came out.
  */
-import { buildEnhancePrompt, buildVerifyPrompt } from './prompts';
-import { TolerantJsonStream, largestValidJson } from './stream-parse';
-import { applyPatches, parseVerifyResult, shouldVerify } from './verify';
-import { degradeDocument, validateNoteDocument } from './validate';
-import type { BuildEnhancePromptInput } from './prompts';
-import type { ChatRequest, ChatUsage, LLMProvider, ProviderError, ProviderId } from './provider';
-import type { EnhanceOptions, NoteDocument, ValidationIssue } from './schema';
+import { buildEnhancePrompt, buildVerifyPrompt } from './prompts/index.ts';
+import { TolerantJsonStream, largestValidJson } from './stream-parse.ts';
+import { applyPatches, parseVerifyResult, shouldVerify } from './verify.ts';
+import { degradeDocument, validateNoteDocument } from './validate.ts';
+import type { BuildEnhancePromptInput } from './prompts/index.ts';
+import type { ChatRequest, ChatUsage, LLMProvider, ProviderError, ProviderId } from './provider.ts';
+import type { EnhanceOptions, NoteDocument, ValidationIssue } from './schema.ts';
 
 export type PipelinePhase =
   'generating' | 'restarting' | 'repairing' | 'simplifying' | 'verifying' | 'finalising';

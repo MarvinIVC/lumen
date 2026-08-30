@@ -2,7 +2,7 @@
  * Types mirroring `pack.schema.json` (05-CURRICULUM-PACKS.md §2).
  * The JSON Schema is the contract for community authors; this is the same shape for the app.
  */
-import type { Curriculum, DomainFamily } from '@/lib/ai/schema';
+import type { Curriculum, DomainFamily } from '../ai/schema.ts';
 
 export type PackStatus = 'stable' | 'beta' | 'draft';
 

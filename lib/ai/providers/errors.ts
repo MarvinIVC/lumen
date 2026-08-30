@@ -6,7 +6,7 @@
  * spends someone else's money to fail identically, so only timeouts, rate limits, 5xx and network
  * faults set it.
  */
-import type { ProviderError, ProviderErrorKind } from '../provider';
+import type { ProviderError, ProviderErrorKind } from '../provider.ts';
 
 export function errorFromStatus(status: number, body: string): ProviderError {
   const message = summarise(body) || `HTTP ${status}`;

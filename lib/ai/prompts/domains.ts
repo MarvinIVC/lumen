@@ -8,9 +8,9 @@
  * The families come from `lib/curriculum/detect.ts` -> `domainFamilyFor()`, so a subject the
  * heuristic cannot place lands on `generic`, which blends rather than guesses.
  */
-import type { DomainFamily } from '../schema';
+import type { DomainFamily } from '../schema.ts';
 
-import { SCHEMA_BLOCK } from './schema-block';
+import { SCHEMA_BLOCK } from './schema-block.ts';
 
 const STEM_QUANTITATIVE = `## Structure for a quantitative science lesson (Chemistry, Physics, Maths, Economics)
 

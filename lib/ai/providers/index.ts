@@ -6,11 +6,11 @@
  * paid APIs — into the browser bundle. `tests/unit/no-client-secrets.test.ts` checks the built
  * bundle for the secret names; this separation is what keeps that check passing by construction.
  */
-import { createAnthropicProvider } from './anthropic';
-import { createDeepSeekProvider } from './deepseek';
-import { createGeminiProvider } from './gemini';
-import { createOpenAICompatibleProvider } from './openai-compatible';
-import type { LLMProvider, ProviderConfig } from '../provider';
+import { createAnthropicProvider } from './anthropic.ts';
+import { createDeepSeekProvider } from './deepseek.ts';
+import { createGeminiProvider } from './gemini.ts';
+import { createOpenAICompatibleProvider } from './openai-compatible.ts';
+import type { LLMProvider, ProviderConfig } from '../provider.ts';
 
 export {
   createAnthropicProvider,
@@ -18,9 +18,9 @@ export {
   createGeminiProvider,
   createOpenAICompatibleProvider,
 };
-export { TIMEOUT_MS } from './openai-compatible';
-export { readSse, sseFrame } from './sse';
-export type { SseFrame } from './sse';
+export { TIMEOUT_MS } from './openai-compatible.ts';
+export { readSse, sseFrame } from './sse.ts';
+export type { SseFrame } from './sse.ts';
 
 export function createProvider(config: ProviderConfig): LLMProvider {
   switch (config.id) {

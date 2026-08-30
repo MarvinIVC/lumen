@@ -26,6 +26,7 @@
     "lh:preview": "node -e \"if(!process.env.LH_BASE_URL)throw new Error('Set LH_BASE_URL to the deployed origin, e.g. LH_BASE_URL=https://pr-2-lumen.marvinmaiwang.workers.dev pnpm lh:preview')\" && lhci autorun --config=lighthouserc.cjs && lhci autorun --config=lighthouserc.mobile.cjs",
     "test:unit:watch": "vitest --project unit",
     "test:ai": "vitest run --project ai-evals --passWithNoTests",
+    "test:edge": "node scripts/test-edge.mjs",
     "test:e2e": "playwright test",
     "storybook": "storybook dev -p 6006 --no-open",
     "build:storybook": "storybook build -o storybook-static",

@@ -18,6 +18,10 @@
     "verbatimModuleSyntax": false,
 
     "noEmit": true,
+    // The engine modules under lib/ai are imported by the Supabase edge functions too, and the
+    // Deno runtime there resolves module specifiers literally: no extension means no module. So
+    // those imports carry an explicit `.ts`, which needs this flag and `noEmit` above it.
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
