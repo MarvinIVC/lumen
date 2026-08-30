@@ -188,5 +188,16 @@ export default tseslint.config(
     rules: { '@typescript-eslint/no-unused-vars': 'off' },
   },
 
+  {
+    /*
+     * The Lighthouse configs are CommonJS because `lhci` loads them with `require()`, so `require`
+     * is the only import form available to them. The rule is right everywhere else; it simply does
+     * not apply to a file that cannot use `import`.
+     */
+    files: ['**/*.cjs'],
+    languageOptions: { globals: globals.node },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+
   prettier,
 );

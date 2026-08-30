@@ -259,6 +259,8 @@ test.describe('SEO', () => {
   });
 
   test('serves the Open Graph card', async ({ page, request }) => {
+    // A committed PNG built by `pnpm og:build`, not a `next/og` route — see lib/marketing/og.ts
+    // for why the route could not ship.
     await page.goto('/');
     const url = await page.locator('meta[property="og:image"]').getAttribute('content');
     expect(url).toBeTruthy();

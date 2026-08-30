@@ -21,12 +21,11 @@
  * subsetted font for the headline alone, which the translated headline makes considerably less
  * tidy than it sounds.
  */
+const { targets } = require('./lighthouse-targets.cjs');
+
 module.exports = {
   ci: {
-    collect: {
-      startServerCommand: 'pnpm start',
-      url: ['http://localhost:3000/', 'http://localhost:3000/how-it-works'],
-      numberOfRuns: 3,
+    collect: targets({
       settings: {
         throttling: {
           rttMs: 150,
@@ -37,7 +36,7 @@ module.exports = {
           uploadThroughputKbps: 1500,
         },
       },
-    },
+    }),
     assert: {
       assertions: {
         'categories:performance': ['error', { minScore: 0.9 }],
