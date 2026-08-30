@@ -101,5 +101,30 @@ number the Cloudflare API enforces.
 
 ## When you finish a phase
 
-Append an entry to `docs/PHASE-LOG.md` in the same shape as the others — especially the
-"must not undo" section. The next agent may be a different tool with no memory of this one.
+A phase is **not** finished when CI is green. It is finished when the deployed preview has been
+verified and the pull request is ready to merge, so the next phase can start without going back.
+That is the standing definition of done for this project, set after phase-03 — where CI passed, the
+local Playwright suite passed against a production build, and the run against the preview still
+found a bug that would have silently discarded a student's answer.
+
+So, in order:
+
+1. Run everything in "The loop" above.
+2. Push the branch and open the PR. Wait for CI and Deploy on **that commit** — `gh run list` will
+   hand you the previous merge's runs if you sample too early.
+3. Verify the preview at `https://pr-<n>-lumen.marvinmaiwang.workers.dev`, and not only with
+   `check:worker`:
+
+   ```bash
+   node scripts/check-worker-routes.mjs --base=https://pr-<n>-lumen.marvinmaiwang.workers.dev
+   PLAYWRIGHT_BASE_URL=https://pr-<n>-lumen.marvinmaiwang.workers.dev pnpm exec playwright test tests/e2e/<your-suite>.spec.ts
+   LH_BASE_URL=https://pr-<n>-lumen.marvinmaiwang.workers.dev pnpm lh:preview
+   ```
+
+   Point the phase's own end-to-end suite at the deployment. That is the step that has now caught
+   two production-only bugs in three phases, and neither was visible from anything else.
+   The `/dev` specs are the exception — the deploy workflow does not set `NEXT_PUBLIC_DEV_SCREENS`,
+   deliberately, so they will 404 against a preview.
+
+4. Append an entry to `docs/PHASE-LOG.md` in the same shape as the others — especially the
+   "must not undo" section. The next agent may be a different tool with no memory of this one.
