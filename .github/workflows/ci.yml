@@ -96,7 +96,7 @@ jobs:
           retention-days: 7
 
       - name: Lighthouse budget (desktop)
-        run: pnpm exec lhci autorun --config=lighthouserc.json
+        run: pnpm exec lhci autorun --config=lighthouserc.cjs
 
       # The definition of done asks for LCP under 1.8s on emulated 4G, which is a *mobile*
       # condition the desktop preset above was never testing. The config carries the throttling

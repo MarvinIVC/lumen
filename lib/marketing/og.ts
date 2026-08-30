@@ -3,17 +3,18 @@ import { APP_NAME, APP_TAGLINE } from '@/lib/config';
 /**
  * The share card's identity, in one place.
  *
- * `app/opengraph-image.tsx` draws it; `metadata.ts` has to point at it explicitly, because a route
- * that returns an `openGraph` object from `generateMetadata` *replaces* the one it inherited —
- * file-based images included. Without this the pages that need per-route OG titles are the exact
- * pages that silently lose their image, which is the wrong way round and easy to miss: every other
- * OG tag is present and correct.
+ * A plain static file, not an `app/opengraph-image.tsx` route. That route works, and it is the
+ * idiomatic answer, but `next/og` carries resvg and yoga as WebAssembly and OpenNext bundles them
+ * into the Cloudflare Worker whether or not the image is prerendered — 1.4 MB that took the Worker
+ * past Cloudflare's 3 MiB free-plan ceiling and failed the deploy outright. `pnpm og:build` renders
+ * it instead, and the WASM stays on the build machine.
  *
- * The URL carries no cache-busting hash. Next serves the generated file at this path too, and a
- * hash we cannot know at this point is not worth a second source of truth.
+ * `metadata.ts` has to point at this explicitly in any case: a route returning an `openGraph`
+ * object from `generateMetadata` *replaces* the one it inherited, file-based images included. That
+ * failure is quiet — every other OG tag stays present and correct.
  */
 export const OG_IMAGE = {
-  url: '/opengraph-image',
+  url: '/og.png',
   width: 1200,
   height: 630,
   alt: `${APP_NAME} — ${APP_TAGLINE}`,
