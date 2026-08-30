@@ -11,10 +11,15 @@ The full product plan lives in [`../lumen-blueprint/`](../lumen-blueprint/) — 
 and eleven sequenced build phases. Read `00-BRIEF.md` and `02-ARCHITECTURE.md` before changing
 anything structural.
 
-> **Status: phase-00.** Repository scaffold, tooling, CI, deploy pipeline, design tokens, and
-> stubs. The home page is a placeholder; the product starts at phase-01.
+> **Status: phase-02 complete.** Scaffold and CI (00), the design system and the notes renderer
+> (01), and the public marketing site in English and 简体中文 with the live demo (02). The app
+> itself starts at phase-03: `/app/new` does not exist yet, so the landing page's primary call to
+> action is a deliberate 404.
 >
 > **Live:** <https://lumen.marvinmaiwang.workers.dev>
+>
+> Building on this? Read [`AGENTS.md`](AGENTS.md) and [`docs/PHASE-LOG.md`](docs/PHASE-LOG.md)
+> first — they carry the decisions and the traps that the code does not show.
 
 ---
 
