@@ -214,15 +214,24 @@ limit, with more headroom than phase-02 had. See "must not undo" #1.
     where it has one and the OCR button where it does not — and a storage failure must not be able
     to fail the parse that produced them. Safari in private browsing refuses IndexedDB outright,
     and that is not a reason to tell a student their photo could not be read.
-12. **`useDraft` only rewrites the URL while its own screen is still mounted.** During a
+12. **Detection must never overwrite what the student typed, and the check has to come _after_ the
+    awaits.** Everything in `runDetection` before the final `patch` can wait on the network — the
+    pack manifest is a chunk, the classify call in phase-04 is a request — while the student is
+    looking at an editable form. On the deployed preview that window was long enough to land on
+    their first keystroke: they set the unit, the awaited detection resolved behind them, their
+    answer was replaced by the guess _and_ marked unedited, and a reload showed an empty field.
+    Locally the chunk import is instant and the window is nothing, **which is why only the run
+    against the real Worker found it** — the third time this project has been taught that lesson.
+    `tests/unit/draft-store.test.ts` now holds it open deliberately.
+13. **`useDraft` only rewrites the URL while its own screen is still mounted.** During a
     navigation away, `useSearchParams` reads as empty for a moment before the route changes, which
     looked exactly like "the URL has lost its draft id" — so the effect replaced it and cancelled
     the navigation the student had just started. The guard is `pathname !== basePath`.
-13. **`splitLesson` copies the assets, it does not share them.** The tail's blocks still point at
+14. **`splitLesson` copies the assets, it does not share them.** The tail's blocks still point at
     asset ids filed under the draft they were split from, so without the copy the second lesson
     opened with every scanned page missing — and discarding the first draft would have deleted the
     rows the second one needed.
-14. **`Textarea` takes `ComponentPropsWithRef<'textarea'>`.** The review screen's blocks measure
+15. **`Textarea` takes `ComponentPropsWithRef<'textarea'>`.** The review screen's blocks measure
     `scrollHeight` to size themselves. Estimating the height from the character count was the first
     attempt and was wrong in both directions: a two-row floor made a pane of thirty one-line
     definitions a minute of scrolling, and any estimate at all clipped the fixture's mercury
@@ -264,6 +273,13 @@ have been read.
 **New guard** — `pnpm check:worker:size` runs `wrangler deploy --dry-run` and fails over the
 3072 KiB ceiling. It is in CI right after `cf:build`. Nothing in the pipeline measured this before,
 which is how a pull request could go fully green and still be undeployable.
+
+**The deployed check earned its keep again.** CI was green and the local Playwright suite passed on
+a production build; the same suite pointed at `https://pr-4-lumen.…workers.dev` failed one test, and
+it was a real bug that would have lost a student's answer (#12). Run it that way:
+`PLAYWRIGHT_BASE_URL=<preview> pnpm exec playwright test tests/e2e/ingest.spec.ts`. Note the `/dev`
+specs cannot be run against a preview — the deploy workflow does not set `NEXT_PUBLIC_DEV_SCREENS`,
+by design.
 
 **Gotchas**
 
