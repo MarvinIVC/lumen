@@ -1,0 +1,396 @@
+{
+  "source": "Hand-authored to fixtures/errors-riddled-good.md.",
+  "tokensIn": 3400,
+  "tokensOut": 5200,
+  "response": {
+    "title": "Acids and Bases — strength, pH and neutralisation",
+    "summary": "This lesson sets up the three ideas the rest of acid-base chemistry rests on: what makes an acid strong as opposed to concentrated, how pH measures hydrogen ion concentration, and what actually happens when an acid meets a base. Several points in the original notes needed correcting, and each correction is marked where it appears.",
+    "objectives": [
+      "Distinguish acid strength from acid concentration.",
+      "Calculate pH from hydrogen ion concentration, and back.",
+      "Predict the pH after a neutralisation from the strengths of the acid and base involved.",
+      "Carry out a mole calculation with units and significant figures."
+    ],
+    "sections": [
+      {
+        "id": "s-strength",
+        "title": "Strength and concentration",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "ai-corrected",
+            "originalText": "A strong acid is one that is very concentrated.",
+            "text": "A strong acid is one that ionises essentially completely in water. Concentration is a different axis entirely: it is how much acid there is per unit volume. A very dilute solution of hydrochloric acid is still a strong acid, and a concentrated solution of ethanoic acid is still a weak one."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "strong acid",
+            "definition": "An acid that ionises essentially completely in aqueous solution, so nearly every molecule donates its proton."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "concentration",
+            "definition": "The amount of solute per unit volume of solution, in mol dm⁻³. Nothing to do with strength."
+          },
+          {
+            "type": "misconception",
+            "origin": "ai-added",
+            "wrong": "Strong and concentrated mean the same thing.",
+            "right": "Strength is about how completely the acid ionises; concentration is about how much of it is dissolved. The two vary independently, which is why dilute strong acids and concentrated weak acids both exist."
+          },
+          {
+            "type": "table",
+            "origin": "ai-added",
+            "caption": "The two axes, with an example in each corner.",
+            "columns": [{ "header": "" }, { "header": "Dilute" }, { "header": "Concentrated" }],
+            "rows": [
+              ["Strong", "0.001 mol dm⁻³ HCl", "6 mol dm⁻³ HCl"],
+              ["Weak", "0.001 mol dm⁻³ ethanoic acid", "vinegar concentrate"]
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s-ph",
+        "title": "pH",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "formula",
+            "origin": "ai-corrected",
+            "originalText": "pH = -log[OH-]",
+            "latex": "\\text{pH} = -\\log_{10}[\\ce{H3O+}]",
+            "where": [
+              {
+                "symbol": "pH",
+                "meaning": "acidity on a logarithmic scale",
+                "units": "dimensionless"
+              },
+              {
+                "symbol": "[\\ce{H3O+}]",
+                "meaning": "hydrogen ion concentration",
+                "units": "mol dm^-3"
+              }
+            ],
+            "useWhen": "You have a hydrogen ion concentration and want a pH, or the reverse with the antilog."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-corrected",
+            "originalText": "pH = -log[OH-]",
+            "text": "The version in the notes defines pOH, not pH. The two are linked: pH + pOH = 14 at 25 °C, so it is a useful relationship, but it is not what pH means."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-clarified",
+            "originalText": "Universal indicator gives an exact pH to 2 decimal places.",
+            "text": "Universal indicator gives an approximate pH from a colour, usually to the nearest whole number. Two decimal places needs a calibrated pH meter, which is why one exists."
+          },
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "Litmus goes red in acid and blue in base."
+          }
+        ]
+      },
+      {
+        "id": "s-neutralisation",
+        "title": "Neutralisation",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "Neutralisation is acid + base → salt + water, and it is exothermic."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-corrected",
+            "originalText": "This is always exothermic and always gives pH 7.",
+            "text": "Neutralisation is exothermic, but it does not always land on pH 7. Only a strong acid with a strong base gives a neutral salt. A weak acid with a strong base gives a salt whose anion is itself basic, so the solution ends up above 7; a strong acid with a weak base ends up below 7."
+          },
+          {
+            "type": "table",
+            "origin": "ai-added",
+            "caption": "Where the equivalence point lands.",
+            "columns": [
+              { "header": "Acid" },
+              { "header": "Base" },
+              { "header": "pH at equivalence" }
+            ],
+            "rows": [
+              ["strong", "strong", "7"],
+              ["weak", "strong", "above 7"],
+              ["strong", "weak", "below 7"]
+            ]
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-clarified",
+            "originalText": "that is the end point which is the same as the equivalence point",
+            "text": "The titration description is right: acid in the burette, alkali in the flask, indicator, swirl to the colour change. One refinement — the end point is where the indicator changes and the equivalence point is where the moles actually balance. A well-chosen indicator makes them nearly the same, which is what choosing an indicator is for."
+          }
+        ]
+      },
+      {
+        "id": "s-moles",
+        "title": "Worked example — mass from moles",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "workedExample",
+            "origin": "ai-corrected",
+            "originalText": "M(NaCl) = 23 + 12 = 35, 0.25 x 23.4 = 5.85 g",
+            "problem": "What mass of sodium chloride is 0.25 mol?",
+            "steps": [
+              {
+                "text": "Find the molar mass. Sodium is 23.0 and chlorine is 35.5, not 12 — 12 is carbon.",
+                "latex": "M(\\ce{NaCl}) = 23.0 + 35.5 = 58.5\\ \\text{g mol}^{-1}"
+              },
+              {
+                "text": "Multiply the amount by the molar mass.",
+                "latex": "m = nM = 0.25\\ \\text{mol} \\times 58.5\\ \\text{g mol}^{-1} = 14.625\\ \\text{g}"
+              },
+              { "text": "The data has three significant figures, so quote three." }
+            ],
+            "answer": "14.6 g",
+            "answerLatex": "m = 14.6\\ \\text{g}",
+            "commonMistake": "Reading the wrong relative atomic mass off the periodic table. Check the symbol, not the position.",
+            "studentAttempt": {
+              "original": "M(NaCl) = 23 + 12 = 35; 0.25 x 23.4 = 5.85 g",
+              "issue": "Chlorine was taken as 12 rather than 35.5, and the multiplication then used 23.4, which is neither value. The method — multiply moles by molar mass — was right."
+            }
+          }
+        ]
+      },
+      {
+        "id": "s-catalysts",
+        "title": "A note on catalysts",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "ai-corrected",
+            "originalText": "A catalyst speeds up a reaction by lowering the activation energy and shifting the equilibrium to the right.",
+            "text": "A catalyst lowers the activation energy, which is right, and it does so for the forward and reverse reactions equally. That means it reaches equilibrium faster but shifts nothing: the position of equilibrium is set by the thermodynamics, not by the path."
+          },
+          {
+            "type": "misconception",
+            "origin": "ai-added",
+            "wrong": "Adding a catalyst increases the yield of a reversible reaction.",
+            "right": "It increases the rate at which the yield is reached. Only changing concentration, pressure or temperature moves the position of equilibrium."
+          }
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "sectionId": "s-strength",
+        "original": "A strong acid is one that is very concentrated.",
+        "corrected": "A strong acid is one that ionises essentially completely; concentration is a separate idea about how much is dissolved.",
+        "why": "Strength and concentration are independent, which is why a dilute strong acid and a concentrated weak acid are both ordinary things."
+      },
+      {
+        "sectionId": "s-ph",
+        "original": "pH = -log[OH-]",
+        "corrected": "pH = −log₁₀[H₃O⁺]",
+        "why": "The version written is the definition of pOH. The two are related by pH + pOH = 14 at 25 °C, but they are not the same quantity."
+      },
+      {
+        "sectionId": "s-neutralisation",
+        "original": "This is always exothermic and always gives pH 7.",
+        "corrected": "Neutralisation is exothermic, but only a strong acid with a strong base gives pH 7.",
+        "why": "The salt of a weak acid is itself basic, so the solution finishes above 7 — which is the whole reason titration curves have different shapes."
+      },
+      {
+        "sectionId": "s-moles",
+        "original": "M(NaCl) = 23 + 12 = 35, 0.25 x 23.4 = 5.85 g",
+        "corrected": "M(NaCl) = 23.0 + 35.5 = 58.5 g mol⁻¹, so 0.25 mol is 14.6 g.",
+        "why": "Chlorine is 35.5, not 12; 12 is carbon. The method was right, so only the numbers needed fixing."
+      },
+      {
+        "sectionId": "s-catalysts",
+        "original": "A catalyst speeds up a reaction by lowering the activation energy and shifting the equilibrium to the right.",
+        "corrected": "A catalyst lowers the activation energy of both directions equally, so it reaches equilibrium faster without shifting it.",
+        "why": "The first half was right. A catalyst changes the path, and the position of equilibrium does not depend on the path."
+      },
+      {
+        "sectionId": "s-ph",
+        "original": "Universal indicator gives an exact pH to 2 decimal places.",
+        "corrected": "Universal indicator gives an approximate pH from a colour, usually to the nearest whole number.",
+        "why": "Two decimal places needs a calibrated pH meter — that is what one is for."
+      }
+    ],
+    "openQuestions": [
+      {
+        "sectionId": "s-neutralisation",
+        "question": "Did class cover titration curves, or only the procedure?",
+        "why": "Your notes describe the method but not the shape of the curve, and the two are usually taught together."
+      }
+    ],
+    "factCheck": {
+      "calculationsVerified": [
+        {
+          "where": "sodium chloride mass",
+          "ok": true,
+          "note": "M(NaCl) = 23.0 + 35.5 = 58.5; 0.25 × 58.5 = 14.625, so 14.6 g to 3 s.f."
+        }
+      ],
+      "checkedClaims": 9,
+      "flags": []
+    },
+    "studyTools": {
+      "flashcards": [
+        {
+          "front": "Strong acid — definition",
+          "back": "One that ionises essentially completely in water.",
+          "sectionId": "s-strength"
+        },
+        {
+          "front": "Can an acid be strong and dilute?",
+          "back": "Yes. Strength is about ionisation, concentration is about amount per volume.",
+          "sectionId": "s-strength"
+        },
+        {
+          "front": "pH in terms of concentration",
+          "back": "pH = −log₁₀[H₃O⁺], with the concentration in mol dm⁻³.",
+          "sectionId": "s-ph"
+        },
+        {
+          "front": "What is −log[OH⁻]?",
+          "back": "pOH. It relates to pH by pH + pOH = 14 at 25 °C.",
+          "sectionId": "s-ph"
+        },
+        {
+          "front": "Does neutralisation always give pH 7?",
+          "back": "No — only strong acid with strong base. Weak acid with strong base finishes above 7.",
+          "sectionId": "s-neutralisation"
+        },
+        {
+          "front": "End point versus equivalence point",
+          "back": "The end point is where the indicator changes; the equivalence point is where the moles balance. A good indicator makes them nearly coincide.",
+          "sectionId": "s-neutralisation"
+        },
+        {
+          "front": "Molar mass of NaCl",
+          "back": "23.0 + 35.5 = 58.5 g mol⁻¹.",
+          "sectionId": "s-moles"
+        },
+        {
+          "front": "Mass of 0.25 mol of NaCl",
+          "back": "0.25 × 58.5 = 14.6 g to three significant figures.",
+          "sectionId": "s-moles"
+        },
+        {
+          "front": "What does a catalyst do to equilibrium position?",
+          "back": "Nothing. It lowers the activation energy both ways, so equilibrium arrives sooner at the same place.",
+          "sectionId": "s-catalysts"
+        },
+        {
+          "front": "How precise is universal indicator?",
+          "back": "About one pH unit from a colour. Two decimal places needs a pH meter.",
+          "sectionId": "s-ph"
+        }
+      ],
+      "quiz": [
+        {
+          "kind": "multiple-choice",
+          "prompt": "Which describes a strong acid?",
+          "choices": [
+            "One with a high concentration",
+            "One that ionises essentially completely",
+            "One with a pH below 1",
+            "One that reacts quickly"
+          ],
+          "answer": "One that ionises essentially completely",
+          "explanation": "Strength is about the extent of ionisation. Concentration, pH and rate all depend on other things as well.",
+          "sectionId": "s-strength"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "Write the definition of pH as an equation.",
+          "answer": "pH = −log₁₀[H₃O⁺]",
+          "explanation": "The hydroxide version defines pOH instead.",
+          "sectionId": "s-ph"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "Ethanoic acid is titrated with sodium hydroxide. The pH at the equivalence point is:",
+          "choices": ["below 7", "exactly 7", "above 7", "impossible to predict"],
+          "answer": "above 7",
+          "explanation": "The salt formed contains the ethanoate ion, which is a weak base, so the solution finishes basic.",
+          "sectionId": "s-neutralisation"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "What mass is 0.25 mol of sodium chloride?",
+          "answer": "14.6 g",
+          "explanation": "M(NaCl) = 58.5 g mol⁻¹, and 0.25 × 58.5 = 14.625, which is 14.6 g to three significant figures.",
+          "sectionId": "s-moles"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "A catalyst is added to a reversible reaction at equilibrium. What happens?",
+          "choices": [
+            "The yield increases",
+            "The equilibrium shifts right",
+            "Nothing shifts; equilibrium is reached faster",
+            "The reaction becomes exothermic"
+          ],
+          "answer": "Nothing shifts; equilibrium is reached faster",
+          "explanation": "A catalyst lowers the activation energy of both directions by the same amount.",
+          "sectionId": "s-catalysts"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "Why can a concentrated solution still be a weak acid?",
+          "answer": "Because only a small fraction of its molecules ionise, however many of them there are.",
+          "explanation": "Concentration counts molecules present; strength counts how many of them donate a proton.",
+          "sectionId": "s-strength"
+        }
+      ]
+    },
+    "glossary": [
+      {
+        "term": "strong acid",
+        "definition": "One that ionises essentially completely in water.",
+        "sectionId": "s-strength"
+      },
+      {
+        "term": "concentration",
+        "definition": "Amount of solute per unit volume, in mol dm⁻³.",
+        "sectionId": "s-strength"
+      },
+      {
+        "term": "pH",
+        "definition": "−log₁₀ of the hydrogen ion concentration.",
+        "sectionId": "s-ph"
+      },
+      {
+        "term": "equivalence point",
+        "definition": "Where the moles of acid and base balance exactly.",
+        "sectionId": "s-neutralisation"
+      },
+      {
+        "term": "end point",
+        "definition": "Where the indicator changes colour.",
+        "sectionId": "s-neutralisation"
+      }
+    ]
+  },
+  "verify": {
+    "patches": [],
+    "calculations": [
+      {
+        "where": "sodium chloride mass",
+        "ok": true,
+        "note": "0.25 × 58.5 = 14.625 g, 14.6 g to 3 s.f."
+      }
+    ],
+    "flags": [],
+    "verdict": "ok"
+  }
+}

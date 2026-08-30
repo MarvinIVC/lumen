@@ -1,0 +1,303 @@
+{
+  "source": "Hand-authored to fixtures/history-coldwar-good.md. Contains no quotation and no named historian, deliberately.",
+  "tokensIn": 3000,
+  "tokensOut": 4400,
+  "response": {
+    "title": "The origins of the Cold War, 1917–1949",
+    "summary": "The wartime alliance held while there was a common enemy and broke apart almost immediately once there was not. The question is why, and the answer separates into two halves: long-running distrust that predates the war entirely, and a run of events between 1945 and 1949 that turned distrust into a settled division of Europe.",
+    "objectives": [
+      "Distinguish long-term causes of the Cold War from its immediate triggers.",
+      "Explain the significance of Yalta, Potsdam, the Truman Doctrine, the Marshall Plan and the Berlin blockade.",
+      "Compare the orthodox, revisionist and post-revisionist interpretations."
+    ],
+    "sections": [
+      {
+        "id": "s-long-term",
+        "title": "Long-term causes",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "Ideology divided the two sides from the start: capitalism against communism, running since 1917. Western forces had intervened in the Russian civil war, which the Soviet leadership did not forget. Stalin wanted a buffer of friendly states in eastern Europe."
+          },
+          {
+            "type": "list",
+            "origin": "ai-clarified",
+            "originalText": "Stalin wanted a buffer zone in eastern europe",
+            "ordered": false,
+            "items": [
+              "Ideological incompatibility, from 1917 onwards: each side believed the other's system would eventually have to be replaced.",
+              "The memory of Allied intervention in the Russian civil war, and of the delayed second front, both read in Moscow as evidence of bad faith.",
+              "Security: the Soviet Union had been invaded across the same plain twice in thirty years, so a friendly eastern Europe was a defensive demand as much as an ideological one.",
+              "Mutual misreading: a defensive buffer looks identical to an expanding sphere of influence from the outside."
+            ]
+          },
+          {
+            "type": "diagram",
+            "origin": "ai-added",
+            "engine": "mermaid",
+            "source": "flowchart TD\n  ideology[Ideological division from 1917] --> distrust[Deep mutual distrust]\n  intervention[Allied intervention in the civil war] --> distrust\n  invasion[Twice invaded from the west] --> security[Soviet demand for a buffer]\n  distrust --> security\n  security --> poland[Poland decided by force not election]\n  poland --> breakdown[Alliance breaks down]",
+            "caption": "Long-term causes feeding the breakdown. The trigger events sit downstream of all of this.",
+            "alt": "A causation diagram: ideological division and Allied intervention produce mutual distrust; repeated invasion produces a Soviet demand for a buffer; together these lead to Poland being settled by force and the alliance breaking down."
+          }
+        ]
+      },
+      {
+        "id": "s-triggers",
+        "title": "Triggers, 1945–1949",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "table",
+            "origin": "ai-clarified",
+            "originalText": "Yalta Feb 1945 - agreed free elections in poland, didnt happen",
+            "caption": "What each event changed, rather than only when it happened.",
+            "columns": [{ "header": "Event" }, { "header": "Date" }, { "header": "What changed" }],
+            "rows": [
+              [
+                "Yalta",
+                "February 1945",
+                "Free elections in Poland were agreed in principle, with no mechanism to enforce them. The gap between agreement and enforcement is the story of the next four years."
+              ],
+              [
+                "Potsdam",
+                "July 1945",
+                "New men at the table and a tested atomic bomb. The balance of confidence had moved, and the tone moved with it."
+              ],
+              [
+                "Truman Doctrine",
+                "March 1947",
+                "Containment became declared American policy: support for free peoples resisting subjugation, first in Greece and Turkey."
+              ],
+              [
+                "Marshall Plan",
+                "1947–48",
+                "Around thirteen billion dollars of aid. The Soviet Union refused it and required the eastern bloc to refuse it too, which drew the economic line."
+              ],
+              [
+                "Berlin blockade",
+                "June 1948 – May 1949",
+                "The first direct confrontation. The airlift kept the western sectors supplied and the blockade failed, but Germany was now divided in practice."
+              ]
+            ]
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-corrected",
+            "originalText": "Truman doctrine 1948 - containment",
+            "text": "The Truman Doctrine was announced in March 1947, not 1948. The date matters for the sequence: it comes before the Marshall Plan rather than after it, which is what makes the Plan read as the economic arm of a policy already declared."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-added",
+            "text": "The iron curtain speech your notes mention was given at Fulton, Missouri in March 1946, by Churchill, who was by then out of office. It described a division rather than creating one, and its importance is that it said in public what was already being said privately."
+          }
+        ]
+      },
+      {
+        "id": "s-historiography",
+        "title": "How historians have read it",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "table",
+            "origin": "ai-clarified",
+            "originalText": "Orthodox = stalins fault. Revisionist = americas fault. Post revisionist = both, misperception",
+            "caption": "The three schools your notes name, with what each claims and what it leans on.",
+            "columns": [
+              { "header": "School" },
+              { "header": "Claim" },
+              { "header": "Evidence it leans on" }
+            ],
+            "rows": [
+              [
+                "Orthodox",
+                "Soviet expansion forced a defensive Western response.",
+                "The fate of free elections in eastern Europe; the blockade of Berlin."
+              ],
+              [
+                "Revisionist",
+                "American economic and atomic power drove the confrontation.",
+                "The timing of the bomb; the terms of Marshall aid; the reach of American trade interests."
+              ],
+              [
+                "Post-revisionist",
+                "Both sides acted defensively and each read the other as offensive.",
+                "Archival evidence of internal debate on both sides; the security dilemma as a framework."
+              ]
+            ]
+          },
+          {
+            "type": "callout",
+            "origin": "ai-added",
+            "kind": "tip",
+            "title": "Using historiography in an answer",
+            "text": "Name the interpretation, give the evidence it rests on, and then say what it struggles to explain. An essay that lists three schools without weighing them has described a debate rather than entered it."
+          }
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "sectionId": "s-triggers",
+        "original": "Truman doctrine 1948",
+        "corrected": "The Truman Doctrine was announced in March 1947.",
+        "why": "The order matters: it precedes the Marshall Plan, which is why the Plan reads as the economic arm of an already-declared containment policy."
+      }
+    ],
+    "openQuestions": [
+      {
+        "sectionId": "s-triggers",
+        "question": "Does the lesson stop at the Berlin airlift, or continue to NATO and the division of Germany?",
+        "why": "Your notes end at the airlift. If the unit runs to 1949 then NATO, Comecon and the two German states belong here too."
+      }
+    ],
+    "factCheck": {
+      "calculationsVerified": [],
+      "checkedClaims": 8,
+      "flags": [
+        {
+          "sectionId": "s-triggers",
+          "claim": "Marshall aid totalled around thirteen billion dollars.",
+          "issue": "Your own figure, and the usual one, though totals vary by whether loans and later tranches are counted. Worth checking against the number your teacher used.",
+          "confidence": "low"
+        }
+      ]
+    },
+    "studyTools": {
+      "flashcards": [
+        {
+          "front": "Two long-term causes of the Cold War",
+          "back": "Ideological division from 1917, and Soviet security fears after two invasions from the west.",
+          "sectionId": "s-long-term"
+        },
+        {
+          "front": "What was agreed at Yalta about Poland?",
+          "back": "Free elections, in principle, with no mechanism to enforce them.",
+          "sectionId": "s-triggers"
+        },
+        {
+          "front": "Why did Potsdam feel colder than Yalta?",
+          "back": "New leaders at the table and a successfully tested atomic bomb.",
+          "sectionId": "s-triggers"
+        },
+        {
+          "front": "Date of the Truman Doctrine",
+          "back": "March 1947.",
+          "sectionId": "s-triggers"
+        },
+        {
+          "front": "What was containment?",
+          "back": "The policy of resisting further Soviet expansion rather than rolling back what existed.",
+          "sectionId": "s-triggers"
+        },
+        {
+          "front": "Why did the eastern bloc refuse Marshall aid?",
+          "back": "The Soviet Union rejected it and required its neighbours to do the same, which drew the economic dividing line.",
+          "sectionId": "s-triggers"
+        },
+        {
+          "front": "How was the Berlin blockade defeated?",
+          "back": "By the airlift, which supplied the western sectors until the blockade was lifted in May 1949.",
+          "sectionId": "s-triggers"
+        },
+        {
+          "front": "The orthodox interpretation",
+          "back": "Soviet expansion forced a defensive Western response.",
+          "sectionId": "s-historiography"
+        },
+        {
+          "front": "The revisionist interpretation",
+          "back": "American economic and atomic power drove the confrontation.",
+          "sectionId": "s-historiography"
+        },
+        {
+          "front": "The post-revisionist interpretation",
+          "back": "Both sides acted defensively and each misread the other, a security dilemma.",
+          "sectionId": "s-historiography"
+        }
+      ],
+      "quiz": [
+        {
+          "kind": "multiple-choice",
+          "prompt": "Which is a long-term rather than an immediate cause?",
+          "choices": [
+            "The Berlin blockade",
+            "The Marshall Plan",
+            "Ideological division since 1917",
+            "The Potsdam conference"
+          ],
+          "answer": "Ideological division since 1917",
+          "explanation": "The other three all fall inside 1945–49 and are triggers rather than underlying causes.",
+          "sectionId": "s-long-term"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "In what year was the Truman Doctrine announced?",
+          "answer": "1947",
+          "explanation": "March 1947, before the Marshall Plan rather than after it.",
+          "sectionId": "s-triggers"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "Explain why Potsdam was frostier than Yalta.",
+          "answer": "The personnel had changed and the United States had tested an atomic bomb, so the balance of confidence had shifted.",
+          "explanation": "Both factors are needed for full credit; the change of leaders alone is not enough.",
+          "sectionId": "s-triggers"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "The revisionist school argues that:",
+          "choices": [
+            "Soviet expansion was the driving force",
+            "American economic and atomic power was the driving force",
+            "neither side intended confrontation",
+            "the Cold War began in 1917"
+          ],
+          "answer": "American economic and atomic power was the driving force",
+          "explanation": "That is the revisionist claim; the first option is the orthodox one.",
+          "sectionId": "s-historiography"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "What does the security dilemma mean in this context?",
+          "answer": "Each side's defensive measures looked offensive to the other, so both grew more insecure by trying to become safer.",
+          "explanation": "This is the mechanism the post-revisionist reading rests on.",
+          "sectionId": "s-historiography"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "The Berlin blockade ended because:",
+          "choices": [
+            "the western powers withdrew",
+            "the airlift made it ineffective",
+            "the United Nations intervened",
+            "Germany was reunified"
+          ],
+          "answer": "the airlift made it ineffective",
+          "explanation": "Supplying the western sectors by air removed the leverage the blockade was meant to create.",
+          "sectionId": "s-triggers"
+        }
+      ]
+    },
+    "glossary": [
+      {
+        "term": "containment",
+        "definition": "Resisting further Soviet expansion rather than attempting to reverse it.",
+        "sectionId": "s-triggers"
+      },
+      {
+        "term": "buffer zone",
+        "definition": "A belt of friendly states held between a power and a potential invader.",
+        "sectionId": "s-long-term"
+      },
+      {
+        "term": "security dilemma",
+        "definition": "When one state's defensive measures make another feel less safe, producing a spiral neither intended.",
+        "sectionId": "s-historiography"
+      }
+    ]
+  },
+  "verify": { "patches": [], "calculations": [], "flags": [], "verdict": "ok" }
+}

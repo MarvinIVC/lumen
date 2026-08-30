@@ -1,0 +1,304 @@
+{
+  "source": "Hand-authored to fixtures/bio-transport-good.md.",
+  "tokensIn": 3100,
+  "tokensOut": 4600,
+  "response": {
+    "title": "Transport across the cell membrane",
+    "summary": "The membrane lets some things through and not others, and everything in this lesson follows from that. Passive processes move substances down a gradient for free; active ones spend ATP to move them the other way. Two points in the original notes had the direction backwards, and both are corrected below.",
+    "objectives": [
+      "Explain why the phospholipid bilayer is selectively permeable.",
+      "Compare passive and active transport on energy, direction and proteins.",
+      "Predict the direction of osmosis from water potential.",
+      "Describe the sodium-potassium pump and its effect on membrane charge."
+    ],
+    "sections": [
+      {
+        "id": "s-membrane",
+        "title": "The membrane itself",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "The membrane is a phospholipid bilayer. The heads are hydrophilic and face the water; the tails are hydrophobic and face inwards. Small nonpolar molecules pass straight through; large or charged ones need help."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "selectively permeable",
+            "definition": "Letting some substances cross freely while restricting others, according to size, charge and polarity."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "facilitated diffusion",
+            "definition": "Passive movement down a gradient through a channel or carrier protein. No ATP is used; the protein only provides a route."
+          }
+        ]
+      },
+      {
+        "id": "s-passive",
+        "title": "Passive transport and water potential",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "ai-corrected",
+            "originalText": "osmosis is the diffusion of water from low water potential to high water potential",
+            "text": "Osmosis is the movement of water across a partially permeable membrane from higher water potential to lower water potential. The notes had this the wrong way round, and it matters because every tonicity question is answered by applying it."
+          },
+          {
+            "type": "formula",
+            "origin": "ai-added",
+            "latex": "\\Psi = \\Psi_p + \\Psi_s",
+            "where": [
+              { "symbol": "\\Psi", "meaning": "water potential", "units": "kPa" },
+              {
+                "symbol": "\\Psi_p",
+                "meaning": "pressure potential, from the cell wall pushing back",
+                "units": "kPa"
+              },
+              {
+                "symbol": "\\Psi_s",
+                "meaning": "solute potential, always negative or zero",
+                "units": "kPa"
+              }
+            ],
+            "useWhen": "You need to decide which way water will move between two cells or solutions."
+          },
+          {
+            "type": "table",
+            "origin": "ai-added",
+            "caption": "Passive against active transport.",
+            "columns": [{ "header": "" }, { "header": "Passive" }, { "header": "Active" }],
+            "rows": [
+              ["Energy", "none", "ATP"],
+              ["Direction", "down the gradient", "against the gradient"],
+              ["Proteins", "sometimes (facilitated diffusion)", "always — a pump"],
+              [
+                "Examples",
+                "diffusion, facilitated diffusion, osmosis",
+                "sodium-potassium pump, endocytosis"
+              ]
+            ]
+          },
+          {
+            "type": "table",
+            "origin": "ai-added",
+            "caption": "What happens to a cell in each kind of solution.",
+            "columns": [
+              { "header": "Solution" },
+              { "header": "Animal cell" },
+              { "header": "Plant cell" }
+            ],
+            "rows": [
+              ["Hypotonic", "swells and may lyse", "turgid — the wall stops it bursting"],
+              ["Isotonic", "no net change", "flaccid"],
+              ["Hypertonic", "shrivels (crenation)", "plasmolysed"]
+            ]
+          },
+          {
+            "type": "misconception",
+            "origin": "ai-added",
+            "wrong": "Osmosis needs energy because water is being moved.",
+            "right": "Osmosis is diffusion. Water moves down its own potential gradient and no ATP is spent."
+          }
+        ]
+      },
+      {
+        "id": "s-active",
+        "title": "Active transport",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "Active transport needs ATP and moves substances from low concentration to high. The sodium-potassium pump moves three sodium ions out and two potassium ions in for each ATP."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-corrected",
+            "originalText": "this makes the inside more positive",
+            "text": "Three positive charges leave for every two that enter, so each cycle makes the inside of the cell more negative, not more positive. That charge difference is the resting membrane potential everything about nerve impulses later depends on."
+          },
+          {
+            "type": "diagram",
+            "origin": "ai-added",
+            "engine": "mermaid",
+            "source": "flowchart TD\n  bind[Three Na+ bind inside] --> phos[ATP phosphorylates the pump]\n  phos --> shape[Pump changes shape]\n  shape --> out[Three Na+ released outside]\n  out --> k[Two K+ bind outside]\n  k --> dephos[Phosphate leaves]\n  dephos --> in[Two K+ released inside]",
+            "caption": "One cycle of the sodium-potassium pump — the diagram the notes left to draw later.",
+            "alt": "A flow diagram of the pump cycle: three sodium ions bind inside, ATP phosphorylates the pump, it changes shape and releases them outside, two potassium ions bind, the phosphate leaves and the potassium is released inside."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "endocytosis",
+            "definition": "Bulk transport into the cell by wrapping material in a vesicle. Phagocytosis takes in solids; pinocytosis takes in liquids."
+          },
+          {
+            "type": "misconception",
+            "origin": "ai-added",
+            "wrong": "Facilitated diffusion and active transport are the same because both use proteins.",
+            "right": "Both use proteins, but only active transport spends ATP and only active transport can move a substance against its gradient."
+          }
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "sectionId": "s-passive",
+        "original": "osmosis is the diffusion of water from low water potential to high water potential",
+        "corrected": "Osmosis moves water from higher water potential to lower water potential.",
+        "why": "Water moves down its own potential gradient, like everything else diffusing. The reversed version gets every tonicity question backwards."
+      },
+      {
+        "sectionId": "s-active",
+        "original": "this makes the inside more positive",
+        "corrected": "Three positive charges out against two in makes the inside more negative.",
+        "why": "Count the charges each cycle. This is where the resting membrane potential comes from, so the sign matters more here than almost anywhere else in the unit."
+      }
+    ],
+    "openQuestions": [
+      {
+        "sectionId": "s-passive",
+        "question": "Did class give water potential values to work with, or only the definitions?",
+        "why": "Your notes have the equation but no numbers, and exam questions on this are usually numerical."
+      }
+    ],
+    "factCheck": { "calculationsVerified": [], "checkedClaims": 6, "flags": [] },
+    "studyTools": {
+      "flashcards": [
+        {
+          "front": "Why can small nonpolar molecules cross the membrane freely?",
+          "back": "The interior of the bilayer is hydrophobic, so nonpolar molecules dissolve straight through it.",
+          "sectionId": "s-membrane"
+        },
+        {
+          "front": "Which way does water move in osmosis?",
+          "back": "From higher water potential to lower.",
+          "sectionId": "s-passive"
+        },
+        {
+          "front": "Water potential equation",
+          "back": "Ψ = Ψp + Ψs, both in kPa. Solute potential is always negative or zero.",
+          "sectionId": "s-passive"
+        },
+        {
+          "front": "Animal cell in a hypotonic solution",
+          "back": "It swells and may burst — there is no wall to push back.",
+          "sectionId": "s-passive"
+        },
+        {
+          "front": "Plant cell in a hypotonic solution",
+          "back": "Turgid. The wall generates pressure potential and stops it bursting.",
+          "sectionId": "s-passive"
+        },
+        {
+          "front": "Does osmosis use ATP?",
+          "back": "No. It is diffusion, down a gradient.",
+          "sectionId": "s-passive"
+        },
+        {
+          "front": "What does the sodium-potassium pump move, and how much?",
+          "back": "Three Na⁺ out and two K⁺ in per ATP.",
+          "sectionId": "s-active"
+        },
+        {
+          "front": "What does the pump do to the charge inside the cell?",
+          "back": "Makes it more negative — three positives leave for every two that enter.",
+          "sectionId": "s-active"
+        },
+        {
+          "front": "Facilitated diffusion versus active transport",
+          "back": "Both use proteins; only active transport spends ATP and only it works against a gradient.",
+          "sectionId": "s-active"
+        },
+        {
+          "front": "Phagocytosis",
+          "back": "Endocytosis of solid material — the cell wraps it in a vesicle and takes it in.",
+          "sectionId": "s-active"
+        }
+      ],
+      "quiz": [
+        {
+          "kind": "multiple-choice",
+          "prompt": "Water moves by osmosis:",
+          "choices": [
+            "from low to high water potential",
+            "from high to low water potential",
+            "only when ATP is available",
+            "only through the phospholipid tails"
+          ],
+          "answer": "from high to low water potential",
+          "explanation": "Osmosis is diffusion of water, so it goes down the potential gradient.",
+          "sectionId": "s-passive"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "A plant cell is placed in distilled water. Describe what happens and why.",
+          "answer": "Water enters, the cell becomes turgid, and the wall generates a pressure potential that stops it bursting.",
+          "explanation": "Distilled water has the highest possible water potential, so water moves into the cell.",
+          "sectionId": "s-passive"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "Why does the sodium-potassium pump make the cell interior more negative?",
+          "answer": "Because it exports three positive ions for every two it imports.",
+          "explanation": "Each cycle removes a net one positive charge from the inside.",
+          "sectionId": "s-active"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "Which process requires ATP?",
+          "choices": ["Diffusion", "Osmosis", "Facilitated diffusion", "The sodium-potassium pump"],
+          "answer": "The sodium-potassium pump",
+          "explanation": "The first three all move substances down a gradient, which costs nothing.",
+          "sectionId": "s-active"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "State two differences between facilitated diffusion and active transport.",
+          "answer": "Active transport uses ATP and can move against a gradient; facilitated diffusion does neither.",
+          "explanation": "Both use membrane proteins, which is what makes them easy to confuse.",
+          "sectionId": "s-active"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "Solute potential is:",
+          "choices": [
+            "always positive",
+            "always negative or zero",
+            "always zero",
+            "equal to pressure potential"
+          ],
+          "answer": "always negative or zero",
+          "explanation": "Adding solute lowers water potential, so the solute term can only subtract.",
+          "sectionId": "s-passive"
+        }
+      ]
+    },
+    "glossary": [
+      {
+        "term": "water potential",
+        "definition": "The tendency of water to move out of a system, in kPa.",
+        "sectionId": "s-passive"
+      },
+      {
+        "term": "turgid",
+        "definition": "A plant cell full of water, with the wall under pressure.",
+        "sectionId": "s-passive"
+      },
+      {
+        "term": "lysis",
+        "definition": "An animal cell bursting from taking in too much water.",
+        "sectionId": "s-passive"
+      },
+      {
+        "term": "active transport",
+        "definition": "Movement against a gradient, powered by ATP.",
+        "sectionId": "s-active"
+      }
+    ]
+  },
+  "verify": { "patches": [], "calculations": [], "flags": [], "verdict": "ok" }
+}

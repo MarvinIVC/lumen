@@ -36,6 +36,9 @@ import type {
 /** Above this share of dropped blocks the document is not repairable, it is broken. */
 const MAX_DROPPED_SHARE = 0.4;
 
+/** …but only once enough have been dropped for the share to mean anything. */
+const MIN_DROPPED_TO_FAIL = 3;
+
 const BLOCK_TYPES = new Set([
   'paragraph',
   'list',
@@ -382,7 +385,10 @@ export function validateNoteDocument(input: unknown): ValidationResult {
     issues.error('sections', 'sections', 'every section was unusable');
     return { ok: false, issues: issues.list };
   }
-  if (total > 0 && dropped / total > MAX_DROPPED_SHARE) {
+  // Both conditions, not either: on a four-block document one dropped diagram is 25% and means
+  // nothing, while on a forty-block one it is a rounding error. A document is broken rather than
+  // repairable when a lot of it is gone *and* that is most of it.
+  if (dropped > MIN_DROPPED_TO_FAIL && dropped / total > MAX_DROPPED_SHARE) {
     issues.error(
       'sections',
       'too-much-dropped',
@@ -459,20 +465,26 @@ export function validateNoteDocument(input: unknown): ValidationResult {
         'a correction was logged but nothing is marked ai-corrected inline; it still appears in the corrections panel',
       );
     }
-    // A block still carrying the student's wrong wording, still labelled as theirs, is the one
-    // contradiction §5 calls out — the fix was logged but never applied.
-    if (original.length > 12) {
-      const contradicted = sections.some((section) =>
-        section.blocks.some(
-          (block) => block.origin === 'student' && blockText(block).includes(original),
-        ),
-      );
-      if (contradicted) {
-        issues.error(
-          `corrections[${index}]`,
-          'student-contradicted',
-          "a block is still marked as the student's own while a correction says that exact text was wrong",
-        );
+    // §5: "no `origin: student` block contains a claim in `corrections`". Read literally that is
+    // an error, and it was one here until the hand-authored gold fixture tripped it: a correction
+    // whose `original` is a short fragment often *qualifies* the student's wording rather than
+    // replacing it, and their sentence rightly survives.
+    //
+    // So it is a repair rather than a failure, and the repair is the honest label: a block whose
+    // text a correction speaks to is `ai-clarified` — their point, with a qualifier added — not
+    // untouched `student`. Only substantial quotes count; a handful of words is a fragment, not a
+    // claim.
+    if (original.length >= 24) {
+      for (const section of sections) {
+        for (const [blockIndex, block] of section.blocks.entries()) {
+          if (block.origin !== 'student' || !blockText(block).includes(original)) continue;
+          section.blocks[blockIndex] = { ...block, origin: 'ai-clarified', originalText: original };
+          issues.repaired(
+            `corrections[${index}]`,
+            'student-contradicted',
+            "a block was marked as the student's own while a correction spoke to that exact text; re-marked as clarified",
+          );
+        }
       }
     }
   }

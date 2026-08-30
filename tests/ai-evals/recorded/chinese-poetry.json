@@ -1,0 +1,255 @@
+{
+  "source": "Hand-authored to fixtures/chinese-poetry-good.md. Output is in Chinese because the notes are; the student's English glosses survive as glosses.",
+  "tokensIn": 2400,
+  "tokensOut": 3600,
+  "response": {
+    "title": "《静夜思》——李白笔下的月与乡愁",
+    "summary": "这首二十个字的五言绝句，用最平常的语言写最普遍的情感。全诗从看见月光开始，经过一个短暂的错觉，落到两个动作上，最后停在思乡上。你的笔记已经抓住了核心：月光像霜的比喻，以及举头和低头的对比。下面把这两点讲透，并补上朝代、格律和写作手法。",
+    "objectives": [
+      "背诵并默写全诗，说明每句的意思。",
+      "分析月与霜两个意象的作用。",
+      "解释举头与低头的对比如何表现情感的转折。",
+      "说明借景抒情这一手法在本诗中的运用。"
+    ],
+    "sections": [
+      {
+        "id": "s-poet",
+        "title": "作者与背景",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "ai-corrected",
+            "originalText": "李白，宋代诗人（诗仙）",
+            "text": "李白是唐代诗人，不是宋代。他被称为诗仙，与杜甫并称李杜，是盛唐诗歌的代表人物之一。这一点在考试中常考，朝代写错会直接失分。"
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "五言绝句",
+            "definition": "近体诗的一种：全诗四句，每句五个字，共二十字，讲究平仄与押韵。本诗的光、霜、乡押韵。"
+          }
+        ]
+      },
+      {
+        "id": "s-text",
+        "title": "原诗与逐句理解",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "list",
+            "origin": "student",
+            "ordered": false,
+            "items": ["床前明月光", "疑是地上霜", "举头望明月", "低头思故乡"]
+          },
+          {
+            "type": "table",
+            "origin": "ai-added",
+            "caption": "逐句理解：从看见，到怀疑，到动作，到情感。",
+            "columns": [{ "header": "诗句" }, { "header": "字面意思" }, { "header": "作用" }],
+            "rows": [
+              ["床前明月光", "床前洒下明亮的月光", "起：先写所见，不写情"],
+              ["疑是地上霜", "恍惚间以为是地上的霜", "承：一个短暂的错觉，把冷意带进来"],
+              ["举头望明月", "抬起头望向明月", "转：由错觉转为确认，动作向上"],
+              ["低头思故乡", "低下头思念故乡", "合：动作向下，情感落地"]
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s-imagery",
+        "title": "意象与手法",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "ai-clarified",
+            "originalText": "霜 frost - 比喻? 月光像霜 moonlight looks like frost, also 冷 cold = lonely",
+            "text": "你写的月光像霜是对的，而且值得说得更准一点：这里用的是比喻中的暗喻，诗人先说疑是，把比喻放在一瞬间的错觉里，因此既写了月光的白，也写了夜的冷。冷是身体的感觉，孤独是心里的感觉，两者在这一个字上重合——这正是你笔记里写的 cold = lonely。"
+          },
+          {
+            "type": "table",
+            "origin": "ai-added",
+            "caption": "意象、所指与效果。",
+            "columns": [{ "header": "意象" }, { "header": "所指" }, { "header": "效果" }],
+            "rows": [
+              ["月 moon", "思乡 homesickness", "同一轮月，故乡与他乡共见，距离因此被写出来"],
+              ["霜 frost", "寒冷、孤独", "视觉转为触觉，白之外还有冷"],
+              [
+                "举头 / 低头",
+                "情感的转折",
+                "两个相反的动作构成对比，把无形的思念写成有形的身体动作"
+              ]
+            ]
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "借景抒情",
+            "definition": "不直接说出情感，而是通过描写景物让情感自然显现。本诗前三句写景写动作，只有最后两个字点出思乡。"
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "对比",
+            "definition": "把两个相反或相对的事物放在一起，使各自的特点更明显。本诗中举头与低头即是。"
+          },
+          {
+            "type": "marginNote",
+            "origin": "student",
+            "kind": "connection",
+            "text": "老师说这首诗很简单但是很深 (teacher said simple language deep feeling)",
+            "anchorId": "s-imagery"
+          }
+        ]
+      },
+      {
+        "id": "s-theme",
+        "title": "主题",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "ai-clarified",
+            "originalText": "主题 theme: 思乡之情",
+            "text": "主题是思乡之情。值得注意的是全诗没有一个字直接写想念的内容——没有写故乡的人、事、景，只写了此刻的月光和两个动作。留白使得任何一个离家的读者都能把自己的故乡放进去，这也是这首诗流传最广的原因。"
+          },
+          {
+            "type": "callout",
+            "origin": "ai-added",
+            "kind": "tip",
+            "title": "答题提示",
+            "text": "分析本诗时，先说手法（比喻、对比、借景抒情），再引原句作证据，最后说效果。只说思乡而不引句子，得不到分析分。"
+          }
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "sectionId": "s-poet",
+        "original": "李白，宋代诗人",
+        "corrected": "李白是唐代诗人。",
+        "why": "李白生活在盛唐，与杜甫并称李杜；宋代是苏轼、李清照等人的时代。朝代写错在考试中会直接失分。"
+      }
+    ],
+    "openQuestions": [
+      {
+        "sectionId": "s-text",
+        "question": "老师有没有讲床字的两种解释？",
+        "why": "床在这里历来有卧具与井栏两种解释，你的笔记没有提到。如果课上讲过，应当补在这里。"
+      }
+    ],
+    "factCheck": { "calculationsVerified": [], "checkedClaims": 5, "flags": [] },
+    "studyTools": {
+      "flashcards": [
+        {
+          "front": "李白是哪个朝代的诗人？",
+          "back": "唐代。被称为诗仙，与杜甫并称李杜。",
+          "sectionId": "s-poet"
+        },
+        {
+          "front": "什么是五言绝句？",
+          "back": "四句，每句五字，共二十字，讲究平仄与押韵。",
+          "sectionId": "s-poet"
+        },
+        {
+          "front": "默写《静夜思》",
+          "back": "床前明月光，疑是地上霜。举头望明月，低头思故乡。",
+          "sectionId": "s-text"
+        },
+        {
+          "front": "霜这个意象有什么作用？",
+          "back": "既写月光之白，又带出夜的冷，冷与孤独在同一个字上重合。",
+          "sectionId": "s-imagery"
+        },
+        {
+          "front": "月在本诗中象征什么？",
+          "back": "思乡。同一轮月故乡与他乡共见，距离因此被写出来。",
+          "sectionId": "s-imagery"
+        },
+        {
+          "front": "举头与低头构成什么手法？",
+          "back": "对比。两个相反的动作把无形的思念写成有形的身体动作。",
+          "sectionId": "s-imagery"
+        },
+        {
+          "front": "什么是借景抒情？",
+          "back": "不直接抒情，通过写景让情感自然显现。",
+          "sectionId": "s-imagery"
+        },
+        { "front": "本诗押的是哪几个字？", "back": "光、霜、乡。", "sectionId": "s-poet" },
+        {
+          "front": "本诗的主题是什么？",
+          "back": "思乡之情，且全诗不直接写思念的内容，留白让读者代入。",
+          "sectionId": "s-theme"
+        }
+      ],
+      "quiz": [
+        {
+          "kind": "multiple-choice",
+          "prompt": "李白是哪个朝代的诗人？",
+          "choices": ["汉代", "唐代", "宋代", "明代"],
+          "answer": "唐代",
+          "explanation": "李白是盛唐诗人，与杜甫并称李杜。",
+          "sectionId": "s-poet"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "疑是地上霜用了什么修辞手法？请说明效果。",
+          "answer": "比喻。把月光比作霜，既写出月光的白，又带出夜的寒冷与孤独。",
+          "explanation": "疑是二字把比喻放进一瞬间的错觉里，比直接说像更自然。",
+          "sectionId": "s-imagery"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "举头与低头这一组动作有什么作用？",
+          "answer": "构成对比，把抽象的思念转化为具体的身体动作，也完成了情感的转折。",
+          "explanation": "一上一下，是全诗从景到情的关键。",
+          "sectionId": "s-imagery"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "本诗属于哪一种体裁？",
+          "choices": ["七言律诗", "五言绝句", "词", "散曲"],
+          "answer": "五言绝句",
+          "explanation": "四句，每句五字，共二十字。",
+          "sectionId": "s-poet"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "什么是借景抒情？请以本诗为例说明。",
+          "answer": "通过写景表达情感。本诗前三句只写月光与动作，最后才点出思乡。",
+          "explanation": "情感被推到最后两个字，前面全是铺垫。",
+          "sectionId": "s-imagery"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "为什么说这首诗简单却很深？",
+          "answer": "语言极浅白，二十字无一生僻，但因为不写思念的具体内容，任何离家的读者都能代入。",
+          "explanation": "留白是这首诗流传最广的原因。",
+          "sectionId": "s-theme"
+        }
+      ]
+    },
+    "glossary": [
+      { "term": "五言绝句", "definition": "四句、每句五字的近体诗。", "sectionId": "s-poet" },
+      {
+        "term": "意象",
+        "definition": "承载情感的具体形象，如本诗的月与霜。",
+        "sectionId": "s-imagery"
+      },
+      {
+        "term": "比喻",
+        "definition": "以一物说明另一物，本诗以霜写月光。",
+        "sectionId": "s-imagery"
+      },
+      {
+        "term": "借景抒情",
+        "definition": "通过描写景物表达情感，不直接抒情。",
+        "sectionId": "s-imagery"
+      },
+      { "term": "思乡", "definition": "对故乡的思念，本诗的主题。", "sectionId": "s-theme" }
+    ]
+  },
+  "verify": { "patches": [], "calculations": [], "flags": [], "verdict": "ok" }
+}
