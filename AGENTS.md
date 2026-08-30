@@ -101,11 +101,14 @@ number the Cloudflare API enforces.
 
 ## When you finish a phase
 
-A phase is **not** finished when CI is green. It is finished when the deployed preview has been
-verified and the pull request is ready to merge, so the next phase can start without going back.
-That is the standing definition of done for this project, set after phase-03 — where CI passed, the
-local Playwright suite passed against a production build, and the run against the preview still
-found a bug that would have silently discarded a student's answer.
+A phase is **not** finished when CI is green. It is finished when the preview has been verified,
+the pull request is **merged**, `main` is green, and production is checked — so the next phase can
+start without going back. That is the standing definition of done for this project, set after
+phase-03, where CI passed, the local Playwright suite passed against a production build, and the run
+against the preview still found a bug that would have silently discarded a student's answer.
+
+Merge it yourself. Do not stop at "ready to merge" for a confirmation; the phase is not done until
+`main` is green and production serves it.
 
 So, in order:
 
@@ -126,5 +129,17 @@ So, in order:
    The `/dev` specs are the exception — the deploy workflow does not set `NEXT_PUBLIC_DEV_SCREENS`,
    deliberately, so they will 404 against a preview.
 
-4. Append an entry to `docs/PHASE-LOG.md` in the same shape as the others — especially the
+4. Merge (rebase, delete the branch), then **watch `main`'s own CI and Deploy on the merge
+   commit** — `gh run list --branch main` will hand you the _previous_ merge's runs if you sample
+   before the new ones exist, so match on the head SHA. Phase-03 went red on `main` having been
+   green on the branch: a test that built its own five-megabyte fixture could not build it in time
+   on a two-core runner.
+5. Check production the same way you checked the preview:
+
+   ```bash
+   node scripts/check-worker-routes.mjs --base=https://lumen.marvinmaiwang.workers.dev
+   PLAYWRIGHT_BASE_URL=https://lumen.marvinmaiwang.workers.dev pnpm exec playwright test tests/e2e/<your-suite>.spec.ts
+   ```
+
+6. Append an entry to `docs/PHASE-LOG.md` in the same shape as the others — especially the
    "must not undo" section. The next agent may be a different tool with no memory of this one.
