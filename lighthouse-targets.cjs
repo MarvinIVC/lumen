@@ -9,8 +9,25 @@ const ROUTES = ['/', '/how-it-works'];
 
 const LOCAL = 'http://localhost:3000';
 
+function baseUrl() {
+  return (process.env.LH_BASE_URL ?? LOCAL).replace(/\/$/, '');
+}
+
+/**
+ * True when we are pointed at a per-pull-request preview deployment.
+ *
+ * Cloudflare serves preview aliases with `x-robots-tag: noindex`, which is correct — a preview
+ * must not be indexed — and which makes Lighthouse's `is-crawlable` audit fail and take the SEO
+ * score to 66. Production carries no such header. So the audit is switched off for previews and
+ * only for previews: locally and in CI, where the check is meaningful, SEO 100 is still enforced
+ * in full and `is-crawlable` is part of it.
+ */
+function isPreviewOrigin() {
+  return /\/\/pr-\d+-/.test(baseUrl());
+}
+
 function targets(extra = {}) {
-  const base = (process.env.LH_BASE_URL ?? LOCAL).replace(/\/$/, '');
+  const base = baseUrl();
   const local = base === LOCAL;
 
   return {
@@ -22,4 +39,4 @@ function targets(extra = {}) {
   };
 }
 
-module.exports = { targets, ROUTES, LOCAL };
+module.exports = { targets, isPreviewOrigin, ROUTES, LOCAL };
