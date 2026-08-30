@@ -117,7 +117,12 @@ export class IngestError extends Error {
     | 'too-large'
     | 'too-many-pages'
     | 'too-much-text'
+    // A PDF that will open once the student supplies the password. The only code the review
+    // screen offers a password box for, because it is the only one where a password helps.
     | 'encrypted'
+    // A pre-2007 `.doc`, or a Word file encrypted with Office's own scheme. We cannot open either,
+    // and asking for a password would be a dialog that cannot succeed.
+    | 'legacy-format'
     | 'empty'
     | 'corrupt';
   /** Whether offering "paste it instead" makes sense for this failure. */

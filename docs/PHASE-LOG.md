@@ -231,7 +231,11 @@ limit, with more headroom than phase-02 had. See "must not undo" #1.
     asset ids filed under the draft they were split from, so without the copy the second lesson
     opened with every scanned page missing — and discarding the first draft would have deleted the
     rows the second one needed.
-15. **`Textarea` takes `ComponentPropsWithRef<'textarea'>`.** The review screen's blocks measure
+15. **A pre-2007 `.doc` is not a locked file, even though it looks like one.** Both are CFB
+    containers, so both were reported as `encrypted` — which opened a password dialog that could
+    never have worked, because nothing here decrypts Word. `legacy-format` is its own code now, and
+    only `encrypted` offers a password box. Found by walking the §5 states rather than reading them.
+16. **`Textarea` takes `ComponentPropsWithRef<'textarea'>`.** The review screen's blocks measure
     `scrollHeight` to size themselves. Estimating the height from the character count was the first
     attempt and was wrong in both directions: a two-row floor made a pane of thirty one-line
     definitions a minute of scrolling, and any estimate at all clipped the fixture's mercury
@@ -269,6 +273,14 @@ strings, suggestions, screens), `components/domain/context-editor.tsx`,
 `pnpm shoot:app` drives the real flow and screenshots it at two widths in both themes — these
 screens cannot be captured by navigating to a URL, because there is nothing on them until files
 have been read.
+
+**Every `01-PRODUCT.md` §5 ingestion/review row is walked by a test**, not asserted about from the
+outside — which needed three fixtures that did not exist: a 45-page and a 61-page scan for either
+side of the soft and hard page caps, and a **genuinely encrypted PDF** so the password dialog is
+exercised end to end (wrong password, then right one, then parsed). `pnpm fixtures:ingest` writes
+them; the RC4 and the PDF standard security handler are ~60 lines in
+`scripts/build-ingest-fixtures.mjs`, written out because Node's crypto dropped RC4 and rightly so.
+That file encrypts a test fixture and nothing else.
 
 **New guard** — `pnpm check:worker:size` runs `wrangler deploy --dry-run` and fails over the
 3072 KiB ceiling. It is in CI right after `cf:build`. Nothing in the pipeline measured this before,

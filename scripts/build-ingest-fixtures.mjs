@@ -16,6 +16,7 @@
  * Flate-compressed RGB image is about thirty lines — pulling in `docx` (phase-06's exporter) or a
  * PDF writer to produce two test files would put a build dependency in the tree for no reason.
  */
+import { createHash } from 'node:crypto';
 import { deflateRawSync, deflateSync } from 'node:zlib';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -250,11 +251,83 @@ function scanBitmap(width, height, seed) {
   return pixels;
 }
 
-async function buildScannedPdf() {
-  const width = 460;
-  const height = 620;
-  const pageCount = 2;
+/* -------------------------------------------------------------------------- *
+ * PDF standard security (revision 2, 40-bit RC4).
+ *
+ * Needed so that "this PDF is locked" is a state the suite can actually walk rather than one we
+ * assert about from the outside. A student being handed a locked past paper by their teacher is
+ * an ordinary Tuesday, and the review screen's password dialog is otherwise untested code.
+ *
+ * RC4 is written out here because Node's crypto dropped it years ago, and rightly — this is a
+ * deliberately weak, forty-bit, twenty-year-old scheme, used to produce a test fixture and for
+ * nothing else. It encrypts nothing that matters and is never used to protect anything.
+ * -------------------------------------------------------------------------- */
 
+const PAD = Buffer.from([
+  0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41, 0x64, 0x00, 0x4e, 0x56, 0xff, 0xfa, 0x01, 0x08,
+  0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80, 0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a,
+]);
+
+function rc4(key, data) {
+  const s = Uint8Array.from({ length: 256 }, (_, i) => i);
+  for (let i = 0, j = 0; i < 256; i += 1) {
+    j = (j + s[i] + key[i % key.length]) & 0xff;
+    [s[i], s[j]] = [s[j], s[i]];
+  }
+  const out = Buffer.alloc(data.length);
+  for (let n = 0, i = 0, j = 0; n < data.length; n += 1) {
+    i = (i + 1) & 0xff;
+    j = (j + s[i]) & 0xff;
+    [s[i], s[j]] = [s[j], s[i]];
+    out[n] = data[n] ^ s[(s[i] + s[j]) & 0xff];
+  }
+  return out;
+}
+
+const md5 = (buffer) => createHash('md5').update(buffer).digest();
+
+/** Pads or truncates a password to the 32 bytes the algorithm wants. */
+function padPassword(password) {
+  const bytes = Buffer.from(password, 'latin1');
+  return Buffer.concat([bytes, PAD]).subarray(0, 32);
+}
+
+function standardSecurity({ userPassword, ownerPassword, permissions, id }) {
+  const ownerKey = md5(padPassword(ownerPassword)).subarray(0, 5);
+  const o = rc4(ownerKey, padPassword(userPassword));
+
+  const p = Buffer.alloc(4);
+  p.writeInt32LE(permissions, 0);
+  const key = md5(Buffer.concat([padPassword(userPassword), o, p, id])).subarray(0, 5);
+  const u = rc4(key, PAD);
+
+  return {
+    key,
+    dict:
+      `<< /Filter /Standard /V 1 /R 2 /Length 40 ` +
+      `/O <${o.toString('hex')}> /U <${u.toString('hex')}> /P ${permissions} >>`,
+  };
+}
+
+/** Per-object key: the file key plus the object and generation numbers, MD5'd. */
+function objectKey(fileKey, objectNumber) {
+  const extra = Buffer.from([
+    objectNumber & 0xff,
+    (objectNumber >> 8) & 0xff,
+    (objectNumber >> 16) & 0xff,
+    0,
+    0,
+  ]);
+  return md5(Buffer.concat([fileKey, extra])).subarray(0, Math.min(16, fileKey.length + 5));
+}
+
+async function buildScannedPdf({
+  name = 'scanned-worksheet.pdf',
+  width = 460,
+  height = 620,
+  pageCount = 2,
+  encrypt = null,
+} = {}) {
   /** Object bodies, 0-indexed; object numbers are index + 1. `binaries` holds the stream bytes. */
   const objects = [];
   const binaries = new Map();
@@ -268,6 +341,20 @@ async function buildScannedPdf() {
   for (let page = 0; page < pageCount; page += 1) pageIds.push(reserve());
   const pagesId = reserve();
   const catalogId = reserve();
+  const encryptId = encrypt ? reserve() : null;
+
+  // A fixed file id, so the fixture is byte-stable across builds. It is an input to the key.
+  const fileId = Buffer.from('0123456789abcdef0123456789abcdef', 'hex');
+  const security = encrypt
+    ? standardSecurity({
+        userPassword: encrypt.userPassword,
+        ownerPassword: encrypt.ownerPassword ?? `${encrypt.userPassword}-owner`,
+        // -4 leaves every permission bit off except the reserved high ones: view only.
+        permissions: -4,
+        id: fileId,
+      })
+    : null;
+  if (encryptId) objects[encryptId - 1] = security.dict;
 
   for (let page = 0; page < pageCount; page += 1) {
     const raw = deflateSync(scanBitmap(width, height, 7 + page * 31));
@@ -295,14 +382,32 @@ async function buildScannedPdf() {
 
   objects.forEach((body, index) => {
     offsets.push(cursor);
-    const raw = binaries.get(index + 1);
-    const buffer = raw
+    const number = index + 1;
+    const raw = binaries.get(number);
+
+    // Every stream is encrypted with its own key. The /Encrypt dictionary itself is not.
+    const stream =
+      security && raw && number !== encryptId ? rc4(objectKey(security.key, number), raw) : raw;
+
+    let text = body;
+    if (security && !raw && number !== encryptId) {
+      // The only other stream in this file is the page content, which is inline in the body.
+      const match = /stream\n([\s\S]*?)\nendstream/.exec(body);
+      if (match) {
+        const encrypted = rc4(objectKey(security.key, number), Buffer.from(match[1], 'latin1'));
+        text = body
+          .replace(/\/Length \d+/, `/Length ${encrypted.length}`)
+          .replace(match[1], encrypted.toString('latin1'));
+      }
+    }
+
+    const buffer = stream
       ? Buffer.concat([
-          Buffer.from(`${index + 1} 0 obj\n${body}\nstream\n`, 'binary'),
-          raw,
+          Buffer.from(`${number} 0 obj\n${text}\nstream\n`, 'binary'),
+          stream,
           Buffer.from('\nendstream\nendobj\n', 'binary'),
         ])
-      : Buffer.from(`${index + 1} 0 obj\n${body}\nendobj\n`, 'binary');
+      : Buffer.from(`${number} 0 obj\n${text}\nendobj\n`, 'binary');
     chunks.push(buffer);
     cursor += buffer.length;
   });
@@ -310,17 +415,55 @@ async function buildScannedPdf() {
   const xrefStart = cursor;
   let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   for (const offset of offsets) xref += `${String(offset).padStart(10, '0')} 00000 n \n`;
+  const idHex = fileId.toString('hex');
   xref +=
-    `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\n` +
+    `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R ` +
+    (encryptId ? `/Encrypt ${encryptId} 0 R ` : '') +
+    `/ID [<${idHex}> <${idHex}>] >>\n` +
     `startxref\n${xrefStart}\n%%EOF\n`;
   chunks.push(Buffer.from(xref, 'binary'));
 
   const buffer = Buffer.concat(chunks);
-  await writeFile(join(fixtures, 'scanned-worksheet.pdf'), buffer);
+  await writeFile(join(fixtures, name), buffer);
   return buffer.length;
 }
 
-const docxSize = await buildDocx();
-const pdfSize = await buildScannedPdf();
-console.log(`fixtures/ap-chem-u1-raw.docx    ${(docxSize / 1024).toFixed(1)} KB`);
-console.log(`fixtures/scanned-worksheet.pdf  ${(pdfSize / 1024).toFixed(1)} KB`);
+/** The password the locked fixture opens with. Also hardcoded in the end-to-end suite. */
+export const LOCKED_PDF_PASSWORD = 'unit-1';
+
+const built = [
+  ['ap-chem-u1-raw.docx', await buildDocx()],
+  ['scanned-worksheet.pdf', await buildScannedPdf()],
+
+  // The caps from 02-ARCHITECTURE.md §7. Tiny pages: these exist to be counted, not to be read,
+  // and 61 legible pages would be a megabyte of fixture for a number.
+  [
+    'long-scan-45p.pdf',
+    await buildScannedPdf({ name: 'long-scan-45p.pdf', width: 120, height: 160, pageCount: 45 }),
+  ],
+  [
+    'too-many-pages-61p.pdf',
+    await buildScannedPdf({
+      name: 'too-many-pages-61p.pdf',
+      width: 120,
+      height: 160,
+      pageCount: 61,
+    }),
+  ],
+
+  // 01-PRODUCT.md §5: "Password-protected PDF — ask for the password client-side".
+  [
+    'locked-worksheet.pdf',
+    await buildScannedPdf({
+      name: 'locked-worksheet.pdf',
+      width: 240,
+      height: 320,
+      pageCount: 1,
+      encrypt: { userPassword: LOCKED_PDF_PASSWORD },
+    }),
+  ],
+];
+
+for (const [name, size] of built) {
+  console.log(`fixtures/${name.padEnd(24)} ${(size / 1024).toFixed(1)} KB`);
+}

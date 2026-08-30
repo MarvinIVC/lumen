@@ -5,7 +5,7 @@
  * time paste. It gets the same normaliser as everything else so the review screen cannot tell
  * where the text came from.
  */
-import { MIN_USEFUL_CHARS } from './limits';
+import { CAP_MESSAGES, MIN_USEFUL_CHARS } from './limits';
 import { newId } from './id';
 import { countChars, toBlocks } from './normalize';
 import { looksLikeRtf, rtfToText } from './rtf';
@@ -66,7 +66,7 @@ export const textParser: Parser = {
     });
 
     if (doc.meta.charCount < MIN_USEFUL_CHARS) {
-      throw new IngestError('empty', `There is almost nothing in ${file.name}.`);
+      throw new IngestError('empty', CAP_MESSAGES.empty(file.name));
     }
     context.onProgress?.(1);
     return doc;
