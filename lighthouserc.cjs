@@ -1,4 +1,4 @@
-const { targets } = require('./lighthouse-targets.cjs');
+const { targets, isPreviewOrigin } = require('./lighthouse-targets.cjs');
 
 /**
  * The desktop Lighthouse gate for the marketing routes (02-ARCHITECTURE.md §8).
@@ -17,6 +17,10 @@ module.exports = {
         'categories:accessibility': ['error', { minScore: 0.95 }],
         'categories:best-practices': ['error', { minScore: 0.95 }],
         'categories:seo': ['error', { minScore: 1 }],
+        // See `isPreviewOrigin`: a preview alias is deliberately noindex, and only there.
+        ...(isPreviewOrigin()
+          ? { 'is-crawlable': 'off', 'categories:seo': ['error', { minScore: 0.6 }] }
+          : {}),
         'cumulative-layout-shift': ['error', { maxNumericValue: 0.02 }],
         'largest-contentful-paint': ['warn', { maxNumericValue: 1800 }],
         'total-byte-weight': ['warn', { maxNumericValue: 400000 }],
