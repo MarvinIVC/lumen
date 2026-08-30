@@ -141,3 +141,141 @@ the new ones exist; wait on a specific run id. Playwright's `page.mouse` works i
 coordinates while `boundingBox()` happily returns a rectangle for an element below the fold —
 `scrollIntoViewIfNeeded()` before any drag. `pnpm add` can leave `'set this to true or false'`
 placeholders in `pnpm-workspace.yaml` that break every later `pnpm install`.
+
+---
+
+## Phase 03 — Ingestion: upload, parse, review
+
+Shipped 2026-08-30. `/app`, `/app/new`, `/app/review` and `/app/note/:id` are live behind the
+marketing CTA that has pointed at `/app/new` since phase-02. Everything in this phase is
+client-side and free: **no AI spend, and the only network call the whole flow can make is
+Turnstile.**
+
+The Worker went **3005 → 3742 KiB gz** the moment the parsers landed, over the 3072 KiB free-plan
+ceiling, exactly as `02-ARCHITECTURE.md` §8 predicted. It now sits at **1731 KiB — 56%** of the
+limit, with more headroom than phase-02 had. See "must not undo" #1.
+
+**Must not undo**
+
+1. **`next.config.ts` aliases seven browser-only libraries to `false` in the _server_
+   compilation.** pdf.js, mammoth, heic2any, mermaid, katex, smiles-drawer and paged.js can none of
+   them execute on the server — every one is behind a single `await import()` in a client module,
+   called from an effect or an event handler. But Next compiles client components for the SSR pass
+   too, so webpack followed those dynamic imports and emitted the chunks into `.next/server`, where
+   OpenNext bundled them into the Worker: 2.2 MB of raw JavaScript that cannot run, in the tightest
+   budget in the project. Removing the alias list puts the deploy back over the ceiling. If one of
+   them ever genuinely needs to run server-side, take that one off the list rather than working
+   around it, and re-measure with `pnpm exec wrangler deploy --dry-run --outdir=…`.
+   **`config.webpack` is ignored under Turbopack** — moving `next build` to Turbopack means finding
+   the equivalent, or the Worker silently grows past the ceiling again.
+2. **The parsers are reachable through exactly one loader**, `lib/ingest/loaders.ts`, the same rule
+   phase-01 set for the renderers. `tests/unit/dynamic-imports.test.ts` now covers `mammoth`,
+   `pdfjs-dist` and `heic2any` as well. One static import of any of them undoes both the client
+   code-splitting and, with #1, the Worker budget.
+3. **A canvas-produced `Blob` cannot be stored in IndexedDB on WebKit** — "Error preparing
+   Blob/File data to be stored in object store". `StoredAsset` holds an `ArrayBuffer` and the Blob
+   is rebuilt on read. On an iPhone this bug made every photo upload hang on "Reading…" for ever.
+4. **A browser asked for an image format it cannot encode returns PNG rather than failing.** Safari
+   has no WebP encoder, so the downscale handed back a **9.9 MB** file for a 5 MB iPhone photo —
+   the step that exists to cut the upload nearly doubled it, on exactly the devices that take the
+   photos. `canvasToBlob` checks the returned blob's own `type` and re-encodes as JPEG.
+5. **An unexpected parser failure must never rethrow out of the parse loop.** It stopped the batch
+   and left the file's row reading for ever, which is the worst failure mode on this screen. The
+   loop marks the row with 01-PRODUCT.md §5's copy and reports the real error out of band
+   (`reportUnexpected`), so Sentry still sees it and the student never sees a stack trace.
+6. **The draft id lives in the URL (`?d=`)**, not in local storage. That single decision is the
+   whole of "refresh at any point and lose nothing": a reload re-reads the same record, the back
+   button works, and a second tab is a second draft rather than a silent fight over one.
+7. **`/app` strings live in `lib/app/strings.ts`, not in `messages/{en,zh}.json`.** A deliberate,
+   scoped exception to the rule in `AGENTS.md`, decided with the user: next-intl is server-only by
+   phase-02's design and `/app` is almost entirely client components whose copy is composed at
+   runtime from parse results. The exception is that one module, English is the only locale `/app`
+   claims, and moving it into the catalogues is one file's work.
+8. **Detection is local and synchronous, and the model classify is wired but off.**
+   `lib/curriculum/detect.ts` is a real implementation now, not the phase-00 declarations. On the
+   fixture it returns Chemistry / AP / AP Chemistry / Unit 1 / en at **0.875 confidence**, over
+   `04-AI-ENGINE.md` §3's 0.7 bar — so the classify call never fires for the common case, which is
+   the entire economic argument for having a local pass. `lib/ai/detect-client.ts` and
+   `lib/ai/ocr-client.ts` report themselves unavailable until phase-04 deploys those functions;
+   both fall back to something a student can still use rather than to an error.
+9. **Language detection is hand-rolled (~2 KB), not `franc`/`tinyld`.** `04-AI-ENGINE.md` §3 names
+   those; the smallest is ~200 KB for one field the student can override with one control, and it
+   only has to be right about the two languages this product renders. Script ranges settle CJK,
+   Cyrillic, Arabic, Devanagari, Hangul, Greek, Hebrew and Thai; a stopword vote settles the
+   Latin-script languages. **The script check runs before the length floor** — 60 characters of
+   English is a fragment while 60 characters of Chinese is two sentences, and one floor for both
+   returned "unknown" for a page of Chinese notes with the script in plain sight.
+10. **The soft quality warning fires on one signal, not two.** `essay-prose` or `code` alone is
+    enough; `no-structure` and `very-short` never are. Requiring two sounded cautious and was
+    simply wrong — a three-paragraph history essay, the exact case the gate exists to catch,
+    produces one signal. It always allows proceeding: the server refusal in phase-04 is the real
+    gate (02-ARCHITECTURE.md §7 layer 3).
+11. **`putAssets` never rejects.** Thumbnails are a convenience — the review screen shows a picture
+    where it has one and the OCR button where it does not — and a storage failure must not be able
+    to fail the parse that produced them. Safari in private browsing refuses IndexedDB outright,
+    and that is not a reason to tell a student their photo could not be read.
+12. **`useDraft` only rewrites the URL while its own screen is still mounted.** During a
+    navigation away, `useSearchParams` reads as empty for a moment before the route changes, which
+    looked exactly like "the URL has lost its draft id" — so the effect replaced it and cancelled
+    the navigation the student had just started. The guard is `pathname !== basePath`.
+13. **`splitLesson` copies the assets, it does not share them.** The tail's blocks still point at
+    asset ids filed under the draft they were split from, so without the copy the second lesson
+    opened with every scanned page missing — and discarding the first draft would have deleted the
+    rows the second one needed.
+14. **`Textarea` takes `ComponentPropsWithRef<'textarea'>`.** The review screen's blocks measure
+    `scrollHeight` to size themselves. Estimating the height from the character count was the first
+    attempt and was wrong in both directions: a two-row floor made a pane of thirty one-line
+    definitions a minute of scrolling, and any estimate at all clipped the fixture's mercury
+    calculation — the one block on that page a student most needs to see whole.
+
+**Decisions taken in-session** (the user was asked; do not re-litigate)
+
+- **App strings: English-only in one module.** See #7.
+- **Language detection: hand-rolled.** See #9.
+- **The extraction editor is one textarea per block, not a contenteditable surface.** Cross-block
+  editing is worse; keyboard behaviour, screen-reader announcement, Chinese input, paste handling
+  and dropping an OCR result in as a new block are all better. Phase-06 brings TipTap for the
+  finished document, where rich editing is the point; here the job is corrections.
+
+**Two things scoped honestly rather than claimed**
+
+- **"Works fully offline" means parsing has no network dependency**, which
+  `tests/e2e/ingest.spec.ts` proves with the network cut. A cold navigation between `/app` routes
+  still needs the network, because `public/sw.js` deliberately caches nothing until phase-09. That
+  is the offline app shell and it is phase-09's to build.
+- **OCR and the model classify are buttons that say when they will work**, not buttons that lie.
+  Both edge functions are phase-04's. Both call sites are wired end to end — `ocr()` in
+  `review-screen.tsx` fetches the asset, calls `runOcr` and drops the result in as an editable
+  block — so phase-04 deploys the function and flips one flag.
+- **`QuotaMeter` on the review screen is hardcoded to 0 of 3.** That is the anon tier from
+  `app_config.quota` and it is accurate while nothing has been spent, which is every session in
+  this phase. Phase-04 owns the real counter; the component is not a shell, the number behind it
+  is.
+
+**New in this phase** — `lib/ingest/*` (parsers, normaliser, caps, quality gate, cost estimate),
+`lib/store/*` (IndexedDB drafts, assets, notes, the Zustand workspace store), `lib/app/*` (routes,
+strings, suggestions, screens), `components/domain/context-editor.tsx`,
+`components/domain/turnstile-widget.tsx`, and two generated fixtures
+(`pnpm fixtures:ingest` → `fixtures/ap-chem-u1-raw.docx`, `fixtures/scanned-worksheet.pdf`).
+`pnpm shoot:app` drives the real flow and screenshots it at two widths in both themes — these
+screens cannot be captured by navigating to a URL, because there is nothing on them until files
+have been read.
+
+**New guard** — `pnpm check:worker:size` runs `wrangler deploy --dry-run` and fails over the
+3072 KiB ceiling. It is in CI right after `cf:build`. Nothing in the pipeline measured this before,
+which is how a pull request could go fully green and still be undeployable.
+
+**Gotchas**
+
+- **`pnpm check:worker` now covers `/app/*`.** `/app/note/[id]` is the first route in this project
+  that is server-rendered on demand rather than prerendered.
+- **Playwright loads specs as CommonJS here**, so `import.meta.dirname` is not available in
+  `tests/e2e`. Use `process.cwd()`.
+- **WebKit only tabs to buttons when macOS "Full Keyboard Access" is on**, which Playwright does not
+  set. Assert focus reveal and operation everywhere; assert tab traversal on Chromium.
+- **Playwright hands WebKit an uploaded file through the browser process**, and reading it while the
+  context is offline fails with "The I/O read operation failed". A real iPhone reading a file off
+  its own disk does not.
+- **All of `/app` is server-rendered markup before it is interactive**, so under `next dev` with
+  nine parallel workers a `fill()` can be lost to a component that has not hydrated. `openNew()` in
+  the ingest suite waits for the client to arrive first.

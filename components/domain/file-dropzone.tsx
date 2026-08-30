@@ -8,12 +8,14 @@ import { IconButton } from '@/components/ui/icon-button';
 import { Progress } from '@/components/ui/progress';
 import {
   AlertTriangleIcon,
+  CameraIcon,
   CheckIcon,
   FileIcon,
   ImageIcon,
   UploadIcon,
   XIcon,
 } from '@/components/ui/icons';
+import { ACCEPT_ATTRIBUTE, formatBytes } from '@/lib/ingest/limits';
 import { cn } from '@/lib/utils/cn';
 
 export type UploadState = 'queued' | 'reading' | 'done' | 'error';
@@ -29,17 +31,24 @@ export interface UploadItem {
   progress?: number;
   /** What went wrong, in the voice of 01-PRODUCT.md §6: what happened, and what to do next. */
   error?: string;
+  /**
+   * An affordance beside the error — "Unlock" for a password-protected PDF, say. Only failures
+   * the student can actually do something about get one; the rest just explain.
+   */
+  action?: { label: string };
 }
 
 export interface FileDropzoneProps {
   items: UploadItem[];
   onFiles: (files: File[]) => void;
   onRemove?: (id: string) => void;
+  /** Invoked for the row's `action`. */
+  onAction?: (id: string) => void;
   accept?: string;
+  /** Offers the camera on a phone. The control is hidden where there is no camera to offer. */
+  camera?: boolean;
   className?: string;
 }
-
-const ACCEPT = '.docx,.pdf,.md,.txt,.png,.jpg,.jpeg,.heic';
 
 /**
  * Where a note begins (03-DESIGN.md §5). Drag, paste, browse, or a photo of the whiteboard.
@@ -55,7 +64,9 @@ export function FileDropzone({
   items,
   onFiles,
   onRemove,
-  accept = ACCEPT,
+  onAction,
+  accept = ACCEPT_ATTRIBUTE,
+  camera = false,
   className,
 }: FileDropzoneProps) {
   const [dragging, setDragging] = useState(false);
@@ -117,6 +128,29 @@ export function FileDropzone({
         />
       </label>
 
+      {camera ? (
+        // Its own label, outside the drop target, so tapping it cannot be read as a drop. Hidden
+        // above the phone breakpoint: `capture` opens a file picker on a laptop, which is what the
+        // control above already does. Paired responsive utilities rather than a CSS rule — a
+        // `display:none` in a component layer loses to a utility on the same element.
+        <label className="flex items-center justify-center gap-2 rounded-md border border-border bg-bg-raised px-3 py-2.5 text-sm font-medium text-text sm:hidden">
+          <CameraIcon aria-hidden="true" className="text-base text-text-muted" />
+          Take a photo of your notes
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            onChange={(event) => {
+              const files = [...(event.target.files ?? [])];
+              if (files.length) onFiles(files);
+              event.target.value = '';
+            }}
+          />
+        </label>
+      ) : null}
+
       {items.length ? (
         <ul className="flex flex-col gap-2">
           {items.map((item) => (
@@ -138,7 +172,7 @@ export function FileDropzone({
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="truncate text-sm text-text">{item.name}</p>
                   <p className="shrink-0 text-xs text-text-muted tabular-nums">
-                    {formatSize(item.size)}
+                    {formatBytes(item.size)}
                   </p>
                 </div>
 
@@ -150,7 +184,14 @@ export function FileDropzone({
                   />
                 ) : null}
                 {item.state === 'error' && item.error ? (
-                  <p className="text-xs leading-snug text-danger">{item.error}</p>
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <p className="text-xs leading-snug text-danger">{item.error}</p>
+                    {item.action && onAction ? (
+                      <Button size="sm" variant="ghost" onClick={() => onAction(item.id)}>
+                        {item.action.label}
+                      </Button>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
 
@@ -177,10 +218,4 @@ export function FileDropzone({
       ) : null}
     </div>
   );
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }

@@ -33,6 +33,12 @@ const EXPECTED = [
   ['/sitemap.xml', 200],
   ['/robots.txt', 200],
   ['/og.png', 200],
+  // The workspace. Client-rendered, but the shell still has to be served — and `/app/note/:id`
+  // is the first route in this project that is server-rendered on demand rather than prerendered.
+  ['/app', 200],
+  ['/app/new', 200],
+  ['/app/review', 200],
+  ['/app/note/does-not-exist', 200],
   // `dynamicParams = false` has to keep meaning what it says: an unknown locale is not a page.
   ['/fr', 404],
 ];

@@ -85,6 +85,13 @@ jobs:
       - name: Worker serves every route
         run: pnpm check:worker
 
+      # The Worker has a hard 3 MiB gzipped ceiling on the free plan and it is the tightest budget
+      # in this project. Phase-03 sailed past it — the parsers took it to 3742 KiB — and the only
+      # thing that noticed was `wrangler deploy`, at the end of a pull request that was already
+      # green. The fix lives in one block of `next.config.ts` and is easy to undo by accident.
+      - name: Worker fits the free-plan ceiling
+        run: pnpm check:worker:size
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium webkit
 

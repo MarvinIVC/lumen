@@ -19,6 +19,48 @@ const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: false },
   eslint: { ignoreDuringBuilds: false },
 
+  /**
+   * Browser-only libraries, cut out of the *server* compilation.
+   *
+   * The Cloudflare Worker has a hard 3 MiB gzipped ceiling on the free plan, and it is the
+   * tightest budget in this project (02-ARCHITECTURE.md §8). Phase-02 left it at 3005 KiB — 98%.
+   * Phase-03's parsers took it to 3742 KiB and the deploy stopped being possible.
+   *
+   * None of these can execute on the server. Every one is behind a single `await import()` in a
+   * client module, called from an event handler or an effect — pdf.js needs a `Worker` and a
+   * canvas, mammoth needs a `File`, heic2any and the renderers need a DOM. But Next compiles
+   * client components for the SSR pass too, so webpack follows those dynamic imports and emits
+   * the chunks into `.next/server`, where OpenNext bundles them into the Worker. 2.2 MB of raw
+   * JavaScript that cannot run, in the one budget that cannot take it.
+   *
+   * `alias: false` in the server compilation resolves each to an empty module, so the chunk is
+   * never emitted. The client build is untouched and still code-splits them exactly as before —
+   * `tests/unit/dynamic-imports.test.ts` is what keeps that true.
+   *
+   * If any of these ever needs to run server-side — a server-rendered diagram, say — take it off
+   * this list rather than working around it, and re-measure with
+   * `pnpm exec wrangler deploy --dry-run --outdir=…`.
+   *
+   * NOTE: `config.webpack` is ignored under Turbopack. Moving `next build` to Turbopack means
+   * finding the equivalent, or the Worker silently grows past the ceiling again.
+   */
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.resolve = config.resolve ?? {};
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'pdfjs-dist': false,
+        mammoth: false,
+        heic2any: false,
+        mermaid: false,
+        katex: false,
+        'smiles-drawer': false,
+        pagedjs: false,
+      };
+    }
+    return config;
+  },
+
   experimental: {
     // Keeps the marketing bundle under the 120 KB budget (02-ARCHITECTURE.md §8) by tree-shaking
     // barrel imports from the packages that have them. `scripts/check-route-budget.mjs` is what

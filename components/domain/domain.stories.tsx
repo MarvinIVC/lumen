@@ -4,10 +4,12 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { Button } from '@/components/ui/button';
 import { FlaskIcon, BookIcon, QuoteIcon } from '@/components/ui/icons';
 import { Case, Panel, Stack } from '../../.storybook/story-helpers';
-import type { EnhanceOptions } from '@/lib/ai/schema';
+import type { EnhanceOptions, NoteContext } from '@/lib/ai/schema';
+import type { ExtractedBlock } from '@/lib/ingest/types';
 
 import { BYOKForm } from './byok-form';
 import { ContextCard } from './context-card';
+import { ContextEditor } from './context-editor';
 import { CostDashboard } from './cost-dashboard';
 import { ExportMenu } from './export-menu';
 import { ExtractionEditor } from './extraction-editor';
@@ -63,6 +65,26 @@ export const Dropzone: Story = {
         </Case>
         <Case label="reading, read, and one that could not be">
           <FileDropzone items={FILES} onFiles={() => {}} onRemove={() => {}} />
+        </Case>
+        {/* A locked PDF is the one failure the student can actually clear, so it is the one
+            failure that gets a control beside the message (01-PRODUCT.md §5). */}
+        <Case label="a locked PDF, with the way out">
+          <FileDropzone
+            camera
+            items={[
+              {
+                id: 'locked',
+                name: 'chem-past-paper.pdf',
+                size: 620_000,
+                kind: 'document',
+                state: 'error',
+                error: 'chem-past-paper.pdf is password-protected.',
+                action: { label: 'Unlock' },
+              },
+            ]}
+            onFiles={() => {}}
+            onAction={() => {}}
+          />
         </Case>
       </Stack>
     </Panel>
@@ -182,25 +204,87 @@ export const Notes: Story = {
   ),
 };
 
+const EXTRACTED_BLOCKS: ExtractedBlock[] = [
+  {
+    id: 'b1',
+    kind: 'heading',
+    level: 2,
+    text: '## 1.1',
+    pageRef: { sourceId: 's1', page: 1, label: 'ap-chem-unit-1-notes.docx · p1' },
+  },
+  {
+    id: 'b2',
+    kind: 'paragraph',
+    text: 'Atomic mass = molar mass. Atomic mass tells the mass of 1 atom (in amu) and the mass of 1 mole (in grams).',
+    pageRef: { sourceId: 's1', page: 1, label: 'ap-chem-unit-1-notes.docx · p1' },
+  },
+  {
+    id: 'b3',
+    kind: 'list',
+    text: '- 32.0 cm3 of mercury, density 13.584 g/cm3 — how many atoms?\n- d = m/v, so m = 434.688 g',
+    pageRef: { sourceId: 's1', page: 1, label: 'ap-chem-unit-1-notes.docx · p1' },
+    edited: true,
+  },
+  {
+    id: 'b4',
+    kind: 'image',
+    text: '[IMAGE: a1]',
+    assetId: 'a1',
+    needsOCR: true,
+    pageRef: { sourceId: 's2', page: 2, label: 'whiteboard.jpg' },
+  },
+];
+
+/**
+ * The review screen's left pane with a scanned page in it — the state that decides whether a
+ * student spends a credit, so it is the one worth having a story for.
+ */
 export const Extraction: Story = {
-  render: () => (
-    <Panel width={620}>
-      <ExtractionEditor
-        fileName="ap-chem-unit-1-notes.docx"
-        pages={[
-          {
-            marker: 'Page 1',
-            text: '1.1 mole = 6.022e23. atomic mass = molar mass. A mole is an amount.\nHg example: 32.0 cm3, density 13.584 -> how many atoms?',
-          },
-          {
-            marker: 'Page 2 (photo)',
-            confidence: 0.62,
-            text: 'isotopes — same element diff neutrons\nrel abundance = how many of that isotope\nmass spec: m/z on x, abundance on y',
-          },
-        ]}
-      />
-    </Panel>
-  ),
+  render: function Extraction() {
+    const [blocks, setBlocks] = useState(EXTRACTED_BLOCKS);
+    return (
+      <Panel width={620}>
+        <ExtractionEditor
+          blocks={blocks}
+          onChangeText={(id, text) =>
+            setBlocks((current) =>
+              current.map((block) => (block.id === id ? { ...block, text, edited: true } : block)),
+            )
+          }
+          onDelete={(id) => setBlocks((current) => current.filter((block) => block.id !== id))}
+          onMergeUp={() => undefined}
+          onMove={() => undefined}
+          onRunOcr={() => undefined}
+        />
+      </Panel>
+    );
+  },
+};
+
+export const ContextFields: Story = {
+  render: function ContextFields() {
+    const [context, setContext] = useState<NoteContext>({
+      subject: 'Chemistry',
+      curriculum: 'AP',
+      course: 'AP Chemistry',
+      unit: 'Unit 1 — Atomic Structure',
+      topic: null,
+      language: 'en',
+    });
+    return (
+      <Panel width={340}>
+        <ContextEditor
+          context={context}
+          notesLanguage="en"
+          detection={{ confidence: 0.88, source: 'heuristic', isStudyNotes: true, edited: false }}
+          onChange={(patch) => setContext((current) => ({ ...current, ...patch }))}
+          onNotesLanguageChange={() => undefined}
+          packName={null}
+          packsResolved
+        />
+      </Panel>
+    );
+  },
 };
 
 export const Library: Story = {
