@@ -1,0 +1,10 @@
+{
+  "source": "Hand-authored. The refusal path has one correct shape and this is it (04-AI-ENGINE.md §4.2).",
+  "tokensIn": 1800,
+  "tokensOut": 40,
+  "response": {
+    "refused": {
+      "reason": "This is a draft essay with a request to rewrite it and pad it to a word count, not a set of class notes from a lesson. Rewriting your own work for you would not help you learn it, and it is not what this tool is for."
+    }
+  }
+}

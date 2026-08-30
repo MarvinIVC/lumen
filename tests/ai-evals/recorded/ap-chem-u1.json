@@ -1,0 +1,614 @@
+{
+  "source": "Hand-authored to the standard of fixtures/ap-chem-u1-gold.md. Replace with a real captured DeepSeek response once the nightly live run has one — see tests/ai-evals/README.md.",
+  "tokensIn": 4100,
+  "tokensOut": 6400,
+  "cachedTokensIn": 0,
+  "response": {
+    "title": "Atomic Structure and Properties — the mole, isotopes and formulas",
+    "summary": "Chemistry is measured by the gram in the lab but reasoned about by the particle in theory, so it needs a bridge between the two: the mole. This lesson builds that bridge, uses a mass spectrometer to explain why the masses on the periodic table are not whole numbers, and then uses the mole to connect a substance's formula to its composition and to handle mixtures.",
+    "objectives": [
+      "Convert between mass, moles and number of particles by dimensional analysis.",
+      "Read a mass spectrum and calculate a relative atomic mass from isotopic abundances.",
+      "Calculate percent composition and determine empirical and molecular formulas.",
+      "Apply mole reasoning to mixtures of known composition."
+    ],
+    "sections": [
+      {
+        "id": "s-1-1",
+        "title": "1.1 The mole and molar mass",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "A mole is an amount — more precisely a count, like a dozen, but very large. One mole is $6.022\\times10^{23}$ of whatever you are counting."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "mole (mol)",
+            "definition": "The SI unit for amount of substance: exactly $6.022\\times10^{23}$ particles. It counts particles; it is not a mass."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "Avogadro constant ($N_A$)",
+            "definition": "The number of particles in one mole, $6.022\\times10^{23}\\ \\text{mol}^{-1}$."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-corrected",
+            "originalText": "Atomic mass = molar mass",
+            "text": "Atomic mass and molar mass are numerically equal but they are not the same quantity. Atomic mass is the mass of one atom, in unified atomic mass units (u, also written amu). Molar mass is the mass of one mole of that substance, in $\\text{g mol}^{-1}$. Carbon-12 is 12 u per atom and 12 g mol$^{-1}$ per mole — same number, different referent and different units. Writing them as equal without that distinction is one of the shortcuts AP marks down."
+          },
+          {
+            "type": "table",
+            "origin": "ai-added",
+            "caption": "Two masses, one number.",
+            "columns": [
+              { "header": "Quantity" },
+              { "header": "What it describes" },
+              { "header": "Unit" },
+              { "header": "Carbon-12" }
+            ],
+            "rows": [
+              ["Atomic mass", "the mass of one atom", "u (amu)", "12 u"],
+              ["Molar mass, $M$", "the mass of one mole", "g mol$^{-1}$", "12 g mol$^{-1}$"]
+            ]
+          },
+          {
+            "type": "formula",
+            "origin": "ai-added",
+            "latex": "n = \\dfrac{m}{M}",
+            "where": [
+              { "symbol": "n", "meaning": "amount of substance", "units": "mol" },
+              { "symbol": "m", "meaning": "mass of the sample", "units": "g" },
+              { "symbol": "M", "meaning": "molar mass", "units": "g mol^-1" }
+            ],
+            "useWhen": "You have a mass and want moles, or the other way round."
+          },
+          {
+            "type": "formula",
+            "origin": "ai-added",
+            "latex": "N = n\\,N_A",
+            "where": [
+              {
+                "symbol": "N",
+                "meaning": "number of particles",
+                "units": "dimensionless (a count)"
+              },
+              { "symbol": "n", "meaning": "amount of substance", "units": "mol" },
+              { "symbol": "N_A", "meaning": "Avogadro constant, 6.022e23", "units": "mol^-1" }
+            ],
+            "useWhen": "You have moles and want a number of atoms, molecules or ions."
+          },
+          {
+            "type": "diagram",
+            "origin": "ai-added",
+            "engine": "mermaid",
+            "source": "flowchart LR\n  vol[volume in cm3] -- x density --> mass[mass in g]\n  mass -- divide by M --> mol[moles]\n  mol -- x M --> mass\n  mol -- x NA --> particles[particles]\n  particles -- divide by NA --> mol",
+            "caption": "Every 1.1 problem is a walk along this chain: pick your start and your finish, and multiply by the right conversion factor at each arrow.",
+            "alt": "A flow diagram linking volume and density to mass, mass to moles by dividing by the molar mass, and moles to a number of particles by multiplying by the Avogadro constant."
+          },
+          {
+            "type": "marginNote",
+            "origin": "ai-added",
+            "kind": "exam-tip",
+            "text": "Write the units at every step. A conversion that leaves you with g mol$^{-1}$ where you wanted mol is telling you the factor is upside down."
+          }
+        ]
+      },
+      {
+        "id": "s-1-1-example",
+        "title": "Worked example — atoms in a sample of mercury",
+        "level": 3,
+        "blocks": [
+          {
+            "type": "workedExample",
+            "origin": "ai-corrected",
+            "originalText": "d=m/v, 13.584=m/32, m=434.688, 434.688/200.592=2.167  2.167*6.02*10^23= 1.3*10^24",
+            "problem": "A sample of mercury occupies $32.0\\ \\text{cm}^3$. The density of mercury at 25 °C is $13.584\\ \\text{g cm}^{-3}$. How many atoms are in the sample?",
+            "steps": [
+              {
+                "text": "Volume and density give the mass.",
+                "latex": "m = \\rho V = 13.584\\ \\text{g cm}^{-3} \\times 32.0\\ \\text{cm}^3 = 434.688\\ \\text{g}"
+              },
+              {
+                "text": "Mass and molar mass give the amount. $M(\\ce{Hg}) = 200.59\\ \\text{g mol}^{-1}$.",
+                "latex": "n = \\dfrac{m}{M} = \\dfrac{434.688\\ \\text{g}}{200.59\\ \\text{g mol}^{-1}} = 2.1670\\ \\text{mol}"
+              },
+              {
+                "text": "Amount and the Avogadro constant give the count.",
+                "latex": "N = n N_A = 2.1670\\ \\text{mol} \\times 6.022\\times10^{23}\\ \\text{mol}^{-1} = 1.3050\\times10^{24}"
+              },
+              {
+                "text": "The volume was given to three significant figures, so the answer is quoted to three."
+              }
+            ],
+            "answer": "1.30 × 10^24 atoms of mercury",
+            "answerLatex": "N = 1.30\\times10^{24}\\ \\text{atoms}",
+            "commonMistake": "Dropping the units mid-calculation and then quoting every digit the calculator shows. The data has three significant figures, so the answer does too.",
+            "studentAttempt": {
+              "original": "434.688/200.592=2.167  2.167*6.02*10^23= 1.3*10^24",
+              "issue": "The chain of reasoning is right and the answer is right. What is missing is units on each step, the standard molar mass of 200.59 g mol⁻¹ rather than 200.592, and a final answer stated to three significant figures."
+            }
+          }
+        ]
+      },
+      {
+        "id": "s-1-2",
+        "title": "1.2 Isotopes and mass spectrometry",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "Atoms with the same number of protons but a different number of neutrons are isotopes. They have different masses, and a pair of isotopes is always the same element."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "relative abundance",
+            "definition": "The proportion of a sample that is one particular isotope, given either as a percentage or as a fraction of 1."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "m/z",
+            "definition": "Mass-to-charge ratio, the x-axis of a mass spectrum. For the singly charged ions a mass spectrometer usually makes, it is numerically the isotope's mass."
+          },
+          {
+            "type": "formula",
+            "origin": "ai-clarified",
+            "originalText": "Multiply the mass of each isotope by its percentage, find the sum and divide by 100",
+            "latex": "A_r = \\sum_i m_i f_i",
+            "where": [
+              {
+                "symbol": "A_r",
+                "meaning": "relative atomic mass, the periodic-table value",
+                "units": "u (dimensionless relative to carbon-12)"
+              },
+              { "symbol": "m_i", "meaning": "mass of isotope i", "units": "u" },
+              {
+                "symbol": "f_i",
+                "meaning": "fractional abundance of isotope i, summing to 1",
+                "units": "dimensionless"
+              }
+            ],
+            "useWhen": "You have a mass spectrum or a table of isotopes and want the value on the periodic table."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-clarified",
+            "originalText": "Find the sum and divide by 100",
+            "text": "Dividing by 100 at the end works because the notes used percentages. The general form multiplies by fractional abundances, which already sum to 1, so there is nothing to divide by."
+          },
+          {
+            "type": "diagram",
+            "origin": "ai-added",
+            "engine": "chart",
+            "spec": {
+              "kind": "bars",
+              "x": "m/z",
+              "y": "relative abundance (%)",
+              "illustrative": true,
+              "series": [
+                { "label": "35", "value": 75.8 },
+                { "label": "37", "value": 24.2 }
+              ],
+              "note": "Two peaks, one per isotope; the taller peak is the more abundant one."
+            },
+            "caption": "A mass spectrum of chlorine. The abundances shown are the accepted ones for chlorine and the shape is illustrative — a real spectrum from your own instrument will differ slightly.",
+            "alt": "A bar chart with mass-to-charge ratio on the x-axis and relative abundance on the y-axis, showing a tall peak at 35 and a shorter peak at 37."
+          },
+          {
+            "type": "misconception",
+            "origin": "ai-added",
+            "wrong": "Isotopes of an element are different elements because they have different masses.",
+            "right": "The element is set by the proton number alone. Isotopes differ in neutrons, so they differ in mass and in nuclear stability, but their chemistry is essentially identical."
+          }
+        ]
+      },
+      {
+        "id": "s-1-2-example",
+        "title": "Worked example — relative atomic mass of chlorine",
+        "level": 3,
+        "blocks": [
+          {
+            "type": "workedExample",
+            "origin": "ai-added",
+            "problem": "Chlorine is 75.76 % $^{35}\\ce{Cl}$ (34.969 u) and 24.24 % $^{37}\\ce{Cl}$ (36.966 u). Find $A_r(\\ce{Cl})$.",
+            "steps": [
+              {
+                "text": "Turn the percentages into fractional abundances.",
+                "latex": "f_{35} = 0.7576,\\quad f_{37} = 0.2424"
+              },
+              {
+                "text": "Weight each isotope mass by its abundance and add.",
+                "latex": "A_r = (34.969)(0.7576) + (36.966)(0.2424) = 26.492 + 8.960 = 35.45"
+              },
+              { "text": "The data has four significant figures, so quote four." }
+            ],
+            "answer": "A_r(Cl) = 35.45",
+            "answerLatex": "A_r(\\ce{Cl}) = 35.45",
+            "commonMistake": "Averaging 34.969 and 36.966 directly, which gives 35.97. The masses have to be weighted by abundance."
+          }
+        ]
+      },
+      {
+        "id": "s-1-3",
+        "title": "1.3 Pure substances, elements and formulas",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "Elements are pure substances made of one type of atom. Some are monatomic and exist as single atoms; others are diatomic and exist as molecules of two atoms."
+          },
+          {
+            "type": "list",
+            "origin": "student",
+            "ordered": false,
+            "items": [
+              "Hydrogen — $\\ce{H2}$",
+              "Nitrogen — $\\ce{N2}$",
+              "Fluorine — $\\ce{F2}$",
+              "Oxygen — $\\ce{O2}$",
+              "Iodine — $\\ce{I2}$",
+              "Chlorine — $\\ce{Cl2}$",
+              "Bromine — $\\ce{Br2}$"
+            ]
+          },
+          {
+            "type": "marginNote",
+            "origin": "student",
+            "kind": "mnemonic",
+            "text": "Have No Fear of Ice Cold Beer",
+            "anchorId": "s-1-3"
+          },
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "Compounds are pure substances formed by combining elements with a chemical bond, which is an attractive force between atoms. Some compounds form individual molecules; others form crystals of repeating units, called a lattice."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "law of definite proportions",
+            "definition": "A given compound always contains the same elements in the same fixed ratio by mass, however it was made. It is why a formula means anything at all."
+          },
+          {
+            "type": "definition",
+            "origin": "student",
+            "term": "empirical formula",
+            "definition": "The formula written in the lowest whole-number ratio of atoms."
+          },
+          {
+            "type": "definition",
+            "origin": "student",
+            "term": "molecular formula",
+            "definition": "The formula giving the true number of atoms in one molecule. It is always a whole-number multiple of the empirical formula, and sometimes the two are the same."
+          },
+          {
+            "type": "formula",
+            "origin": "ai-added",
+            "latex": "n = \\dfrac{M_\\text{molecular}}{M_\\text{empirical}}",
+            "where": [
+              {
+                "symbol": "n",
+                "meaning": "how many empirical units make one molecule",
+                "units": "dimensionless"
+              },
+              {
+                "symbol": "M_\\text{molecular}",
+                "meaning": "molar mass of the actual molecule",
+                "units": "g mol^-1"
+              },
+              {
+                "symbol": "M_\\text{empirical}",
+                "meaning": "molar mass of one empirical unit",
+                "units": "g mol^-1"
+              }
+            ],
+            "useWhen": "You have an empirical formula and the true molar mass, and want the molecular formula."
+          }
+        ]
+      },
+      {
+        "id": "s-1-3-example",
+        "title": "Worked example — finishing the empirical-formula problem",
+        "level": 3,
+        "blocks": [
+          {
+            "type": "workedExample",
+            "origin": "ai-added",
+            "problem": "Given the empirical formula $\\ce{C5H7N}$ and a molar mass of $162.26\\ \\text{g mol}^{-1}$, find the molecular formula. (This is where the notes stop.)",
+            "steps": [
+              {
+                "text": "Find the molar mass of one empirical unit.",
+                "latex": "M(\\ce{C5H7N}) = 5(12.011) + 7(1.008) + 14.007 = 81.12\\ \\text{g mol}^{-1}"
+              },
+              {
+                "text": "Divide the true molar mass by it.",
+                "latex": "n = \\dfrac{162.26}{81.12} = 2.000"
+              },
+              { "text": "Multiply every subscript by n = 2." }
+            ],
+            "answer": "C10H14N2",
+            "answerLatex": "\\ce{C10H14N2}",
+            "commonMistake": "Stopping at n and forgetting to multiply the subscripts, or rounding n to a whole number when it is nowhere near one — if n comes out at 1.5 the empirical formula itself is wrong.",
+            "studentAttempt": {
+              "original": "Given the empirical formula C5H7N, molar mass 162.26 g/mol",
+              "issue": "The notes set the problem up and stop. It is finished here."
+            }
+          }
+        ]
+      },
+      {
+        "id": "s-1-4",
+        "title": "1.4 Mixtures",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "ai-added",
+            "text": "A mixture is two or more substances physically combined, and unlike a compound its composition can vary. That contrast with 1.3 is the whole idea: a compound has one fixed formula, a mixture has proportions."
+          },
+          {
+            "type": "table",
+            "origin": "ai-added",
+            "caption": "Compound against mixture.",
+            "columns": [{ "header": "" }, { "header": "Compound" }, { "header": "Mixture" }],
+            "rows": [
+              ["Composition", "fixed by the formula", "variable"],
+              [
+                "Held together by",
+                "chemical bonds",
+                "nothing — the components keep their properties"
+              ],
+              [
+                "Separated by",
+                "a chemical reaction",
+                "a physical method such as filtration or distillation"
+              ]
+            ]
+          },
+          {
+            "type": "callout",
+            "origin": "ai-added",
+            "kind": "tip",
+            "title": "Working with a mixture",
+            "text": "Do the mole arithmetic per component and then add. The mass of an element in a mixture is the sum of what each component contributes."
+          }
+        ]
+      }
+    ],
+    "corrections": [
+      {
+        "sectionId": "s-1-1",
+        "original": "Atomic mass = molar mass",
+        "corrected": "Atomic mass (in u) and molar mass (in g mol⁻¹) are numerically equal but describe different things: the mass of one atom against the mass of one mole.",
+        "why": "They are the same number for a reason — the mole is defined so that they line up — but treating them as the same quantity loses the units, and AP penalises that shortcut directly."
+      },
+      {
+        "sectionId": "s-1-1-example",
+        "original": "434.688/200.592=2.167",
+        "corrected": "n = 434.688 g ÷ 200.59 g mol⁻¹ = 2.1670 mol, and the final answer is 1.30 × 10²⁴ atoms to three significant figures.",
+        "why": "The working was right; it needed units on each step and a final answer matched to the three significant figures of the data."
+      }
+    ],
+    "openQuestions": [
+      {
+        "sectionId": "s-1-3-example",
+        "question": "Your notes set up the C5H7N problem and stop. We finished it as C10H14N2 — does that match what class got?",
+        "why": "The molar mass you wrote down gives n = 2.000 exactly, so the answer is almost certainly right, but the last line of your notes is missing and it is worth confirming."
+      },
+      {
+        "sectionId": "s-1-4",
+        "question": "Did the lesson cover mixtures, or did it stop at formulas?",
+        "why": "Your headings run 1.3-1.4 together and there is nothing about mixtures in the body, so this section may be ahead of where class actually got to."
+      }
+    ],
+    "factCheck": {
+      "calculationsVerified": [
+        {
+          "where": "mercury worked example",
+          "ok": true,
+          "note": "13.584 × 32.0 = 434.688 g; 434.688 ÷ 200.59 = 2.1670 mol; × 6.022e23 = 1.3050e24, so 1.30e24 to 3 s.f."
+        },
+        {
+          "where": "chlorine relative atomic mass",
+          "ok": true,
+          "note": "34.969(0.7576) + 36.966(0.2424) = 35.45, matching the periodic table."
+        },
+        {
+          "where": "C5H7N molecular formula",
+          "ok": true,
+          "note": "M(C5H7N) = 81.12 g/mol; 162.26 ÷ 81.12 = 2.000, so the molecular formula is C10H14N2."
+        }
+      ],
+      "checkedClaims": 12,
+      "flags": []
+    },
+    "studyTools": {
+      "flashcards": [
+        {
+          "front": "What does a mole count?",
+          "back": "Particles — 6.022 × 10²³ of them. It is a count, not a mass.",
+          "sectionId": "s-1-1"
+        },
+        {
+          "front": "Atomic mass and molar mass: same or different?",
+          "back": "Numerically equal, conceptually different. Atomic mass is one atom in u; molar mass is one mole in g mol⁻¹.",
+          "sectionId": "s-1-1"
+        },
+        {
+          "front": "Convert mass to number of particles",
+          "back": "Divide by the molar mass to get moles, then multiply by the Avogadro constant.",
+          "sectionId": "s-1-1"
+        },
+        {
+          "front": "Why are periodic-table masses not whole numbers?",
+          "back": "They are abundance-weighted averages over an element's isotopes.",
+          "sectionId": "s-1-2"
+        },
+        {
+          "front": "What do the axes of a mass spectrum show?",
+          "back": "m/z across, relative abundance up.",
+          "sectionId": "s-1-2"
+        },
+        {
+          "front": "Two atoms have the same protons, different neutrons. Same element?",
+          "back": "Yes — the proton number sets the element. They are isotopes.",
+          "sectionId": "s-1-2"
+        },
+        {
+          "front": "Name the seven diatomic elements",
+          "back": "Hydrogen, nitrogen, fluorine, oxygen, iodine, chlorine, bromine.",
+          "hint": "Your own mnemonic: Have No Fear of Ice Cold Beer.",
+          "sectionId": "s-1-3"
+        },
+        {
+          "front": "Empirical formula versus molecular formula",
+          "back": "Empirical is the lowest whole-number ratio; molecular is the true count, always a whole multiple of it.",
+          "sectionId": "s-1-3"
+        },
+        {
+          "front": "How do you get a molecular formula from an empirical one?",
+          "back": "Divide the true molar mass by the empirical molar mass and multiply every subscript by that whole number.",
+          "sectionId": "s-1-3"
+        },
+        {
+          "front": "What is the law of definite proportions?",
+          "back": "A given compound always has the same elements in the same fixed mass ratio.",
+          "sectionId": "s-1-3"
+        },
+        {
+          "front": "Compound or mixture: which has variable composition?",
+          "back": "A mixture. A compound is fixed by its formula.",
+          "sectionId": "s-1-4"
+        }
+      ],
+      "quiz": [
+        {
+          "kind": "multiple-choice",
+          "prompt": "Which statement about the mole is correct?",
+          "choices": [
+            "It is a unit of mass equal to one gram",
+            "It is a count of 6.022 × 10²³ particles",
+            "It is the mass of one atom in amu",
+            "It applies only to gases"
+          ],
+          "answer": "It is a count of 6.022 × 10²³ particles",
+          "explanation": "The mole counts particles. It is tied to mass only through the molar mass of a particular substance.",
+          "sectionId": "s-1-1"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "A 32.0 cm³ sample of mercury has density 13.584 g cm⁻³. How many moles is that?",
+          "answer": "2.17 mol",
+          "explanation": "m = 13.584 × 32.0 = 434.688 g; n = 434.688 ÷ 200.59 = 2.1670 mol, which is 2.17 mol to three significant figures.",
+          "sectionId": "s-1-1-example"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "Why is the relative atomic mass of chlorine 35.45 rather than 36?",
+          "answer": "Because it is weighted by abundance: chlorine is about 76 % ³⁵Cl.",
+          "explanation": "A straight average of 34.969 and 36.966 gives 35.97. Weighting by the actual abundances gives 35.45.",
+          "sectionId": "s-1-2"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "A compound has empirical formula CH₂O and molar mass 180 g mol⁻¹. What is its molecular formula?",
+          "choices": ["CH₂O", "C₃H₆O₃", "C₆H₁₂O₆", "C₁₂H₂₄O₁₂"],
+          "answer": "C₆H₁₂O₆",
+          "explanation": "M(CH₂O) = 30 g mol⁻¹, and 180 ÷ 30 = 6, so every subscript is multiplied by six.",
+          "sectionId": "s-1-3"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "Finish this: given empirical formula C5H7N and molar mass 162.26 g mol⁻¹, the molecular formula is…",
+          "answer": "C10H14N2",
+          "explanation": "M(C5H7N) = 81.12 g mol⁻¹, and 162.26 ÷ 81.12 = 2, so the subscripts double.",
+          "sectionId": "s-1-3-example"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "Which of these is a mixture?",
+          "choices": ["Carbon dioxide", "Air", "Sodium chloride", "Water"],
+          "answer": "Air",
+          "explanation": "Air is several substances physically combined in proportions that vary. The other three are compounds with fixed formulas.",
+          "sectionId": "s-1-4"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "State the seven diatomic elements.",
+          "answer": "Hydrogen, nitrogen, fluorine, oxygen, iodine, chlorine, bromine.",
+          "explanation": "The mnemonic in your own notes gets you all seven in order.",
+          "sectionId": "s-1-3"
+        }
+      ]
+    },
+    "glossary": [
+      {
+        "term": "mole",
+        "definition": "The SI unit of amount of substance: 6.022 × 10²³ particles.",
+        "sectionId": "s-1-1"
+      },
+      {
+        "term": "molar mass",
+        "definition": "The mass of one mole of a substance, in g mol⁻¹.",
+        "sectionId": "s-1-1"
+      },
+      {
+        "term": "atomic mass unit (u, amu)",
+        "definition": "One twelfth of the mass of a carbon-12 atom.",
+        "sectionId": "s-1-1"
+      },
+      {
+        "term": "isotope",
+        "definition": "Atoms of one element differing in neutron number, and so in mass.",
+        "sectionId": "s-1-2"
+      },
+      {
+        "term": "relative abundance",
+        "definition": "The proportion of a sample that is one isotope.",
+        "sectionId": "s-1-2"
+      },
+      {
+        "term": "empirical formula",
+        "definition": "The lowest whole-number ratio of atoms in a compound.",
+        "sectionId": "s-1-3"
+      },
+      {
+        "term": "molecular formula",
+        "definition": "The true number of atoms in one molecule.",
+        "sectionId": "s-1-3"
+      }
+    ],
+    "furtherStudy": [
+      "Topic 1.5 — electron configuration, which explains why these masses sit where they do in the table.",
+      "Unit 4 stoichiometry, where mass-to-mole conversion becomes every second step."
+    ]
+  },
+  "verify": {
+    "patches": [
+      {
+        "sectionId": "s-1-4",
+        "kind": "add-open-question",
+        "target": "",
+        "replacement": "Did class use a worked example for mixtures? We covered the idea but not a calculation.",
+        "reason": "Topic 1.4 is assessed with elemental-analysis arithmetic, and this note explains the concept without one."
+      }
+    ],
+    "calculations": [
+      {
+        "where": "chlorine worked example",
+        "ok": true,
+        "note": "Weighted average recomputed as 35.45."
+      }
+    ],
+    "flags": [],
+    "verdict": "minor-fixes"
+  }
+}

@@ -1,0 +1,311 @@
+{
+  "source": "Hand-authored to fixtures/english-gatsby-good.md. Every quotation in it is one the student wrote down; there are no others, and no page or line references.",
+  "tokensIn": 2900,
+  "tokensOut": 4300,
+  "response": {
+    "title": "The Great Gatsby, chapters 1–3 — narrator, symbol and setting",
+    "summary": "The first three chapters set up a narrator we are invited to trust and then given reasons not to, a symbol introduced before it is explained, and a geography that does the novel's social argument for it. Your notes have all three; what follows sharpens them and defines the terms you will need to name in an essay.",
+    "objectives": [
+      "Explain how Nick is established as a narrator and why that establishment is unstable.",
+      "Analyse the green light, the valley of ashes and the Eckleburg billboard as symbols, using the evidence in your notes.",
+      "Compare East Egg and West Egg as a social geography.",
+      "Trace the American Dream as a theme through the first three chapters."
+    ],
+    "sections": [
+      {
+        "id": "s-narrator",
+        "title": "Nick as narrator",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "unreliable narrator",
+            "definition": "A narrator whose account the reader has reason to doubt — through self-interest, limited knowledge, or a gap between what they claim about themselves and what they show."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-clarified",
+            "originalText": "unreliable? he says hes honest but",
+            "text": "The line you noted — Reserving judgments is a matter of infinite hope — is a claim Nick makes about himself in the opening pages, and the novel spends the rest of its length testing it. Your instinct in the notes is the right one: the question is not whether he lies, but whether a narrator who insists on his own fairness can be taken at his word about anything, including his own fairness."
+          },
+          {
+            "type": "callout",
+            "origin": "ai-added",
+            "kind": "example",
+            "title": "How to use this in an essay",
+            "text": "Set the claim against the behaviour. Nick tells us he reserves judgment and then delivers judgments about almost everyone he meets. The gap is the evidence; the claim alone is not."
+          }
+        ]
+      },
+      {
+        "id": "s-symbols",
+        "title": "Symbols, and the evidence for each",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "symbol",
+            "definition": "An object that carries a meaning beyond itself, sustained across a text. Distinct from a motif, which is a repeated element that need not stand for anything."
+          },
+          {
+            "type": "table",
+            "origin": "ai-clarified",
+            "originalText": "symbols: green light, eyes, valley of ashes, colours",
+            "caption": "Each symbol with the evidence from your own notes, and what it does at this stage of the novel.",
+            "columns": [
+              { "header": "Symbol" },
+              { "header": "Your evidence" },
+              { "header": "What it does in chapters 1–3" }
+            ],
+            "rows": [
+              [
+                "The green light",
+                "he stretched out his arms toward the dark water in a curious way",
+                "Introduced as gesture before it is introduced as meaning. We see the reaching before we know what is being reached for, which is how longing is made to feel prior to its object."
+              ],
+              [
+                "The valley of ashes",
+                "your note on the greyness, and its position between West Egg and New York",
+                "Puts the cost of the wealth physically between the wealth and the city. It is a setting doing an argument's work."
+              ],
+              [
+                "The Eckleburg billboard",
+                "your note that the eyes watch, and your question about God",
+                "Keep this a question. The eyes are an advertisement that has outlived its business; what they mean is contested inside the novel itself."
+              ],
+              [
+                "Colour",
+                "your note that white is associated with Daisy",
+                "Worth tracking rather than concluding. The association is established early; whether it is ironic is something the later chapters decide."
+              ]
+            ]
+          },
+          {
+            "type": "definition",
+            "origin": "ai-added",
+            "term": "simile",
+            "definition": "A comparison made explicit with like or as."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-added",
+            "text": "In his blue gardens men and girls came and went like moths — the line you copied from the party scene — is doing two things at once. The simile turns the guests into moths, drawn to light and weightless, and the colour word attaches to the gardens rather than to any plant, so the setting is being described the way a mood would be."
+          },
+          {
+            "type": "misconception",
+            "origin": "ai-added",
+            "wrong": "A symbol means one fixed thing, and the job is to find out what.",
+            "right": "A symbol accumulates meaning as a text goes on. In chapters 1–3 the green light has barely begun; saying it stands for the American Dream is importing an answer from the end of the novel."
+          }
+        ]
+      },
+      {
+        "id": "s-geography",
+        "title": "The social geography",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "table",
+            "origin": "ai-clarified",
+            "originalText": "east egg = old money (tom, daisy) west egg = new money (gatsby, nick)",
+            "caption": "The contrast your notes set out in a line, opened up.",
+            "columns": [{ "header": "" }, { "header": "East Egg" }, { "header": "West Egg" }],
+            "rows": [
+              ["Money", "inherited", "recently made"],
+              ["Who lives there", "Tom and Daisy", "Gatsby, and Nick next door"],
+              ["Manner", "assured, careless", "performed, effortful"],
+              [
+                "What it signals",
+                "belonging that needs no display",
+                "display standing in for belonging"
+              ]
+            ]
+          },
+          {
+            "type": "marginNote",
+            "origin": "ai-added",
+            "kind": "connection",
+            "text": "The valley of ashes lies between both Eggs and the city, so every journey in the novel passes through the place the money was made.",
+            "anchorId": "s-geography"
+          }
+        ]
+      },
+      {
+        "id": "s-theme",
+        "title": "The American Dream, so far",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "ai-clarified",
+            "originalText": "The American dream - money doesnt make you happy?",
+            "text": "Your question is the right frame, though the novel is doing something narrower than money does not buy happiness. Across these three chapters wealth is shown as something that can be acquired and status as something that cannot, and the distance between the two is where the Dream is being examined. The parties are full of people who do not know their host: attendance is not acceptance."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-clarified",
+            "originalText": "daisys voice is full of money (tom? someone says this later)",
+            "text": "You noted the line about Daisy's voice being full of money, and that you were not sure who says it or where. Keep it as your paraphrase until you can find it — do not quote it as exact in an essay, and do not attribute it. When you do find it, note who says it, because that turns out to matter."
+          },
+          {
+            "type": "callout",
+            "origin": "ai-added",
+            "kind": "tip",
+            "title": "Essay angles you could argue from what you have",
+            "text": "One: the novel introduces Gatsby through other people's talk before it introduces him in person, so his reputation exists before he does. Two: the geography argues the social case that the dialogue only implies. Three: Nick's claim to reserve judgment is the first thing the novel asks us to judge."
+          }
+        ]
+      }
+    ],
+    "corrections": [],
+    "openQuestions": [
+      {
+        "sectionId": "s-theme",
+        "question": "Where does the line about Daisy's voice appear, and who says it?",
+        "why": "Your notes have it as a paraphrase with a question mark against the speaker. Find it in the text before using it, and note the speaker — it changes what the line is doing."
+      },
+      {
+        "sectionId": "s-symbols",
+        "question": "Did class read the Eckleburg eyes as a religious image, or resist that reading?",
+        "why": "Your notes raise it as a question. It is a genuinely contested reading and it is worth knowing which way the lesson went."
+      }
+    ],
+    "factCheck": { "calculationsVerified": [], "checkedClaims": 5, "flags": [] },
+    "studyTools": {
+      "flashcards": [
+        {
+          "front": "What is an unreliable narrator?",
+          "back": "One the reader has reason to doubt — through self-interest, limited knowledge, or a gap between claim and behaviour.",
+          "sectionId": "s-narrator"
+        },
+        {
+          "front": "What does Nick claim about himself at the start?",
+          "back": "That reserving judgments is a matter of infinite hope — a claim the novel then tests.",
+          "sectionId": "s-narrator"
+        },
+        {
+          "front": "Symbol versus motif",
+          "back": "A symbol stands for something beyond itself; a motif is a repeated element that need not.",
+          "sectionId": "s-symbols"
+        },
+        {
+          "front": "How is the green light introduced?",
+          "back": "Through Gatsby's gesture towards the water, before any meaning is attached to it.",
+          "sectionId": "s-symbols"
+        },
+        {
+          "front": "Where is the valley of ashes, and why does that matter?",
+          "back": "Between the Eggs and New York, so every journey passes through the place the money was made.",
+          "sectionId": "s-symbols"
+        },
+        {
+          "front": "Identify the device: men and girls came and went like moths",
+          "back": "A simile — the comparison is made explicit with like.",
+          "sectionId": "s-symbols"
+        },
+        {
+          "front": "East Egg versus West Egg",
+          "back": "Inherited money against recently made money; belonging that needs no display against display standing in for belonging.",
+          "sectionId": "s-geography"
+        },
+        {
+          "front": "What do the crowded parties show about Gatsby?",
+          "back": "That attendance is not acceptance — the house is full of people who do not know him.",
+          "sectionId": "s-theme"
+        },
+        {
+          "front": "Why keep the line about Daisy's voice as a paraphrase?",
+          "back": "Because your notes record it as one, with the speaker uncertain. Quoting it as exact would be inventing evidence.",
+          "sectionId": "s-theme"
+        }
+      ],
+      "quiz": [
+        {
+          "kind": "short-answer",
+          "prompt": "Name the device in the description of guests coming and going like moths, and say what it achieves.",
+          "answer": "A simile; it makes the guests weightless and drawn to light, so the party is described as a phenomenon rather than a social event.",
+          "explanation": "The comparison is explicit, which makes it a simile rather than a metaphor.",
+          "sectionId": "s-symbols"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "Nick's opening claim about reserving judgment is best used in an essay as:",
+          "choices": [
+            "proof that he is honest",
+            "a claim to be tested against his behaviour",
+            "evidence that he dislikes Gatsby",
+            "a description of Tom"
+          ],
+          "answer": "a claim to be tested against his behaviour",
+          "explanation": "The gap between what he says about himself and what he does is the evidence; the claim alone is not.",
+          "sectionId": "s-narrator"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "Why is the position of the valley of ashes significant?",
+          "answer": "It lies between the wealthy Eggs and the city, so the cost of the wealth is physically in the way.",
+          "explanation": "The setting is making the social argument that the dialogue only implies.",
+          "sectionId": "s-symbols"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "Which is the safest claim about the green light in chapters 1–3?",
+          "choices": [
+            "It stands for the American Dream",
+            "It represents Daisy alone",
+            "It is introduced as gesture before meaning",
+            "It has no significance yet"
+          ],
+          "answer": "It is introduced as gesture before meaning",
+          "explanation": "The first two import readings the later novel develops; the fourth ignores how carefully the moment is staged.",
+          "sectionId": "s-symbols"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "State one difference between East Egg and West Egg beyond the source of the money.",
+          "answer": "East Egg belonging needs no display, while West Egg substitutes display for belonging.",
+          "explanation": "The manner, not just the money, is what the contrast is for.",
+          "sectionId": "s-geography"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "You cannot remember where a line appears or who says it. In an essay you should:",
+          "choices": [
+            "quote it anyway",
+            "invent a plausible chapter reference",
+            "paraphrase it and say it needs checking",
+            "leave the idea out entirely"
+          ],
+          "answer": "paraphrase it and say it needs checking",
+          "explanation": "The idea is still usable; presenting an unverified line as an exact quotation is not.",
+          "sectionId": "s-theme"
+        }
+      ]
+    },
+    "glossary": [
+      {
+        "term": "unreliable narrator",
+        "definition": "A narrator the reader has reason to doubt.",
+        "sectionId": "s-narrator"
+      },
+      {
+        "term": "symbol",
+        "definition": "An object carrying meaning beyond itself across a text.",
+        "sectionId": "s-symbols"
+      },
+      {
+        "term": "simile",
+        "definition": "An explicit comparison, using like or as.",
+        "sectionId": "s-symbols"
+      },
+      {
+        "term": "imagery",
+        "definition": "Language appealing to the senses to build a scene or a mood.",
+        "sectionId": "s-symbols"
+      }
+    ]
+  },
+  "verify": { "patches": [], "calculations": [], "flags": [], "verdict": "ok" }
+}

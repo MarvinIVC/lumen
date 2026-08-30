@@ -6,7 +6,7 @@
  * PROMPT_VERSION — which invalidates the provider's prefix cache. That is expected and fine.
  */
 export const SCHEMA_VERSION = '1.0.0';
-export const PROMPT_VERSION = '1.0.0';
+export const PROMPT_VERSION = '1.1.0';
 
 export type SchemaVersion = typeof SCHEMA_VERSION;
 export type PromptVersion = typeof PROMPT_VERSION;

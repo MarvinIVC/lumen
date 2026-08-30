@@ -1,0 +1,282 @@
+{
+  "source": "Hand-authored to fixtures/photo-ocr-good.md. The point of this one is the gap.",
+  "tokensIn": 2600,
+  "tokensOut": 3800,
+  "response": {
+    "title": "Waves — describing and measuring them",
+    "summary": "A wave transfers energy without transferring matter, and everything measurable about one comes from two questions: which way does the oscillation point relative to the travel, and how do you put numbers on the shape. One page of your photographs could not be read, so this rebuilds what was legible and says plainly where the gap is.",
+    "objectives": [
+      "Distinguish transverse from longitudinal waves.",
+      "Define wavelength, frequency, amplitude and phase difference.",
+      "Use the wave equation to relate speed, frequency and wavelength."
+    ],
+    "sections": [
+      {
+        "id": "s-types",
+        "title": "Two kinds of wave",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "A wave carries energy, not matter. In a transverse wave the oscillation is perpendicular to the direction of travel; in a longitudinal wave it is parallel."
+          },
+          {
+            "type": "table",
+            "origin": "ai-added",
+            "caption": "Transverse against longitudinal.",
+            "columns": [{ "header": "" }, { "header": "Transverse" }, { "header": "Longitudinal" }],
+            "rows": [
+              ["Oscillation", "perpendicular to travel", "parallel to travel"],
+              ["Shape", "crests and troughs", "compressions and rarefactions"],
+              ["Examples", "light, water surface waves", "sound"],
+              ["Can it be polarised?", "yes", "no"]
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s-measuring",
+        "title": "Putting numbers on a wave",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "definition",
+            "origin": "student",
+            "term": "wavelength (λ)",
+            "definition": "The distance between two adjacent points in phase, measured in metres."
+          },
+          {
+            "type": "definition",
+            "origin": "student",
+            "term": "frequency (f)",
+            "definition": "The number of complete waves passing a point each second, measured in hertz."
+          },
+          {
+            "type": "definition",
+            "origin": "ai-clarified",
+            "originalText": "amplitude - max displacement",
+            "term": "amplitude (A)",
+            "definition": "The maximum displacement from the equilibrium position, measured in metres. It is measured from the middle, not from trough to crest."
+          },
+          {
+            "type": "formula",
+            "origin": "ai-added",
+            "latex": "v = f\\lambda",
+            "where": [
+              { "symbol": "v", "meaning": "wave speed", "units": "m s^-1" },
+              { "symbol": "f", "meaning": "frequency", "units": "Hz" },
+              { "symbol": "\\lambda", "meaning": "wavelength", "units": "m" }
+            ],
+            "useWhen": "You know two of speed, frequency and wavelength and want the third."
+          },
+          {
+            "type": "paragraph",
+            "origin": "ai-clarified",
+            "originalText": "intensity proportional to amplitude squared",
+            "text": "Intensity is proportional to the square of the amplitude: doubling the amplitude gives four times the intensity. Intensity is measured in W m⁻² and amplitude in m, so this is a proportionality, not an equation you can evaluate without a constant."
+          },
+          {
+            "type": "diagram",
+            "origin": "ai-added",
+            "engine": "chart",
+            "spec": {
+              "kind": "line",
+              "x": "distance (m)",
+              "y": "displacement (m)",
+              "illustrative": true,
+              "points": [
+                { "x": 0, "y": 0 },
+                { "x": 0.25, "y": 1 },
+                { "x": 0.5, "y": 0 },
+                { "x": 0.75, "y": -1 },
+                { "x": 1, "y": 0 },
+                { "x": 1.25, "y": 1 },
+                { "x": 1.5, "y": 0 }
+              ],
+              "annotations": [
+                { "x": 0.25, "label": "amplitude" },
+                { "x": 1, "label": "one wavelength" }
+              ]
+            },
+            "caption": "A transverse wave with amplitude and wavelength marked. The numbers are illustrative — they show the shape, not a measurement.",
+            "alt": "A sine curve of displacement against distance, with the peak height labelled amplitude and the distance between successive equivalent points labelled one wavelength."
+          }
+        ]
+      },
+      {
+        "id": "s-phase",
+        "title": "Phase difference",
+        "level": 2,
+        "blocks": [
+          {
+            "type": "paragraph",
+            "origin": "student",
+            "text": "Phase difference is measured in radians, and 2π radians corresponds to one whole wavelength."
+          },
+          {
+            "type": "callout",
+            "origin": "ai-added",
+            "kind": "tip",
+            "title": "Converting a distance to a phase",
+            "text": "Divide the path difference by the wavelength and multiply by 2π. Half a wavelength apart is π radians — exactly out of phase."
+          }
+        ]
+      }
+    ],
+    "corrections": [],
+    "openQuestions": [
+      {
+        "sectionId": "s-phase",
+        "question": "One of your pages could not be read — it sits between the amplitude notes and the phase-difference notes. What was on it?",
+        "why": "We have deliberately written nothing for it rather than guess. Given where it falls it was probably the wave equation worked through, or superposition. Check against a classmate's notes and add it here."
+      }
+    ],
+    "factCheck": {
+      "calculationsVerified": [],
+      "checkedClaims": 4,
+      "flags": [
+        {
+          "sectionId": "s-phase",
+          "claim": "The lesson ends at phase difference.",
+          "issue": "A page of the source could not be read, so this note may be missing a topic that came between.",
+          "confidence": "medium"
+        }
+      ]
+    },
+    "studyTools": {
+      "flashcards": [
+        {
+          "front": "What does a wave transfer?",
+          "back": "Energy, not matter.",
+          "sectionId": "s-types"
+        },
+        {
+          "front": "Transverse wave — direction of oscillation",
+          "back": "Perpendicular to the direction of travel.",
+          "sectionId": "s-types"
+        },
+        {
+          "front": "Longitudinal wave — direction of oscillation",
+          "back": "Parallel to the direction of travel, as compressions and rarefactions.",
+          "sectionId": "s-types"
+        },
+        {
+          "front": "Which wave type can be polarised?",
+          "back": "Only transverse.",
+          "sectionId": "s-types"
+        },
+        {
+          "front": "Wavelength — definition",
+          "back": "The distance between two adjacent points in phase, in metres.",
+          "sectionId": "s-measuring"
+        },
+        {
+          "front": "Frequency — definition and unit",
+          "back": "Complete waves passing a point per second, in hertz.",
+          "sectionId": "s-measuring"
+        },
+        {
+          "front": "The wave equation",
+          "back": "v = fλ, with v in m s⁻¹, f in Hz and λ in m.",
+          "sectionId": "s-measuring"
+        },
+        {
+          "front": "Amplitude — measured from where?",
+          "back": "From the equilibrium position to the maximum displacement, not trough to crest.",
+          "sectionId": "s-measuring"
+        },
+        {
+          "front": "Double the amplitude — what happens to intensity?",
+          "back": "It quadruples. Intensity is proportional to amplitude squared.",
+          "sectionId": "s-measuring"
+        },
+        {
+          "front": "Phase difference of half a wavelength",
+          "back": "π radians — exactly out of phase.",
+          "sectionId": "s-phase"
+        }
+      ],
+      "quiz": [
+        {
+          "kind": "multiple-choice",
+          "prompt": "Sound is a longitudinal wave because:",
+          "choices": [
+            "it travels quickly",
+            "the oscillation is parallel to the travel",
+            "it cannot travel through a vacuum",
+            "it has a low frequency"
+          ],
+          "answer": "the oscillation is parallel to the travel",
+          "explanation": "That is the definition. The vacuum point is true of sound but is not what makes it longitudinal.",
+          "sectionId": "s-types"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "A wave has frequency 250 Hz and wavelength 1.4 m. What is its speed?",
+          "answer": "350 m s⁻¹",
+          "explanation": "v = fλ = 250 × 1.4 = 350 m s⁻¹.",
+          "sectionId": "s-measuring"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "Define wavelength.",
+          "answer": "The distance between two adjacent points in phase.",
+          "explanation": "Any two equivalent points work — crest to crest is the easiest to see.",
+          "sectionId": "s-measuring"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "The amplitude of a wave is tripled. The intensity is:",
+          "choices": [
+            "three times greater",
+            "six times greater",
+            "nine times greater",
+            "unchanged"
+          ],
+          "answer": "nine times greater",
+          "explanation": "Intensity is proportional to amplitude squared, and three squared is nine.",
+          "sectionId": "s-measuring"
+        },
+        {
+          "kind": "short-answer",
+          "prompt": "Two points on a wave are one quarter of a wavelength apart. What is their phase difference in radians?",
+          "answer": "π/2",
+          "explanation": "A full wavelength is 2π, so a quarter of one is π/2.",
+          "sectionId": "s-phase"
+        },
+        {
+          "kind": "multiple-choice",
+          "prompt": "Which quantity is measured in hertz?",
+          "choices": ["Wavelength", "Frequency", "Amplitude", "Wave speed"],
+          "answer": "Frequency",
+          "explanation": "Hertz is one per second, which is what a frequency counts.",
+          "sectionId": "s-measuring"
+        }
+      ]
+    },
+    "glossary": [
+      {
+        "term": "transverse wave",
+        "definition": "One whose oscillation is perpendicular to its travel.",
+        "sectionId": "s-types"
+      },
+      {
+        "term": "longitudinal wave",
+        "definition": "One whose oscillation is parallel to its travel.",
+        "sectionId": "s-types"
+      },
+      {
+        "term": "wavelength",
+        "definition": "Distance between adjacent points in phase, in metres.",
+        "sectionId": "s-measuring"
+      },
+      {
+        "term": "phase difference",
+        "definition": "How far apart two oscillations are in their cycle, in radians.",
+        "sectionId": "s-phase"
+      }
+    ]
+  },
+  "verify": { "patches": [], "calculations": [], "flags": [], "verdict": "ok" }
+}

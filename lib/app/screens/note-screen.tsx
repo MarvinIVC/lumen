@@ -19,6 +19,7 @@ import { resetsIn } from '@/lib/ai/usage-client';
 import { blocksToText } from '@/lib/ingest/normalize';
 import { loadNote, saveNote } from '@/lib/store/drafts';
 import type { LocalNote } from '@/lib/store/types';
+import { PROMPT_VERSION, SCHEMA_VERSION } from '@/lib/ai/versions';
 import type { NoteDocument } from '@/lib/ai/schema';
 
 /**
@@ -333,8 +334,8 @@ export function NoteScreen({ noteId }: { noteId: string }) {
 /** A document shell so the streaming view has a title and context before anything has landed. */
 function emptyFor(note: LocalNote): NoteDocument {
   return {
-    schemaVersion: '1.0.0',
-    promptVersion: '1.0.0',
+    schemaVersion: SCHEMA_VERSION,
+    promptVersion: PROMPT_VERSION,
     title: note.title,
     context: note.context,
     options: note.options,

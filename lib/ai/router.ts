@@ -58,9 +58,26 @@ export interface ModelPricing {
   off_peak: RateCard;
 }
 
-export type PricingTable = Record<string, ModelPricing> & {
-  _meta?: { currency: string; fx_usd_cny: number; verified_on: string; peak_hours_utc: string };
-};
+export interface PricingMeta {
+  currency: string;
+  fx_usd_cny: number;
+  verified_on: string;
+  peak_hours_utc: string;
+  source?: string;
+  unit?: string;
+}
+
+/**
+ * The `app_config.pricing` row: one entry per model, plus a `_meta` entry that documents where the
+ * numbers came from and when they were last verified.
+ *
+ * Phase-00 typed this as `Record<string, ModelPricing> & { _meta?: … }`, which no object literal
+ * can actually satisfy — the index signature demands `_meta` be a rate card. It is an index
+ * signature over a union instead, and `rateCard` narrows: a row without a `peak` is not a model.
+ */
+export type PricingTable = {
+  _meta?: PricingMeta;
+} & Record<string, ModelPricing | PricingMeta | undefined>;
 
 export interface AppConfig {
   enhance_enabled: boolean;
@@ -422,7 +439,7 @@ const ZERO_RATES: RateCard = { in_miss: 0, in_hit: 0, out: 0 };
 
 export function rateCard(model: string, pricing: PricingTable, at: Date = new Date()): RateCard {
   const card = pricing[model];
-  if (!card) return ZERO_RATES;
+  if (!card || !('peak' in card)) return ZERO_RATES;
   return isPeak(at, pricing) ? card.peak : card.off_peak;
 }
 

@@ -1,0 +1,15 @@
+{
+  "measuredOn": "2026-08-30",
+  "note": "Measured against the recorded responses at peak DeepSeek rates. Regenerate with UPDATE_COST_BASELINE=1 pnpm test:ai.",
+  "perCase": {
+    "ap-chem-u1": 0.07062,
+    "bio-transport": 0.05085,
+    "history-coldwar": 0.0479,
+    "english-gatsby": 0.04672,
+    "chinese-poetry": 0.03903,
+    "photo-ocr": 0.04228,
+    "errors-riddled": 0.05727,
+    "essay-rewrite": 0.00568
+  },
+  "medianCny": 0.04731
+}

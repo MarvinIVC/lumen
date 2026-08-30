@@ -1,0 +1,54 @@
+name: AI evals (nightly)
+
+# The live half of the release gate (04-AI-ENGINE.md §9). CI on every pull request replays
+# recorded responses and mocks the judge, which tests the pipeline; this tests the model. It runs
+# on a tiny budget — eight fixtures, one call each plus a verify pass — and it is allowed to fail
+# loudly, because a model or a price changing under us is exactly what it exists to notice.
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ai-nightly
+  cancel-in-progress: false
+
+jobs:
+  evals:
+    name: Live evals
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Skipped rather than failed when there is no key: a repository without provider secrets is a
+    # fork or a fresh clone, and neither should see a red cross for it.
+    if: ${{ github.repository_owner != '' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Check the keys are present
+        id: keys
+        run: |
+          if [ -z "${{ secrets.DEEPSEEK_API_KEY }}" ] || [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+            echo "No provider keys configured — the live evals cannot run."
+            echo "have_keys=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "have_keys=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run the live evals
+        if: steps.keys.outputs.have_keys == 'true'
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: pnpm test:ai
+
+      - name: Verify the live pricing has not moved
+        if: steps.keys.outputs.have_keys == 'true'
+        run: pnpm vitest run --project unit tests/unit/pricing.test.ts

@@ -52,9 +52,22 @@ export function lintMermaid(source: string): LintResult {
   if (kind === 'flowchart' || kind === 'graph') {
     const nodes = new Set<string>();
     for (const line of trimmed.split('\n').slice(1)) {
-      for (const id of line.matchAll(/(^|\s|-->|---|==>|-\.->)\s*([A-Za-z_][\w-]*)/g)) {
+      // Strip the label text first. Without this every word inside `a[Three Na+ bind inside]`
+      // counts as its own node, and a perfectly ordinary six-box diagram is rejected for having
+      // twenty-one — which is exactly how this was wrong the first time.
+      const bare = line
+        .replace(/\[[^\]]*\]/g, '')
+        .replace(/\([^)]*\)/g, '')
+        .replace(/\{[^}]*\}/g, '')
+        .replace(/\|[^|]*\|/g, '');
+      for (const id of bare.matchAll(/(^|\s|-->|---|==>|-\.->|--)\s*([A-Za-z_][\w-]*)/g)) {
         const name = id[2];
-        if (name && !['subgraph', 'end', 'direction'].includes(name)) nodes.add(name);
+        if (
+          name &&
+          !['subgraph', 'end', 'direction', 'TD', 'LR', 'TB', 'RL', 'BT'].includes(name)
+        ) {
+          nodes.add(name);
+        }
       }
     }
     if (nodes.size > MAX_NODES)
