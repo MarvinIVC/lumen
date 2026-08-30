@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/toast';
-import { AlertTriangleIcon, FileIcon, SparkIcon } from '@/components/ui/icons';
+import { FileIcon, SparkIcon } from '@/components/ui/icons';
 import { ContextEditor } from '@/components/domain/context-editor';
 import { ExtractionEditor } from '@/components/domain/extraction-editor';
 import { OptionsPanel } from '@/components/domain/options-panel';
 import { QuotaMeter } from '@/components/domain/quota-meter';
+import { Notice } from '@/lib/app/notice';
 import { appStrings } from '@/lib/app/strings';
 import { APP_REVIEW, newHref, noteHref } from '@/lib/app/routes';
 import { useAssetUrls } from '@/lib/app/use-asset-urls';
@@ -22,6 +23,9 @@ import { CAP_MESSAGES } from '@/lib/ingest/limits';
 import { assessQuality } from '@/lib/ingest/quality';
 import { estimateRun, formatCost, formatCredits, formatDuration } from '@/lib/ingest/estimate';
 import { isOcrAvailable, runOcr } from '@/lib/ai/ocr-client';
+import { fetchUsage, resetsIn } from '@/lib/ai/usage-client';
+import type { UsageSnapshot } from '@/lib/ai/usage-client';
+import { readByok } from '@/lib/ai/byok-store';
 import { listPacks } from '@/lib/curriculum/load';
 import { getAsset } from '@/lib/store/drafts';
 import { flushDraft, useDraftStore } from '@/lib/store/draft-store';
@@ -54,6 +58,18 @@ export function ReviewScreen() {
   const [packsResolved, setPacksResolved] = useState(false);
   const [oneLesson, setOneLesson] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [usage, setUsage] = useState<UsageSnapshot | null>(null);
+  const [hasOwnKey, setHasOwnKey] = useState(false);
+
+  // The meter reads the same rolling window the guardrails read, so what a student is told here
+  // and what refuses them on the next screen cannot disagree. A failed read shows the full
+  // allowance rather than an error — being generous for one screen beats a broken widget.
+  useEffect(() => {
+    const controller = new AbortController();
+    setHasOwnKey(Boolean(readByok()));
+    void fetchUsage(controller.signal).then(setUsage);
+    return () => controller.abort();
+  }, []);
   const [online, setOnline] = useState(true);
 
   const draftId = draft?.id ?? null;
@@ -284,7 +300,14 @@ export function ReviewScreen() {
 
           <Separator />
 
-          <QuotaMeter used={0} total={3} resetsIn="at midnight" />
+          <QuotaMeter
+            used={usage?.enhance.used ?? 0}
+            total={usage?.enhance.total ?? 3}
+            {...(resetsIn(usage?.enhance.resetsAt ?? null)
+              ? { resetsIn: resetsIn(usage?.enhance.resetsAt ?? null) }
+              : {})}
+            ownKey={hasOwnKey}
+          />
 
           <Button
             size="lg"
@@ -301,22 +324,5 @@ export function ReviewScreen() {
         </aside>
       </div>
     </main>
-  );
-}
-
-function Notice({ tone, children }: { tone: 'warning' | 'info'; children: React.ReactNode }) {
-  return (
-    <div
-      className={
-        tone === 'warning'
-          ? 'flex items-start gap-2.5 rounded-md border border-warning/50 bg-verify px-3 py-2.5'
-          : 'flex items-start gap-2.5 rounded-md border border-border bg-bg-sunken px-3 py-2.5'
-      }
-    >
-      {tone === 'warning' ? (
-        <AlertTriangleIcon aria-hidden="true" className="mt-0.5 shrink-0 text-base text-warning" />
-      ) : null}
-      <p className="font-sans text-sm leading-snug text-text">{children}</p>
-    </div>
   );
 }

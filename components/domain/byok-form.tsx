@@ -11,6 +11,15 @@ import { cn } from '@/lib/utils/cn';
 export interface BYOKFormProps {
   provider: string;
   onProviderChange: (provider: string) => void;
+  /**
+   * The exact model id to call. Required by every provider and impossible to guess for a BYOK
+   * endpoint, so it is a field rather than a default — with a sensible suggestion per provider.
+   */
+  model?: string;
+  onModelChange?: (model: string) => void;
+  /** Only meaningful for an OpenAI-compatible endpoint; the form hides it otherwise. */
+  baseUrl?: string;
+  onBaseUrlChange?: (baseUrl: string) => void;
   /** True once a key is stored. The key itself is never read back into the form. */
   hasKey: boolean;
   onSave: (key: string) => void;
@@ -30,6 +39,10 @@ export interface BYOKFormProps {
 export function BYOKForm({
   provider,
   onProviderChange,
+  model,
+  onModelChange,
+  baseUrl,
+  onBaseUrlChange,
   hasKey,
   onSave,
   onRemove,
@@ -52,9 +65,35 @@ export function BYOKForm({
         <Select value={provider} onValueChange={onProviderChange} aria-label="Provider">
           <SelectItem value="deepseek">DeepSeek</SelectItem>
           <SelectItem value="gemini">Google Gemini</SelectItem>
-          <SelectItem value="openrouter">OpenRouter</SelectItem>
+          <SelectItem value="openai-compatible">Any OpenAI-compatible endpoint</SelectItem>
+          <SelectItem value="anthropic">Anthropic</SelectItem>
         </Select>
       </Field>
+
+      {onModelChange ? (
+        <Field label="Model" hint="The exact model id, e.g. deepseek-v4-flash.">
+          <Input
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="deepseek-v4-flash"
+            value={model ?? ''}
+            onChange={(event) => onModelChange(event.target.value)}
+          />
+        </Field>
+      ) : null}
+
+      {onBaseUrlChange && provider === 'openai-compatible' ? (
+        <Field label="Base URL" hint="Must start with https://. Your key is sent to this endpoint.">
+          <Input
+            autoComplete="off"
+            spellCheck={false}
+            inputMode="url"
+            placeholder="https://api.example.com/v1"
+            value={baseUrl ?? ''}
+            onChange={(event) => onBaseUrlChange(event.target.value)}
+          />
+        </Field>
+      ) : null}
 
       <Field
         label={hasKey ? 'Replace your key' : 'API key'}

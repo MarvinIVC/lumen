@@ -138,14 +138,85 @@ export const appStrings = {
   note: {
     readyTitle: 'Ready to generate',
     readyBody:
-      'Your notes are saved on this device and everything is set. Generation is the next thing ' +
-      'we are building — when it lands, this page will start streaming your study guide.',
+      'Your notes are saved on this device and everything is set. Start when you are ready — ' +
+      'it takes about half a minute.',
+    startCta: 'Rebuild my notes',
     backToReview: 'Back to review',
     missingTitle: 'We could not find that note',
     missingBody: 'It may have been on another device, or cleared with your browsing data.',
     missingCta: 'Start a new one',
     sourceLine: (files: number, chars: number) =>
       `${files} ${files === 1 ? 'source' : 'sources'} · ${chars.toLocaleString('en')} characters`,
+  },
+
+  generate: {
+    starting: 'Reading your notes…',
+    cancel: 'Stop',
+    cancelled: 'Stopped. What arrived is kept as a draft.',
+    resumeTitle: 'This one did not finish',
+    resumeBody:
+      'The last attempt stopped part-way — a closed tab, a lost connection, or you asked it to. ' +
+      'What arrived is below, and starting again does not cost you the first attempt.',
+    resumeCta: 'Try again',
+    keepPartial: 'Keep this draft',
+    partialBanner:
+      'This is a partial study guide — generation stopped before it finished. Try again when you have a moment.',
+    degradedBanner:
+      'Some parts of this did not come back cleanly and were left out rather than guessed at. Generating again usually fixes it.',
+    revisedBanner: 'We revised several points after a second check. They are marked in the text.',
+    rebuiltWith: (model: string) => `Rebuilt with ${model}`,
+
+    errorTitle: 'That did not finish',
+    errorRetry: 'Try again',
+    errorKeep: 'Back to review',
+
+    refusedTitle: 'These do not look like class notes',
+    refusedBody:
+      'Lumen rebuilds notes from a lesson into a study guide. It will not write an essay, do a ' +
+      'problem set, or work as a general chatbot — that is a deliberate limit, not a failure.',
+    refusedReason: (reason: string) => `What the model said: ${reason}`,
+    refusedCta: 'Use different notes',
+    refusedFree: 'You have not been charged for this.',
+
+    quotaTitle: 'That is all the free study guides for today',
+    quotaBody: (resets: string) =>
+      `Your free allowance comes back ${resets}. Two things you can do right now:`,
+    quotaBodyNoReset: 'Two things you can do right now:',
+    quotaKeyCta: 'Add your own API key',
+    quotaKeyHint: 'Free to do, removes the daily limit, and your key never leaves our server.',
+    quotaSampleCta: 'See a finished example',
+    quotaSampleHint: 'The AP Chemistry lesson this was built around, in full.',
+
+    capTitle: "We have hit today's community limit",
+    capBody:
+      'Lumen is free and the shared budget runs out some days. Your notes are safe on this ' +
+      'device — nothing has been lost.',
+
+    pausedTitle: 'Rebuilding is paused',
+    pausedBody:
+      'We have stopped generation for a moment, usually because something is wrong on our side. ' +
+      'Your notes are safe on this device. Try again a little later.',
+  },
+
+  settings: {
+    title: 'Settings',
+    lead: 'Everything here is stored on this device.',
+    byokHeading: 'Use your own API key',
+    byokLead:
+      'Lumen is free, which means a shared daily budget and a small daily limit. Your own key ' +
+      'removes both. The key is sent to our server once, encrypted there, and only the encrypted ' +
+      'form is kept on this device — we cannot read it back, and it is never sent to the browser ' +
+      'of anyone you share a note with.',
+    byokBilling: 'Your provider bills you directly. Lumen never charges you anything.',
+    modelLabel: 'Model',
+    modelHint: 'The exact model id, e.g. deepseek-v4-flash or gpt-4.1-mini.',
+    baseUrlLabel: 'Base URL',
+    baseUrlHint: 'Only for an OpenAI-compatible endpoint. Must start with https://.',
+    saved: 'Key saved. Generation will use it from now on.',
+    removed: 'Key removed. You are back on the free allowance.',
+    savedOn: (date: string) => `Added ${date}`,
+    checking: 'Checking that key works…',
+    unavailable: 'Saving a key is not available on this deployment yet.',
   },
 
   turnstile: {

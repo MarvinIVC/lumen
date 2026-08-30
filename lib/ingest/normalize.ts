@@ -224,3 +224,42 @@ function looksLikeHeading(line: string, next: string): boolean {
 export function countChars(blocks: ExtractedBlock[]): number {
   return blocks.reduce((total, block) => total + block.text.length, 0);
 }
+
+/**
+ * The confirmed extraction as one string, which is what the enhance call actually sends
+ * (04-AI-ENGINE.md §4.5: "BEGIN STUDENT NOTES (verbatim, may include [IMAGE: alt/ocr])").
+ *
+ * Verbatim means verbatim. Headings keep their level so the model can keep the student's
+ * structure, and nothing here tidies, reflows or corrects — the whole product rests on the model
+ * seeing what the student actually wrote, including the parts that are wrong.
+ *
+ * A block still marked `needsOCR` is named rather than dropped: an unread page is a fact about the
+ * notes, and saying "there was a page here we could not read" is what stops the model inventing
+ * continuity across the gap.
+ */
+export function blocksToText(blocks: ExtractedBlock[]): string {
+  const lines: string[] = [];
+
+  for (const block of blocks) {
+    switch (block.kind) {
+      case 'heading':
+        lines.push(`${'#'.repeat(Math.min(6, Math.max(1, block.level ?? 2)))} ${block.text}`);
+        break;
+      case 'list':
+        lines.push(block.text);
+        break;
+      case 'image':
+        lines.push(
+          block.needsOCR
+            ? `[IMAGE: not read — a page or photograph the student included but which has no text layer]`
+            : `[IMAGE: ${block.text.replace(/^\[IMAGE:\s*/i, '').replace(/\]$/, '') || 'figure'}]`,
+        );
+        break;
+      default:
+        lines.push(block.text);
+        break;
+    }
+  }
+
+  return lines.join('\n\n').trim();
+}

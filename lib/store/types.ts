@@ -5,7 +5,7 @@
  * the Postgres tables they will sync into, so the merge on first sign-in is a copy rather than a
  * translation — `localId` is the dedupe key named in §4.
  */
-import type { EnhanceOptions, NoteContext } from '@/lib/ai/schema';
+import type { EnhanceOptions, NoteContext, NoteDocument } from '@/lib/ai/schema';
 import type { ExtractedBlock, ExtractedMeta } from '@/lib/ingest/types';
 import type { QualitySignal } from '@/lib/ingest/quality';
 
@@ -78,7 +78,7 @@ export interface LocalDraft {
   quality: QualitySignal[];
 }
 
-/** Mirrors the `note` table. `status: 'draft'` until phase-04 generates into it. */
+/** Mirrors the `note` table. `status: 'draft'` until the engine generates into it. */
 export interface LocalNote {
   id: string;
   localId: string;
@@ -96,6 +96,31 @@ export interface LocalNote {
     extractedCharCount: number;
     ocrPages: number;
   };
-  /** The confirmed extraction, handed to the enhance call in phase-04. */
+  /** The confirmed extraction, handed to the enhance call. */
   doc: StoredDoc;
+  /**
+   * Carried over from the draft (02 §7 layer 3).
+   *
+   * A signed-out student is minted an anonymous id on their first server call, and minting one
+   * requires passing Turnstile. That first call is usually detection, on the review screen, where
+   * the widget lives — but a confident local heuristic never calls detection at all, and then the
+   * *generation* is the first call. Without this the token would be sitting on the draft while the
+   * request that needs it is made from the note.
+   */
+  turnstileToken?: string | null;
+  /**
+   * The generated study guide. Present once generation has produced anything at all — including a
+   * run the student cancelled, which is kept as a partial rather than thrown away (04 §7).
+   */
+  generated?: NoteDocument;
+  /** True while `generated` is what streamed before a cancel, rather than a finished document. */
+  partial?: boolean;
+  /** Set when the model declined the input: not study notes, an essay to rewrite, spam (04 §4.2). */
+  refusal?: string;
+  /** The last failure, in the student's words, so the page can offer to resume rather than reload. */
+  error?: { code: string; message: string; resumable: boolean };
+  /** "Rebuilt with DeepSeek V4" in the note meta (06 §5 item 7). */
+  model?: string;
+  /** True when the second check changed several things — surfaces a gentle banner (04 §6). */
+  degraded?: boolean;
 }

@@ -9,6 +9,7 @@
 export const APP_HOME = '/app';
 export const APP_NEW = '/app/new';
 export const APP_REVIEW = '/app/review';
+export const APP_SETTINGS = '/app/settings';
 
 export const DRAFT_PARAM = 'd';
 
