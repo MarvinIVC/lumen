@@ -14,7 +14,7 @@ import { htmlToBlocks } from './html-blocks';
 import { newId } from './id';
 import { normaliseImage } from './image';
 import { loadMammoth } from './loaders';
-import { MIN_USEFUL_CHARS } from './limits';
+import { CAP_MESSAGES, MIN_USEFUL_CHARS } from './limits';
 import { countChars } from './normalize';
 import { IngestError } from './types';
 import type { ExtractedAsset, ExtractedDoc, Parser, ParseContext } from './types';
@@ -37,7 +37,7 @@ export const docxParser: Parser = {
 
     if (await looksLikeCfb(file)) {
       throw new IngestError(
-        'encrypted',
+        'legacy-format',
         `${file.name} is either password-protected or saved in the older .doc format. ` +
           `Open it in Word and "Save as" .docx, or paste the text in.`,
       );
@@ -87,7 +87,7 @@ export const docxParser: Parser = {
     const charCount = countChars(blocks.filter((block) => block.kind !== 'image'));
 
     if (charCount < MIN_USEFUL_CHARS && assets.length === 0) {
-      throw new IngestError('empty', `There is almost no text in ${file.name}.`);
+      throw new IngestError('empty', CAP_MESSAGES.empty(file.name));
     }
 
     context.onProgress?.(1);

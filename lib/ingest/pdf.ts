@@ -13,7 +13,7 @@
 import { canvasToBlob } from './image';
 import { newId } from './id';
 import { loadPdfJs } from './loaders';
-import { MAX_PAGES, MIN_PAGE_TEXT_CHARS, MIN_USEFUL_CHARS } from './limits';
+import { CAP_MESSAGES, MAX_PAGES, MIN_PAGE_TEXT_CHARS, MIN_USEFUL_CHARS } from './limits';
 import { countChars, stripRepeatedEdges, toBlocks } from './normalize';
 import type { RawPage } from './normalize';
 import { IngestError } from './types';
@@ -47,7 +47,7 @@ export const pdfParser: Parser = {
 
     try {
       if (pdf.numPages > MAX_PAGES) {
-        throw new IngestError('too-many-pages', `${file.name} is ${pdf.numPages} pages.`, false);
+        throw new IngestError('too-many-pages', CAP_MESSAGES.tooManyPages(pdf.numPages), false);
       }
 
       const rawPages: RawPage[] = [];
@@ -99,7 +99,7 @@ export const pdfParser: Parser = {
 
       const charCount = countChars(blocks.filter((block) => block.kind !== 'image'));
       if (charCount < MIN_USEFUL_CHARS && scans.length === 0) {
-        throw new IngestError('empty', `We found no text in ${file.name}.`);
+        throw new IngestError('empty', CAP_MESSAGES.empty(file.name));
       }
 
       context.onProgress?.(1);
@@ -130,18 +130,21 @@ export const pdfParser: Parser = {
   },
 };
 
-/** pdf.js reports "no password" and "wrong password" the same way apart from a numeric code. */
+/** pdf.js's own codes: 1 is "no password given", 2 is "the one you gave is wrong". */
+const NEED_PASSWORD = 1;
+
 function translateLoadError(error: unknown, name: string, hadPassword: boolean): IngestError {
-  const kind = (error as { name?: string } | null)?.name;
-  if (kind === 'PasswordException') {
+  const failure = error as { name?: string; code?: number } | null;
+  if (failure?.name === 'PasswordException') {
+    // Prefer pdf.js's own code over inferring from whether we sent one: a stale password from a
+    // previous file would otherwise be reported as "wrong" when it was never tried.
+    const needsFirstAttempt = failure.code === NEED_PASSWORD || (!hadPassword && !failure.code);
     return new IngestError(
       'encrypted',
-      hadPassword
-        ? 'That password did not open it. Try again, or paste the text instead.'
-        : `${name} is password-protected.`,
+      needsFirstAttempt ? CAP_MESSAGES.encrypted(name) : CAP_MESSAGES.wrongPassword,
     );
   }
-  if (kind === 'InvalidPDFException') {
+  if (failure?.name === 'InvalidPDFException') {
     return new IngestError('corrupt', `${name} is not a PDF we can read — it may be damaged.`);
   }
   return new IngestError('corrupt', `We could not open ${name}.`);

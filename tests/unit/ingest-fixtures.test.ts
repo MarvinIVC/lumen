@@ -4,7 +4,13 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { MAX_BYTES, MAX_PAGES, extensionOf, isAccepted } from '@/lib/ingest/limits';
+import {
+  MAX_BYTES,
+  MAX_PAGES,
+  SOFT_PAGE_LIMIT,
+  extensionOf,
+  isAccepted,
+} from '@/lib/ingest/limits';
 
 /**
  * The two generated binary fixtures (`pnpm fixtures:ingest`).
@@ -74,6 +80,34 @@ describe('the scanned-PDF fixture', () => {
     const pages = /\/Type \/Pages \/Count (\d+)/.exec(readFileSync(PDF).toString('latin1'));
     expect(Number(pages?.[1])).toBeGreaterThan(1);
     expect(Number(pages?.[1])).toBeLessThan(MAX_PAGES);
+  });
+});
+
+describe('the cap and lock fixtures', () => {
+  const pageCount = (file: string) => {
+    const body = readFileSync(resolve(ROOT, 'fixtures', file)).toString('latin1');
+    return Number(/\/Type \/Pages \/Count (\d+)/.exec(body)?.[1]);
+  };
+
+  it('straddles the soft page limit and the hard one', () => {
+    // One either side of each line in 02-ARCHITECTURE.md §7, so both branches are walkable.
+    expect(pageCount('long-scan-45p.pdf')).toBeGreaterThan(SOFT_PAGE_LIMIT);
+    expect(pageCount('long-scan-45p.pdf')).toBeLessThanOrEqual(MAX_PAGES);
+    expect(pageCount('too-many-pages-61p.pdf')).toBeGreaterThan(MAX_PAGES);
+  });
+
+  it('ships a genuinely encrypted PDF, not one that merely says it is', () => {
+    const body = readFileSync(resolve(ROOT, 'fixtures/locked-worksheet.pdf')).toString('latin1');
+    expect(body).toContain('/Filter /Standard');
+    expect(body).toContain('/Encrypt');
+    // The trailer id is an input to the key; without it the file cannot be opened at all.
+    expect(body).toMatch(/\/ID \[<[0-9a-f]{32}> <[0-9a-f]{32}>\]/);
+  });
+
+  it('keeps the cap fixtures small — they exist to be counted, not read', () => {
+    for (const file of ['long-scan-45p.pdf', 'too-many-pages-61p.pdf', 'locked-worksheet.pdf']) {
+      expect(statSync(resolve(ROOT, 'fixtures', file)).size, file).toBeLessThan(64 * 1024);
+    }
   });
 });
 

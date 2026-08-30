@@ -413,6 +413,108 @@ test('parsing and review work with the network cut', async ({ page, context, bro
 });
 
 /**
+ * The rest of `01-PRODUCT.md` §5's ingestion rows.
+ *
+ * The definition of done asks for every one of these to be reachable in a manual pass, and three
+ * of them were only ever verified by reading the code. Walking them found a real one: a pre-2007
+ * `.doc` shares a CFB container with an encrypted `.docx`, so it was reported with the same code
+ * as a locked PDF — and opened a password dialog that could not possibly have worked, because
+ * nothing here decrypts Word files.
+ */
+test.describe('the non-happy states', () => {
+  test('a locked PDF asks for the password, and opens with it', async ({ page }) => {
+    await openNew(page);
+    await upload(page, [resolve(FIXTURES, 'locked-worksheet.pdf')]);
+
+    // The dialog comes up on its own — the student does not have to find a control first.
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('never sent anywhere');
+
+    await dialog.getByLabel('Password').fill('wrong-one');
+    await dialog.getByRole('button', { name: 'Unlock' }).click();
+    await expect(page.getByText('That password did not open it')).toBeVisible();
+
+    // A failed attempt reopens the prompt rather than stranding the file.
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel('Password').fill('unit-1');
+    await dialog.getByRole('button', { name: 'Unlock' }).click();
+
+    await waitForRead(page);
+    await expect(page.getByText(/1 needing OCR/)).toBeVisible();
+    await expect(dialog).toBeHidden();
+  });
+
+  test('a locked PDF can be skipped, and the row keeps a way back in', async ({ page }) => {
+    await openNew(page);
+    await upload(page, [resolve(FIXTURES, 'locked-worksheet.pdf')]);
+
+    await page.getByRole('button', { name: 'Skip this file' }).click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+
+    await expect(page.getByText(/locked-worksheet\.pdf is password-protected/)).toBeVisible();
+    await page.getByRole('button', { name: 'Unlock' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+  });
+
+  test('an old .doc explains itself instead of asking for a password it cannot use', async ({
+    page,
+  }) => {
+    // A CFB container — what Word wrote before 2007, and what an encrypted .docx also looks like.
+    const cfb = Buffer.concat([
+      Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]),
+      Buffer.alloc(512),
+    ]);
+    await openNew(page);
+    await page.locator('input[type="file"]').first().setInputFiles({
+      name: 'unit-1-notes.docx',
+      mimeType: 'application/octet-stream',
+      buffer: cfb,
+    });
+
+    await expect(page.getByText(/saved in the older \.doc format/)).toBeVisible();
+    // No password box: a password cannot open this, and offering one would be a dead end.
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Unlock' })).toHaveCount(0);
+  });
+
+  test('a file with almost nothing in it says so, and says what to do', async ({ page }) => {
+    await openNew(page);
+    await page
+      .locator('input[type="file"]')
+      .first()
+      .setInputFiles({ name: 'empty.txt', mimeType: 'text/plain', buffer: Buffer.from('hi') });
+
+    await expect(page.getByText(/couldn't find any text in empty\.txt/)).toBeVisible();
+    await expect(page.getByText(/run OCR on it below|paste the text in/)).toBeVisible();
+  });
+
+  test('past 40 pages it explains the per-lesson model without refusing', async ({ page }) => {
+    test.slow();
+    await openNew(page);
+    await upload(page, [resolve(FIXTURES, 'long-scan-45p.pdf')]);
+    await waitForRead(page);
+
+    await page.getByRole('button', { name: 'Review what we found' }).click();
+    await expect(page.getByText(/45 pages is more than one lesson usually is/)).toBeVisible();
+    // Explained, not blocked — and the way to act on it is right there.
+    await expect(page.getByRole('button', { name: 'Create study guide' })).toBeEnabled();
+    await expect(
+      page.getByRole('button', { name: 'Split into two lessons here' }).first(),
+    ).toBeVisible();
+  });
+
+  test('past 60 pages it refuses, before reading any of them', async ({ page }) => {
+    await openNew(page);
+    await upload(page, [resolve(FIXTURES, 'too-many-pages-61p.pdf')]);
+
+    await expect(page.getByText(/That's 61 pages/)).toBeVisible();
+    await expect(page.getByText(/Split it into units and run them separately/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Review what we found' })).toBeDisabled();
+  });
+});
+
+/**
  * The block controls are quiet until hovered, which is a decision that can only be wrong in one
  * way: if they become unreachable without a mouse. `opacity-0` elements are still focusable and
  * still announced, and the block reveals them on `:focus-within` — but that is a claim about CSS,
