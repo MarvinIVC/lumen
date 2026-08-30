@@ -77,6 +77,14 @@ jobs:
       - name: OpenNext (Cloudflare) build
         run: pnpm cf:build
 
+      # Asks the *real* worker, in workerd, for every public URL. Nothing else in this pipeline
+      # can: Playwright and Lighthouse both run against `next start`, which reads Next's prerender
+      # cache off the filesystem. The worker cannot, and serves prerendered pages of dynamic routes
+      # from an incremental cache instead — which is how all five /zh pages once shipped as 404s
+      # with every other check in this file green.
+      - name: Worker serves every route
+        run: pnpm check:worker
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium webkit
 

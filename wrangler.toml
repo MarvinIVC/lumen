@@ -3,7 +3,11 @@
 # @opennextjs/cloudflare v1 targets Workers with Static Assets rather than the older Pages
 # adapter, which Cloudflare has deprecated. Same platform, same free tier, current supported path.
 #
-#   pnpm cf:build     build the worker into .open-next/
+#   pnpm cf:build     build the worker into .open-next/, then populate the prerender cache
+#                     into .open-next/assets — `wrangler deploy` uploads that directory, and
+#                     without the cache every prerendered page of a *dynamic* route 404s in
+#                     production while working perfectly under `next start`. See
+#                     open-next.config.ts.
 #   pnpm cf:preview   run it locally in workerd
 #   pnpm cf:deploy    build and deploy
 
