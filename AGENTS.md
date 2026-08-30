@@ -69,13 +69,17 @@ pipeline that would have caught that bug.
 
 | Limit                                 | Current                   | Enforced by                        |
 | ------------------------------------- | ------------------------- | ---------------------------------- |
-| Worker size (Cloudflare free plan)    | **3005 / 3072 KiB — 98%** | `wrangler deploy` refuses over     |
+| Worker size (Cloudflare free plan)    | **1731 / 3072 KiB — 56%** | `wrangler deploy` refuses over     |
 | First-load JS on `/`                  | 107.5 / 120 KB gz         | `pnpm test:budget`, in CI          |
 | Lighthouse on `/` and `/how-it-works` | 100 / 100 / 100 / 100     | `pnpm lh`, `pnpm lh:mobile`, in CI |
 | Monthly AI spend                      | ceiling ¥100              | `app_config` caps + kill switch    |
 
-**The Worker ceiling is the one that will bite next.** There is 67 KiB of headroom and phase-03 adds
-the app shell. `02-ARCHITECTURE.md` §8 names the two dead payloads inside it and the options.
+**The Worker ceiling bit in phase-03 and was fixed, not deferred.** Adding the parsers took it to
+3742 KiB — over the ceiling and undeployable. `next.config.ts` now aliases the seven browser-only
+libraries (pdf.js, mammoth, heic2any, mermaid, katex, smiles-drawer, paged.js) to `false` in the
+_server_ compilation: none of them can execute there, but Next compiles client components for the
+SSR pass, so webpack was emitting all of them into `.next/server` for OpenNext to bundle. That is
+2.2 MB of unreachable JavaScript, and removing the alias list puts the deploy back over the limit.
 Measure with `pnpm exec wrangler deploy --dry-run --outdir=/tmp/wr` — it prints the same gzipped
 number the Cloudflare API enforces.
 
@@ -84,10 +88,15 @@ number the Cloudflare API enforces.
 - **Design tokens only.** No hex, no arbitrary lengths in `components/**`, `lib/render/**`,
   `lib/design/**`. `tests/unit/tokens-only.test.ts` reads the files as text, because ESLint does not
   parse CSS.
-- **The heavy renderers stay dynamic.** KaTeX, Mermaid, smiles-drawer and paged.js each have exactly
-  one `await import()`. `tests/unit/dynamic-imports.test.ts` fails on a static one.
+- **The heavy renderers and the parsers stay dynamic.** KaTeX, Mermaid, smiles-drawer, paged.js,
+  mammoth, pdf.js and heic2any each have exactly one `await import()`, in one loader module.
+  `tests/unit/dynamic-imports.test.ts` fails on a static one.
 - **Every visible string comes from `messages/{en,zh}.json`.** Key and ICU-placeholder parity between
   locales is a unit test — a missing key renders as its own key path on a live page, silently.
+  One scoped exception, decided with the user in phase-03 and recorded in the phase log:
+  `/app/*` copy lives in `lib/app/strings.ts`, because next-intl is server-only by phase-02's
+  design and the workspace is almost entirely client components. That module is the whole
+  exception; do not start a second one.
 - **Commit scopes** are limited to the list in `commitlint.config.mjs`.
 
 ## When you finish a phase

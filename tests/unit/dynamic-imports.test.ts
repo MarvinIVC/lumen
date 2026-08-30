@@ -14,7 +14,18 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 
-const DEFERRED = ['katex', 'mermaid', 'smiles-drawer', 'pagedjs'];
+const DEFERRED = [
+  'katex',
+  'mermaid',
+  'smiles-drawer',
+  'pagedjs',
+  // Phase-03's parsers. Together they are over a megabyte, and a student who pastes their notes
+  // into the textarea should download none of it. Same rule, same one-loader-per-library shape:
+  // `lib/ingest/loaders.ts`.
+  'mammoth',
+  'pdfjs-dist',
+  'heic2any',
+];
 
 /** `import type` is erased at compile time and ships nothing. */
 const STATIC_IMPORT = (pkg: string) =>

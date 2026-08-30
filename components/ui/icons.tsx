@@ -199,6 +199,55 @@ export const SparkIcon = (p: IconProps) => (
   </Icon>
 );
 
+export const CameraIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3.5 8.5h3l1.5-2.5h6l1.5 2.5h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Z" />
+    <circle cx="12" cy="13" r="3.2" />
+  </Icon>
+);
+
+export const ArrowUpIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 19V5" />
+    <path d="m6 11 6-6 6 6" />
+  </Icon>
+);
+
+export const ArrowDownIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 5v14" />
+    <path d="m6 13 6 6 6-6" />
+  </Icon>
+);
+
+/** Two blocks becoming one: the "merge into the block above" control. */
+export const MergeUpIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 5h16" />
+    <path d="M4 19h16" />
+    <path d="m9 13 3-3 3 3" />
+    <path d="M12 16v-6" />
+  </Icon>
+);
+
+/** A cut across the page: "these are two lessons". */
+export const ScissorsIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="6" cy="6.5" r="2.5" />
+    <circle cx="6" cy="17.5" r="2.5" />
+    <path d="M8.2 7.9 19 17" />
+    <path d="M8.2 16.1 19 7" />
+  </Icon>
+);
+
+export const TextIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 6.5h14" />
+    <path d="M5 12h14" />
+    <path d="M5 17.5h9" />
+  </Icon>
+);
+
 export const CircleDotIcon = (p: IconProps) => (
   <Icon {...p}>
     <circle cx="12" cy="12" r="8.5" />
