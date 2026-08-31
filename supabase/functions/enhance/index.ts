@@ -142,7 +142,9 @@ serve(async (request) => {
   // A student on their own key gets their own model checking its own work, which is the only
   // honest option: we are not going to spend the shared budget verifying a BYOK generation.
   const verifier = resolved.caller.byok ? decision.provider : createVerifier(config, keys, options);
-  const headers = resolved.issuedAnonId ? { [ANON_HEADER]: resolved.issuedAnonId } : {};
+  const headers: Record<string, string> = resolved.issuedAnonId
+    ? { [ANON_HEADER]: resolved.issuedAnonId }
+    : {};
 
   return sseResponse(request, headers, async (writer) => {
     const controller = new AbortController();

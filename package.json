@@ -27,6 +27,7 @@
     "test:unit:watch": "vitest --project unit",
     "test:ai": "vitest run --project ai-evals --passWithNoTests",
     "test:edge": "node scripts/test-edge.mjs",
+    "check:edge": "deno check --config supabase/functions/deno.json supabase/functions/*/index.ts",
     "test:e2e": "playwright test",
     "storybook": "storybook dev -p 6006 --no-open",
     "build:storybook": "storybook build -o storybook-static",

@@ -14,7 +14,16 @@
  */
 const VERSION = 'v1';
 
-function keyBytes(): Uint8Array {
+/**
+ * `Uint8Array<ArrayBuffer>`, not the bare `Uint8Array`, and it matters.
+ *
+ * Since TypeScript 5.7 the typed arrays are generic over their backing buffer, and the bare name
+ * widens to `Uint8Array<ArrayBufferLike>` — which Web Crypto's `BufferSource` does not accept,
+ * because a `SharedArrayBuffer` cannot be passed to it. Deno typechecks these functions with that
+ * stricter lib; the repository's `tsc` does not see them at all. Both annotations here exist to
+ * keep `deno check` green.
+ */
+function keyBytes(): Uint8Array<ArrayBuffer> {
   const raw = Deno.env.get('BYOK_ENC_KEY') ?? '';
   if (!raw) throw new Error('BYOK_ENC_KEY is not set');
   const binary = atob(raw);
@@ -31,13 +40,13 @@ async function subtleKey(): Promise<CryptoKey> {
   ]);
 }
 
-function toBase64(bytes: Uint8Array): string {
+function toBase64(bytes: Uint8Array<ArrayBufferLike>): string {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary);
 }
 
-function fromBase64(value: string): Uint8Array {
+function fromBase64(value: string): Uint8Array<ArrayBuffer> {
   const binary = atob(value);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
