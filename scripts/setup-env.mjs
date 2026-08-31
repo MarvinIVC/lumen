@@ -34,6 +34,10 @@ const red = (s) => `\x1b[31m${s}\x1b[0m`;
 const args = process.argv.slice(2);
 const askAll = args.includes('--all');
 const doGithub = args.includes('--github');
+const dryRun = args.includes('--dry-run');
+
+/** Where the site is deployed. The allowlist has to name it, and localhost is not it. */
+const PRODUCTION_ORIGIN = 'https://lumen.marvinmaiwang.workers.dev';
 
 /* -------------------------------------------------------------------------- *
  * What we need, where it comes from, and what a valid one looks like.
@@ -286,13 +290,21 @@ class EndOfInput extends Error {}
  * GitHub
  * -------------------------------------------------------------------------- */
 
+/**
+ * The only thing in this script that touches anything outside the machine.
+ *
+ * It refuses to run under `--dry-run` rather than trusting every call site to check the flag —
+ * which is exactly the bug that pushed a set of dummy test values into a real repository while a
+ * dry run was printing "would push". A guard at the boundary cannot be forgotten at a call site.
+ */
 function gh(args) {
+  if (dryRun) throw new Error(`Refusing to run \`gh ${args.join(' ')}\` during a dry run.`);
   return execFileSync('gh', args, { cwd: root, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
 }
 
 function pushToGithub(values) {
   try {
-    gh(['auth', 'status']);
+    if (!dryRun) gh(['auth', 'status']);
   } catch {
     console.log(
       red('\n`gh` is not signed in. Run `gh auth login`, then `pnpm setup:env --github`.'),
@@ -303,8 +315,10 @@ function pushToGithub(values) {
   const ref = /https:\/\/([a-z0-9-]+)\.supabase\.co/.exec(
     values.NEXT_PUBLIC_SUPABASE_URL ?? '',
   )?.[1];
-  const origin =
-    values.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? 'https://lumen.marvinmaiwang.workers.dev';
+  // `.env.local` points NEXT_PUBLIC_APP_URL at localhost, which is right for `pnpm dev` and wrong
+  // for an allowlist that has to name the deployed site.
+  const configured = values.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? '';
+  const origin = /^https:\/\//.test(configured) ? configured : PRODUCTION_ORIGIN;
   const host = origin.replace(/^https?:\/\//, '');
 
   const variables = {
@@ -323,17 +337,19 @@ function pushToGithub(values) {
     ...(ref ? { SUPABASE_PROJECT_REF: ref } : {}),
   };
 
-  console.log(`\n${bold('Pushing to GitHub Actions')}`);
+  console.log(`\n${bold(dryRun ? 'Would push to GitHub Actions' : 'Pushing to GitHub Actions')}`);
   for (const [key, value] of Object.entries(variables)) {
     if (!value) continue;
-    gh(['variable', 'set', key, '--body', value]);
-    console.log(`  ${green('✓')} variable ${key}`);
+    if (!dryRun) gh(['variable', 'set', key, '--body', value]);
+    // Variables are not secret — they are inlined into the browser bundle — so printing them is
+    // the point: this is the one chance to notice a wrong project URL before a deploy uses it.
+    console.log(`  ${green(dryRun ? '·' : '✓')} variable ${key} ${dim(`= ${value}`)}`);
   }
   for (const [key, value] of Object.entries(secrets)) {
     if (!value) continue;
-    gh(['secret', 'set', key, '--body', value]);
+    if (!dryRun) gh(['secret', 'set', key, '--body', value]);
     console.log(
-      `  ${green('✓')} secret   ${key} ${dim('(write-only — GitHub will not show it back)')}`,
+      `  ${green(dryRun ? '·' : '✓')} secret   ${key} ${dim('(write-only — GitHub will not show it back)')}`,
     );
   }
 }
@@ -390,7 +406,7 @@ async function main() {
     console.log(yellow(`\nStill missing: ${missing.map((f) => f.key).join(', ')}`));
   }
 
-  if (doGithub) {
+  if (doGithub || dryRun) {
     pushToGithub(merged);
   } else {
     console.log(dim('\nRun `pnpm setup:env --github` to push these to GitHub Actions as well.'));
