@@ -145,10 +145,9 @@ export function ReviewScreen() {
   /**
    * "Run OCR (≈ 1 credit)" — the one control on this screen that spends anything.
    *
-   * Wired end to end even though `isOcrAvailable()` is false and the button is disabled, so that
-   * phase-04 only has to deploy the function and flip that flag. The recognised text arrives as an
-   * ordinary editable block, because OCR is never quite right and the correction has to happen
-   * here rather than in the study guide.
+   * The recognised text arrives as an ordinary editable block, because OCR is never quite right
+   * and the correction has to happen here rather than in the study guide — a word invented at
+   * this step becomes a fact the enhancement stage will faithfully build a lesson on.
    */
   const ocr = async (blockId: string) => {
     const block = blocks.find((entry) => entry.id === blockId);

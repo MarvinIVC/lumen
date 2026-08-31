@@ -109,11 +109,12 @@ test.describe('ingestion', () => {
     await expect(page.getByText('No text layer').first()).toBeVisible();
     await expect(page.getByRole('img', { name: /Scanned page/ }).first()).toBeVisible();
 
-    // The OCR button exists and is honest about not working yet (phase-04 owns the function).
+    // The OCR button works now that the function has shipped, and it says what it costs before it
+    // is pressed — this screen is the last point at which a mistake costs nothing.
     const ocr = page.getByRole('button', { name: /Run OCR/ }).first();
     await expect(ocr).toBeVisible();
-    await expect(ocr).toBeDisabled();
-    await expect(page.getByText(/coming soon/).first()).toBeVisible();
+    await expect(ocr).toBeEnabled();
+    await expect(page.getByText(/1 credit/).first()).toBeVisible();
   });
 
   test('multiple files merge into one reviewable lesson', async ({ page }) => {
@@ -246,7 +247,9 @@ test.describe('ingestion', () => {
     await expect(page.getByText(/paste the text in below/)).toBeVisible();
   });
 
-  test('creating the study guide lands on the note in its draft state', async ({ page }) => {
+  test('creating the study guide hands off to the note, which starts generating', async ({
+    page,
+  }) => {
     await openNew(page);
     await upload(page, [resolve(FIXTURES, 'ap-chem-u1-raw.md')]);
     await waitForRead(page);
@@ -254,8 +257,11 @@ test.describe('ingestion', () => {
 
     await page.getByRole('button', { name: 'Create study guide' }).click();
     await expect(page).toHaveURL(/\/app\/note\//);
-    await expect(page.getByText('Ready to generate').first()).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Back to review' })).toBeVisible();
+
+    // What happens next belongs to tests/e2e/generate.spec.ts, which stubs the provider. All this
+    // one owns is the handover: the note exists on this device and the screen is doing something
+    // about it rather than sitting on a dead end.
+    await expect(page.getByRole('main')).not.toBeEmpty();
   });
 });
 

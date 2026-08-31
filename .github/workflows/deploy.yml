@@ -95,3 +95,77 @@ jobs:
                 ...context.repo, issue_number: context.issue.number, body,
               });
             }
+
+  # ---------------------------------------------------------------------------
+  # Supabase — migrations, function secrets and the edge functions.
+  #
+  # There is one Supabase project, so a pull request's edge functions ARE the live ones from the
+  # moment this job runs. That is a real trade and it is made deliberately: the alternative is that
+  # no preview can exercise generation at all, and AGENTS.md is emphatic that a green pipeline is
+  # not evidence a deployment works. What makes it tolerable is that the guardrails are config
+  # rather than code — `enhance_enabled` and both caps are rows in `app_config`, so a bad deploy is
+  # stopped from the dashboard in seconds rather than by another deploy. Phase-06, which brings
+  # accounts, is where a second project or Supabase branching belongs.
+  #
+  # The whole job is skipped when the project secrets are absent, which is what a fork sees.
+  # ---------------------------------------------------------------------------
+  supabase:
+    name: Supabase functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the project is configured
+        id: configured
+        run: |
+          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] || [ -z "${{ secrets.SUPABASE_PROJECT_REF }}" ]; then
+            echo "No Supabase project configured — skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: supabase/setup-cli@v1
+        if: steps.configured.outputs.ready == 'true'
+        with:
+          version: latest
+
+      - name: Link
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
+
+      - name: Apply migrations
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase db push --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
+
+      - name: Set the function secrets
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase secrets set \
+            DEEPSEEK_API_KEY="${{ secrets.DEEPSEEK_API_KEY }}" \
+            GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            BYOK_ENC_KEY="${{ secrets.BYOK_ENC_KEY }}" \
+            ANON_ID_SECRET="${{ secrets.ANON_ID_SECRET }}" \
+            TURNSTILE_SECRET="${{ secrets.TURNSTILE_SECRET }}" \
+            ALLOWED_ORIGINS="${{ vars.ALLOWED_ORIGINS }}"
+
+      # Named one by one, so `test-provider` — the scripted stand-in the guardrail tests drive —
+      # cannot reach production by way of a directory scan. It also refuses to run without
+      # ALLOW_TEST_PROVIDER, which is never set here.
+      - name: Deploy the functions
+        if: steps.configured.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          for fn in enhance detect ocr usage byok cron-keepalive notion-oauth notion-push drive-auth drive-push; do
+            # Signed-out students call these, so the platform's JWT gate has to be off; each
+            # function does its own auth (a verified JWT, or a signed anon id behind Turnstile).
+            supabase functions deploy "$fn" --no-verify-jwt
+          done

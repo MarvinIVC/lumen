@@ -315,3 +315,121 @@ by design.
 - **All of `/app` is server-rendered markup before it is interactive**, so under `next dev` with
   nine parallel workers a `fill()` can be lost to a component that has not hydrated. `openNew()` in
   the ingest suite waits for the client to arrive first.
+
+---
+
+## Phase 04 — The AI engine & generation flow
+
+Shipped 2026-08-30. The engine: providers, prompts, the guardrails, the edge functions, the
+streaming client, BYOK, and the eval suite that gates prompt changes.
+
+**Live pricing re-verified on 2026-08-30** against `api-docs.deepseek.com`: flash $0.22/$0.44
+cache-miss in, $0.007/$0.014 cache-hit in, $0.66/$1.32 out (off-peak/peak); pro at 3×; peak
+01:00–04:00 and 06:00–10:00 UTC Mon–Fri. Identical to what phase-00 seeded, so `app_config` was
+not touched — `tests/unit/pricing.test.ts` now asserts the row against those numbers, and the
+nightly workflow runs it after the live evals so a price change is a red build rather than a
+surprise at month end.
+
+**Must not undo**
+
+1. **The cached prefix is byte-identical or it is not cached.** `system` + the pack block + the
+   domain block are `buildEnhancePrompt`'s stable half, and nothing in them may vary per call — no
+   clock, no id, no title, no filename. DeepSeek's prefix caching is automatic and silent: when it
+   stops, the output is identical and input costs ~31× more. `tests/unit/prompt-cache.test.ts` is
+   the only thing that would notice.
+2. **`lib/ai/**` is shared source with the Deno edge functions.** Deno resolves specifiers
+   literally, so every relative import there carries an explicit `.ts` and `tsconfig` sets
+   `allowImportingTsExtensions`. `sloppy-imports` in `supabase/functions/deno.json` is **not**
+   honoured by the Supabase edge runtime — it was tried and it boots with `Module not found`. The
+   alternative was a bundling step, which would have put a generated copy of the engine between the
+   eval gate and the code students actually run. Nothing in `lib/ai` may touch a Node or DOM API.
+3. **Packs reach the server through `lib/curriculum/registry.ts`, not `loadPack`.** A
+   template-literal dynamic `import()` of JSON cannot be statically resolved by Deno, so the edge
+   function would boot with no packs at all and silently generate in generic mode. The registry is
+   static imports with the JSON import attribute. It must never be imported from client code.
+4. **`daily_cost.cost_cny` is `numeric(12,5)`, not `(10,2)`.** `record_usage` adds each call's cost
+   to a running total, so at two decimal places every ~0.007 CNY call rounded to 0.01 before it was
+   added — a 40% overstatement, and at 4,000 calls a month a large fraction of the ceiling the cap
+   exists to defend.
+5. **A failed, refused or cancelled generation writes `credits: 0` and its real `cost_cny`.** The
+   ledger has to stay honest about what was spent while the student's allowance stays untouched.
+   `scripts/test-edge.mjs` asserts both halves for all three cases.
+6. **An unreadable response is never a quota card.** `RefusalReason` is a closed union and the
+   client maps anything outside it to `unavailable`. It was `| string` for an afternoon, and a 503
+   from an unreachable backend rendered as "that is all the free study guides for today" — a
+   message that is wrong about the student's own account and that they cannot check.
+7. **`ALLOW_TEST_PROVIDER` gates `supabase/functions/test-provider`, and the deploy workflow names
+   the functions it ships.** Two independent reasons the scripted provider cannot reach production.
+
+**Decisions made in-session**
+
+- **BYOK is a server-sealed blob held on the device.** `02` §6 puts the ciphertext in
+  `profile.byok`, which needs an account, and accounts are phase-06 — but the DoD requires BYOK to
+  work when the cap is hit. So the key is posted once to `byok`, validated with a one-token call,
+  encrypted, and only the ciphertext comes back to `localStorage`. Same property that matters: only
+  this server can open it. Phase-06 moves the same blob into `profile.byok` with nobody re-typing
+  anything.
+- **AES-256-GCM, not libsodium secretbox.** Same key material (32 bytes, `openssl rand -base64 32`),
+  same strength, and no npm WebAssembly module in the one path where a load failure locks a student
+  out of their own key. The ciphertext carries a `v1.` tag so a later move can read what this wrote.
+- **The pack block is topic-scoped.** `05` §2 asks for a block under ~1200 tokens and `05` §3
+  specifies AP Chem Unit 1 with eight detailed topics, which is ~2,150 on its own. Truncating a
+  syllabus to hit a token target is the wrong resolution, so the topics the lesson is about get the
+  full treatment (~1,400 tokens) and the rest of the unit appears as a one-line index. A lesson that
+  names no topic still gets the whole unit.
+- **The tolerant JSON parser is hand-rolled**, like phase-03's language detection: ~200 lines, no
+  dependency, and it has to run in Deno as well as the browser.
+- **The validator is hand-rolled too, not Zod.** The interesting rules are not shape checks, the
+  repair path mutates as it goes, and a dependency-free module runs identically in Node, Deno and
+  the browser.
+- **Generation starts once per note and marks it `generating` before the request leaves.** A reload
+  mid-call finds `generating` and _offers_ to resume rather than spending a second credit.
+- **One Supabase project, so a pull request's edge functions are the live ones.** Recorded in
+  `deploy.yml`. The mitigation is that the guardrails are config: `enhance_enabled` and both caps
+  are rows, so a bad deploy is stopped from the dashboard in seconds.
+
+**Two rules that were wrong, both found by tests**
+
+- **The mermaid linter counted every word inside a node label as a node**, so an ordinary six-box
+  diagram was rejected as twenty-one and silently dropped from the note.
+- **"A correction quotes text still marked `student`" is a repair, not a failure.** The
+  hand-authored gold fixture trips the literal reading of `04` §5, because a correction often
+  _qualifies_ the student's wording rather than replacing it. The block becomes `ai-clarified`,
+  which is what provenance should have said in the first place.
+
+**What is measured**
+
+Median cost per call is **0.047 CNY** at peak rates and the AP Chemistry call is **0.071**, against
+the ~0.075 that `02` §7 budgets. At that rate the 100 CNY monthly ceiling buys roughly 2,100
+enhancements — comfortable against the realistic 2,000/month in §7, and about half the pessimistic
+4,000. The caps hold the ceiling either way; per-student quota is the flex, exactly as the migration
+comment says.
+
+**Still to verify against a live model.** Everything in this phase is tested against recorded
+responses and a scripted provider. The `recorded/*.json` files are hand-authored to the standard of
+the `-good.md` note beside each fixture and each says so in a `source` field; they should be
+replaced with real captures the first time the nightly run produces a passing document. The five
+verification steps in the phase prompt that need a real key — the fixture end to end, the live cache
+hit, the refusal, the mid-stream throttle — are the ones waiting on `DEEPSEEK_API_KEY` and a hosted
+Supabase project.
+
+**Gotchas**
+
+- **Playwright's WebKit does not apply `page.route` to these cross-origin `fetch` calls.** The
+  requests go to whatever is really listening on the Supabase port — which on a developer's machine
+  is the local stack, so a stubbed test silently passes against the _real_ scripted provider and
+  reports a document nobody wrote. The streaming tests are Chromium-only and say why; the storage
+  half, which is where WebKit has actually bitten this project, runs on both engines by seeding
+  IndexedDB directly.
+- **The pipeline stamps `context` and `options` onto the finished document.** The model is never
+  asked for them, and the browser client used to be the only thing patching them in — so any other
+  consumer got a document that crashes the renderer. Found by the first test to read one back out
+  of IndexedDB.
+- **A margin note is in the document but off screen below 1100px.** Assert `toBeAttached`, not
+  `toBeVisible`, for anything in the margin column on the mobile project.
+- **`supabase functions serve` skips directories starting with `_`.** Useful for `_shared`;
+  confusing for ten minutes when a probe function returns "Function not found".
+- **Postgres numerics arrive from PostgREST as strings**, and `"10" >= 6` is false. Every number in
+  the guardrail snapshot is coerced on the way in; the cap it defends is why.
+- **`app_config` is cached for 60 s inside each function.** `APP_CONFIG_TTL_MS=0` is how the
+  integration tests change a cap and expect the next request to obey it.

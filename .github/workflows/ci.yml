@@ -149,16 +149,30 @@ jobs:
         run: pnpm test:ai
 
   supabase:
-    name: Supabase migration
+    name: Supabase — migrations, types and the guardrails
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      # Applies 0000_init.sql to a clean local Postgres, so a migration that does not apply
+      # The edge functions import lib/ai directly, and Deno resolves module specifiers literally.
+      # A type error there fails at *deploy* rather than at typecheck, so it gets its own check —
+      # `tsc` excludes supabase/functions because it cannot see the Deno globals.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Typecheck the edge functions
+        run: |
+          for fn in supabase/functions/*/index.ts; do
+            echo "checking $fn"
+            deno check --config supabase/functions/deno.json "$fn"
+          done
+
+      # Applies both migrations to a clean local Postgres, so a migration that does not apply
       # cannot merge.
       - name: Start local stack
         run: supabase start
@@ -166,17 +180,15 @@ jobs:
       - name: Verify migrations apply from scratch
         run: supabase db reset
 
-      - name: Verify each edge function stub responds 501
+      # The three-layer cost ceiling is a claim about auth, Postgres, a streaming response and a
+      # ledger write all agreeing, and the only way to check it is to drive the real functions
+      # until they refuse. The provider is `supabase/functions/test-provider`, scripted and free.
+      - name: Serve the functions
         run: |
-          supabase functions serve --no-verify-jwt &
-          for i in $(seq 1 60); do
-            curl -sf -o /dev/null http://127.0.0.1:54321/functions/v1/enhance && break || sleep 1
+          supabase functions serve --no-verify-jwt --env-file supabase/functions/.env.test &
+          for i in $(seq 1 90); do
+            curl -sf -o /dev/null http://127.0.0.1:54321/functions/v1/usage && break || sleep 1
           done
-          fail=0
-          for fn in enhance ocr notion-oauth notion-push drive-auth drive-push cron-keepalive; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
-              "http://127.0.0.1:54321/functions/v1/$fn")
-            echo "$fn -> $code"
-            [ "$code" = "501" ] || fail=1
-          done
-          exit $fail
+
+      - name: Guardrail integration tests
+        run: node scripts/test-edge.mjs

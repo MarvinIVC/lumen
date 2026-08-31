@@ -39,6 +39,7 @@ const EXPECTED = [
   ['/app/new', 200],
   ['/app/review', 200],
   ['/app/note/does-not-exist', 200],
+  ['/app/settings', 200],
   // `dynamicParams = false` has to keep meaning what it says: an unknown locale is not a page.
   ['/fr', 404],
 ];

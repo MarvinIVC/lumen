@@ -38,9 +38,32 @@ export interface StreamUsage {
   provider: string;
 }
 
+/**
+ * The reasons a call is refused before it runs. `unavailable` is not one the server sends: it is
+ * what the client calls anything it could not make sense of, and keeping it in the union rather
+ * than widening `reason` to `string` is what stops a 503 from an unreachable backend being shown
+ * to a student as a quota card.
+ */
+export type RefusalReason =
+  | 'kill-switch'
+  | 'monthly-cap'
+  | 'daily-cap'
+  | 'quota'
+  | 'rate-limited'
+  | 'too_large'
+  | 'unavailable';
+
+const KNOWN_REASONS = new Set<string>([
+  'kill-switch',
+  'monthly-cap',
+  'daily-cap',
+  'quota',
+  'rate-limited',
+  'too_large',
+]);
+
 export interface QuotaRefusal {
-  reason:
-    'kill-switch' | 'monthly-cap' | 'daily-cap' | 'quota' | 'rate-limited' | 'too_large' | string;
+  reason: RefusalReason;
   message: string;
   resetsAt: string | null;
   byokHelps: boolean;
@@ -174,22 +197,27 @@ export async function streamEnhance(
   captureAnonId(response);
 
   if (!response.ok || !response.body) {
-    let refusal: QuotaRefusal = {
-      reason: 'error',
-      message: 'We could not reach the study-guide service. Your notes are safe on this device.',
+    // The default, and the one that matters: anything we cannot read is a service we could not
+    // reach, never an allowance the student has spent. A 503 from a gateway used to render as
+    // "that is all the free study guides for today", which is a lie about their own account.
+    const refusal: QuotaRefusal = {
+      reason: 'unavailable',
+      message:
+        'We could not reach the study-guide service just now. Your notes are safe on this device — try again in a moment.',
       resetsAt: null,
       byokHelps: false,
     };
     try {
       const parsed = (await response.json()) as Partial<QuotaRefusal> & { error?: string };
-      refusal = {
-        reason: parsed.reason ?? parsed.error ?? 'error',
-        message: parsed.message ?? refusal.message,
-        resetsAt: parsed.resetsAt ?? null,
-        byokHelps: parsed.byokHelps ?? false,
-      };
+      const claimed = parsed.reason ?? parsed.error ?? '';
+      if (KNOWN_REASONS.has(claimed)) {
+        refusal.reason = claimed as RefusalReason;
+        if (parsed.message) refusal.message = parsed.message;
+        refusal.resetsAt = parsed.resetsAt ?? null;
+        refusal.byokHelps = parsed.byokHelps ?? false;
+      }
     } catch {
-      // A gateway error page rather than our JSON. The default message is the honest one.
+      // A gateway error page rather than our JSON. The default above is the honest reading.
     }
     throw new EnhanceRefused(refusal);
   }
