@@ -303,6 +303,27 @@ async function testByokSealing() {
   check('the sealed key can be used', reuse.events.document?.length === 1);
 }
 
+async function testCors() {
+  // ALLOWED_ORIGINS is unset here, which is the local-development case: any origin is echoed back.
+  // The allowlist matching itself is a pure function and is unit tested in tests/unit/cors.test.ts
+  // — the Supabase CLI does not pick up a newly added env key without restarting the whole stack,
+  // so asserting it here would be asserting the harness rather than the code.
+  const response = await fetch(`${BASE}/usage`, {
+    method: 'OPTIONS',
+    headers: { origin: 'https://pr-7-lumen.example.workers.dev' },
+  });
+  check('preflight is answered', response.status === 204 || response.ok, String(response.status));
+  check(
+    'the anon id header is exposed to the client',
+    (response.headers.get('access-control-expose-headers') ?? '').includes('x-lumen-anon-id'),
+    response.headers.get('access-control-expose-headers') ?? 'none',
+  );
+  check(
+    'the anon id header is allowed on the request',
+    (response.headers.get('access-control-allow-headers') ?? '').includes('x-lumen-anon-id'),
+  );
+}
+
 async function testInputCap() {
   const { response, text } = await post('enhance', {
     extract: 'x'.repeat(60_001),
@@ -324,6 +345,7 @@ async function main() {
   await testRefusal();
   await testUnparseable();
   await testInputCap();
+  await testCors();
   await testQuota();
   await testDailyCapAndByok();
   await testUsageEndpoint();

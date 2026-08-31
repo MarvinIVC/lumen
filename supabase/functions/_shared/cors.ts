@@ -2,18 +2,33 @@
  * CORS for the browser-facing functions. The app is served from Cloudflare and the functions from
  * Supabase, so every call is cross-origin.
  *
- * ALLOWED_ORIGINS is read from the function secret of the same name (comma-separated). When it is
- * unset — local development — any origin is allowed, because there is nothing to protect yet.
+ * `ALLOWED_ORIGINS` is a comma-separated list from the function secret of the same name. Unset —
+ * local development — allows any origin, because there is nothing yet to protect.
+ *
+ * An entry may start with `*.` to allow a whole subdomain, which is not decoration: every pull
+ * request gets its own preview at `https://pr-<n>-lumen.<host>`, and AGENTS.md is emphatic that a
+ * phase is not finished until the *preview* has been checked. Without the wildcard the choice
+ * would be between an allowlist that has to be edited per pull request and no allowlist at all.
+ * The match is on the host only, after the scheme, so `*.example.com` cannot be satisfied by
+ * `https://evil.com/?x=.example.com` or by `https://notexample.com`.
  */
-const configured = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
-  .split(',')
-  .map((o) => o.trim())
-  .filter(Boolean);
+import { originAllowed } from './origins.ts';
+
+function configuredOrigins(): string[] {
+  return (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
 
 export function allowedOrigin(request: Request): string {
   const origin = request.headers.get('origin');
-  if (configured.length === 0) return origin ?? '*';
-  return origin && configured.includes(origin) ? origin : configured[0];
+  const allowed = configuredOrigins();
+  if (allowed.length === 0) return origin ?? '*';
+  if (origin && originAllowed(origin, allowed)) return origin;
+  // Answer with the first configured origin rather than the caller's: the browser then refuses
+  // the response, which is the correct outcome, and we have not echoed an untrusted value back.
+  return allowed[0] ?? '';
 }
 
 export function corsHeaders(request: Request): Record<string, string> {
