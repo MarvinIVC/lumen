@@ -95,7 +95,7 @@ pipeline that would have caught that bug.
 | First-load JS on `/`                  | 107.5 / 120 KB gz         | `pnpm test:budget`, in CI          |
 | Lighthouse on `/` and `/how-it-works` | 100 / 100 / 100 / 100     | `pnpm lh`, `pnpm lh:mobile`, in CI |
 | Monthly AI spend                      | ceiling ¥100              | `app_config` caps + kill switch    |
-| Measured cost per enhancement         | ¥0.047 median, ¥0.071 max | `pnpm test:ai`, fails at +25%      |
+| Measured cost per enhancement         | ¥0.062 live, ¥0.047 in CI | `pnpm test:ai`, fails at +25%      |
 
 **The Worker ceiling bit in phase-03 and was fixed, not deferred.** Adding the parsers took it to
 3742 KiB — over the ceiling and undeployable. `next.config.ts` now aliases the seven browser-only
@@ -121,6 +121,8 @@ number the Cloudflare API enforces.
   design and the workspace is almost entirely client components. That module is the whole
   exception; do not start a second one.
 - **Commit scopes** are limited to the list in `commitlint.config.mjs`.
+- **Live evals cost money and must be asked for.** `pnpm test:ai` replays recordings; only
+  `EVAL_LIVE=1` runs the real model. Vitest loads `.env.local`, so keys on disk are not consent.
 - **Prompts are versioned.** Any edit to a string in `lib/ai/prompts/` bumps `PROMPT_VERSION`,
   re-runs `pnpm test:ai` and updates the hash in `tests/unit/prompt-cache.test.ts` — which fails on
   every prompt edit on purpose. See `docs/PROMPTS.md`.

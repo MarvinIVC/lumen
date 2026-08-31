@@ -405,13 +405,28 @@ enhancements — comfortable against the realistic 2,000/month in §7, and about
 4,000. The caps hold the ceiling either way; per-student quota is the flex, exactly as the migration
 comment says.
 
-**Still to verify against a live model.** Everything in this phase is tested against recorded
-responses and a scripted provider. The `recorded/*.json` files are hand-authored to the standard of
-the `-good.md` note beside each fixture and each says so in a `source` field; they should be
-replaced with real captures the first time the nightly run produces a passing document. The five
-verification steps in the phase prompt that need a real key — the fixture end to end, the live cache
-hit, the refusal, the mid-stream throttle — are the ones waiting on `DEEPSEEK_API_KEY` and a hosted
-Supabase project.
+**Verified against the live model and the deployed preview.** All five verification steps in the
+phase prompt were run against the hosted Supabase project and `pr-7-lumen.…workers.dev`:
+
+| Check                                   | Result                                                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `fixtures/ap-chem-u1-raw.md` end to end | every hard check and every AP Chem assertion passes; the LLM judge scores **5/5 on all six dimensions** |
+| Prefix cache                            | **7,680 of ~14,000 input tokens served from cache**, `cacheHit: true`                                   |
+| Cost per call                           | **0.062 CNY** on the deployed run, inside the ~0.075 that `02` §7 budgets                               |
+| Latency                                 | 74 s server-side; the first section is on screen after **12 s**                                         |
+| `daily_cap_cny` forced to 0.01          | shared call refused 429 `daily-cap`; BYOK produced a document at `cost_cny: 0`                          |
+| `enhance_enabled` false                 | 503 `kill-switch`, instantly                                                                            |
+| Refusal fixture                         | `refused` with a reason, `credits: 0`, cost still recorded                                              |
+| Stop mid-stream                         | partial kept, labelled, resumable — quota unchanged at 3, then 2 after completing                       |
+
+Every point of the definition of done was checked individually on the deployed output: C₅H₇N
+completed to C₁₀H₁₄N₂ with an open question raised, "atomic mass = molar mass" corrected and marked
+`ai-corrected`, all seven diatomics with the student's mnemonic verbatim in a `student` margin note,
+a mass-spectrum figure, the mercury example with units and three significant figures, five
+calculations verified, and 12 flashcards / 10 quiz items.
+
+The `recorded/*.json` files are still hand-authored and say so in a `source` field. Replace them
+with real captures now that live runs produce passing documents.
 
 **Gotchas**
 
@@ -433,3 +448,23 @@ Supabase project.
   the guardrail snapshot is coerced on the way in; the cap it defends is why.
 - **`app_config` is cached for 60 s inside each function.** `APP_CONFIG_TTL_MS=0` is how the
   integration tests change a cap and expect the next request to obey it.
+- **Vitest loads `.env.local` into `process.env`.** The moment real keys existed, `pnpm test:ai`
+  stopped replaying recordings and started running seven paid generations. Live now needs
+  `EVAL_LIVE=1`; keys on disk are not consent to spend.
+- **The Supabase CLI does not pick up a newly _added_ env key without restarting the whole stack.**
+  Editing an existing one works; adding one and re-running `functions serve` does not, which looks
+  exactly like your code ignoring the variable.
+- **Playwright's `setOffline` does not abort an already-open streaming response**, so it cannot
+  simulate a connection dropping mid-generation. The Stop button exercises the same client path and
+  the dropped-stream case is covered by a stubbed stream that simply ends.
+- **`gh secret set` from a script needs the guard at the boundary.** A `--dry-run` flag applied at
+  the call sites pushed a set of dummy values into the real repository while printing "would push".
+
+**Two things a later phase should look at**
+
+1. **At 0.062 CNY per call, the 100 CNY monthly ceiling buys roughly 1,600 enhancements** — fine
+   against `02` §7's realistic 2,000/month only because most students will not use their full
+   allowance. If real usage approaches the pessimistic case, the per-tier quota is the flex, not
+   the cap.
+2. **Verify runs with reasoning off, like everything else.** It is the one call where thinking
+   might pay for itself, and it was switched off with the rest rather than measured separately.
