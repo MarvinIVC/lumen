@@ -82,13 +82,22 @@ export function createGeminiProvider(options: GeminiOptions): LLMProvider {
   const baseUrl = (options.baseUrl ?? GEMINI_BASE_URL).replace(/\/+$/, '');
 
   async function* chat(req: ChatRequest): AsyncIterable<ChatChunk> {
-    const timeout = AbortSignal.timeout(TIMEOUT_MS);
+    const timeout = AbortSignal.timeout(req.timeoutMs ?? TIMEOUT_MS);
     const signal = AbortSignal.any([req.signal, timeout]);
 
     const generationConfig: Record<string, unknown> = {
       temperature: req.temperature,
       maxOutputTokens: req.maxTokens,
     };
+    // Gemini 3 models always think. `thinkingBudget: 0` is rejected outright (400), so `'none'`
+    // means "as little as the model allows" rather than off — which is still the difference
+    // between an answer and a response that spends its whole budget thinking and returns empty
+    // text with finishReason MAX_TOKENS.
+    if (req.reasoningEffort) {
+      generationConfig.thinkingConfig = {
+        thinkingLevel: req.reasoningEffort === 'none' ? 'low' : req.reasoningEffort,
+      };
+    }
     if (req.json) {
       generationConfig.responseMimeType = 'application/json';
       if (options.responseSchema) generationConfig.responseSchema = options.responseSchema;

@@ -62,7 +62,7 @@ export function createOpenAICompatibleProvider(options: OpenAICompatibleOptions)
   const baseUrl = (options.baseUrl ?? 'https://api.openai.com').replace(/\/+$/, '');
 
   async function* chat(req: ChatRequest): AsyncIterable<ChatChunk> {
-    const timeout = AbortSignal.timeout(TIMEOUT_MS);
+    const timeout = AbortSignal.timeout(req.timeoutMs ?? TIMEOUT_MS);
     const signal = AbortSignal.any([req.signal, timeout]);
 
     const body: Record<string, unknown> = {
@@ -80,6 +80,9 @@ export function createOpenAICompatibleProvider(options: OpenAICompatibleOptions)
     };
     if (req.json && options.jsonMode !== false) body.response_format = { type: 'json_object' };
     if (options.includeUsage) body.stream_options = { include_usage: true };
+    // Only sent when asked for. A BYOK endpoint that has never heard of it would reject the whole
+    // request, and the default — whatever the model does on its own — is the right default.
+    if (req.reasoningEffort) body.reasoning_effort = req.reasoningEffort;
 
     let response: Response;
     try {

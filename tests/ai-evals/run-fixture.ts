@@ -90,7 +90,12 @@ export interface RunResult {
 export async function runCase(
   evalCase: EvalCase,
   provider: LLMProvider,
-  options: { verifier?: LLMProvider | null; signal?: AbortSignal } = {},
+  options: {
+    verifier?: LLMProvider | null;
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    reasoningEffort?: 'none' | 'low' | 'medium' | 'high';
+  } = {},
 ): Promise<RunResult> {
   const match = await matchPack(evalCase.context, staticPackSource);
   const packBlock = match ? buildPackBlock(match) : genericBlock(evalCase.context);
@@ -112,8 +117,16 @@ export async function runCase(
       packBlock,
       extract: evalCase.raw,
     },
-    maxTokens: 10_000,
+    // These three mirror `app_config` rather than inventing their own values, because an eval that
+    // runs the model differently from production is measuring something students never see. The
+    // env overrides exist for deliberate experiments — "what would reasoning cost us?" — and the
+    // answer that put `none` in the config was measured with exactly that.
+    maxTokens: Number(process.env.EVAL_MAX_TOKENS ?? 10_000),
     temperature: 0.3,
+    timeoutMs: options.timeoutMs ?? Number(process.env.EVAL_TIMEOUT_MS ?? 100_000),
+    reasoningEffort:
+      options.reasoningEffort ??
+      ((process.env.EVAL_REASONING ?? 'none') as 'none' | 'low' | 'medium' | 'high'),
     verifyTokens: 3000,
     verifyFamilies: ['stem-quantitative', 'stem-descriptive'],
     signal: options.signal ?? new AbortController().signal,

@@ -30,6 +30,17 @@ function seededJson(key: string): Record<string, unknown> {
 const pricing = seededJson('pricing') as PricingTable;
 const models = seededJson('models') as Record<string, string>;
 
+/**
+ * `0000_init.sql` seeds the config and `0001_ai_engine.sql` corrects two of its values against
+ * what the live APIs actually accept. A test that reads only the seed asserts something that was
+ * true for three days.
+ */
+function seededModelsAfterMigrations(): Record<string, string> {
+  const later = readFileSync(resolve(ROOT, 'supabase/migrations/0001_ai_engine.sql'), 'utf8');
+  const patch = /set value = value \|\| '(\{[^']*\})'::jsonb\s*where key = 'models'/.exec(later);
+  return { ...models, ...(patch?.[1] ? (JSON.parse(patch[1]) as Record<string, string>) : {}) };
+}
+
 /** USD list prices, per million tokens, off-peak and peak. */
 const VERIFIED_USD = {
   'deepseek-v4-flash': { hit: [0.007, 0.014], miss: [0.22, 0.44], out: [0.66, 1.32] },
@@ -73,7 +84,9 @@ describe('the seeded rate card', () => {
     expect(models.primary).toBe('deepseek-v4-flash');
     expect(models.verify).toBe('deepseek-v4-pro');
     expect(models.vision).toBe('deepseek-v4-flash-vision-exp');
-    expect(models.fallback).toBe('gemini-2.5-flash');
+    // `gemini-2.5-flash` is 404 for any key issued now — see the note in 0001_ai_engine.sql.
+    // 0000 seeds it and 0001 corrects it, so this reads the corrected value.
+    expect(seededModelsAfterMigrations().fallback).toBe('gemini-3.6-flash');
   });
 });
 

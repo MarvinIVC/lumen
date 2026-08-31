@@ -170,6 +170,8 @@ serve(async (request) => {
         },
         maxTokens: decision.maxTokens,
         temperature: decision.temperature,
+        timeoutMs: decision.timeoutMs,
+        ...(decision.reasoningEffort ? { reasoningEffort: decision.reasoningEffort } : {}),
         verifyTokens: config.limits.max_tokens.verify ?? 3000,
         verifyFamilies: config.verify_families,
         signal: controller.signal,

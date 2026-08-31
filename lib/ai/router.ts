@@ -96,7 +96,17 @@ export interface AppConfig {
     max_tokens: Record<string, number>;
     anon_lifetime_calls: number;
     ip_calls_per_hour: number;
+    /** Per provider call. Defaults to 90 s; the Supabase edge function's own ceiling is 150 s. */
+    timeout_ms?: number;
   };
+  /**
+   * Reasoning effort per call kind, for models that reason before answering.
+   *
+   * Reasoning is billed as output and counted against `max_tokens`, so it is worth paying for
+   * where judgement is the product — rebuilding a lesson, checking a calculation — and pure waste
+   * where the work is mechanical. Classifying a note and transcribing a page are mechanical.
+   */
+  reasoning?: Partial<Record<CallKind, 'none' | 'low' | 'medium' | 'high'>>;
 }
 
 export type RefusalReason =
@@ -127,6 +137,8 @@ export interface RouteDecision {
   credits: number;
   maxTokens: number;
   temperature: number;
+  timeoutMs: number;
+  reasoningEffort: 'none' | 'low' | 'medium' | 'high' | undefined;
 }
 
 export type RouteResult = RouteDecision | RouteRefusal;
@@ -301,6 +313,8 @@ export async function route(input: RouteInput, context: RouteContext): Promise<R
 
   const maxTokens = maxTokensFor(input);
   const temperature = TEMPERATURES[input.kind];
+  const timeoutMs = input.config.limits.timeout_ms ?? DEFAULT_TIMEOUT_MS;
+  const reasoningEffort = input.config.reasoning?.[input.kind];
 
   if (input.caller.byok) {
     const byok = input.caller.byok;
@@ -325,6 +339,8 @@ export async function route(input: RouteInput, context: RouteContext): Promise<R
       credits: decision.credits,
       maxTokens,
       temperature,
+      timeoutMs,
+      reasoningEffort,
     };
   }
 
@@ -363,8 +379,20 @@ export async function route(input: RouteInput, context: RouteContext): Promise<R
       })
     : null;
 
-  return { ok: true, provider, fallback, credits: decision.credits, maxTokens, temperature };
+  return {
+    ok: true,
+    provider,
+    fallback,
+    credits: decision.credits,
+    maxTokens,
+    temperature,
+    timeoutMs,
+    reasoningEffort,
+  };
 }
+
+/** 04-AI-ENGINE.md §2 step 3. Overridable because a reasoning model can run past it legitimately. */
+const DEFAULT_TIMEOUT_MS = 90_000;
 
 /**
  * The examiner for the verify pass (§6).

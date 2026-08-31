@@ -193,4 +193,4 @@ describe('prompt versioning', () => {
 });
 
 /** Bumped together with PROMPT_VERSION. See the failure message above. */
-const EXPECTED_PROMPT_HASH = '8eab782597459987';
+const EXPECTED_PROMPT_HASH = '06bbb9f05cd6168c';

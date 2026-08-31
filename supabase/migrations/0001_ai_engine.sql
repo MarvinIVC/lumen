@@ -141,3 +141,72 @@ $$;
 revoke execute on function public.guardrail_snapshot(uuid, text, text) from public, anon, authenticated;
 revoke execute on function public.record_usage(uuid, text, text, text, text, int, int, int, numeric, numeric, boolean, text)
   from public, anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- What a live run against DeepSeek V4 taught us that the spec could not.
+--
+-- 1. The model reasons before it answers, and the reasoning is billed as output
+--    *and* counted against `max_tokens`. With it on, a full study guide spent
+--    its budget thinking and came back truncated: 117 s, 14k output tokens,
+--    0.14 CNY, and no document at all. With `reasoning_effort: "none"` the same
+--    fixture produced a document that passes every hard check, in 72 s.
+--
+--    So reasoning is off for now, everywhere. It is a row rather than a
+--    constant because that is a judgement about one model at one point in time,
+--    and the next model may deserve the opposite answer.
+--
+-- 2. 90 s — the number 04-AI-ENGINE.md §2 names as the point at which the
+--    fallback provider gets a turn — was written before models reasoned. A
+--    generation that legitimately takes 72 s has no headroom against it, and a
+--    timeout that always fires is a fallback that always fires. 100 s leaves
+--    room for the verify pass inside the edge function's own 150 s ceiling.
+--
+-- 3. The measured draft is ~7k output tokens, against a `complete` cap of 8k.
+--    That is close enough to the ceiling that a longer lesson would truncate,
+--    which is a broken note rather than a cheaper one. Raised, with the global
+--    caps still holding the budget.
+-- ---------------------------------------------------------------------------
+update public.app_config
+set value = value
+  || '{"timeout_ms": 100000}'::jsonb
+  || jsonb_build_object(
+       'max_tokens',
+       (value -> 'max_tokens') || '{"complete": 10000, "study_guide": 12000}'::jsonb
+     )
+where key = 'limits';
+
+insert into public.app_config (key, value) values
+  ('reasoning', '{"enhance":"none","regen":"none","verify":"none","detect":"none","ocr":"none"}'::jsonb)
+on conflict (key) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- The fallback model, corrected against the live API.
+--
+-- `gemini-2.5-flash` — named in 02-ARCHITECTURE.md §2 and seeded by phase-00 —
+-- returns 404 for any API key issued now: "no longer available to new users".
+-- The entire fallback path was therefore dead on a fresh deployment, and
+-- nothing would have noticed until the day DeepSeek was down, which is the one
+-- day it matters.
+--
+-- Gemini 3.x models always think, and unlike DeepSeek the thinking cannot be
+-- switched off (`thinkingBudget: 0` is rejected); the provider asks for the
+-- lowest level instead and the token budget has to cover it.
+--
+-- The free tier still exists, so the rate card stays zero for the shared
+-- fallback. The paid rates as of 2026-08-31 are $0.75/M in and $3.75/M out
+-- (rising on 2027-01-01), recorded here so that a move off the free tier is an
+-- edit rather than a discovery.
+-- ---------------------------------------------------------------------------
+update public.app_config
+set value = value || '{"fallback": "gemini-3.6-flash"}'::jsonb
+where key = 'models';
+
+update public.app_config
+set value = value || $json${
+  "gemini-3.6-flash": {
+    "peak":     { "in_miss": 0, "in_hit": 0, "out": 0 },
+    "off_peak": { "in_miss": 0, "in_hit": 0, "out": 0 },
+    "_paid_rates_2026_08_31": { "usd_in": 0.75, "usd_out": 3.75, "rises": "2027-01-01" }
+  }
+}$json$::jsonb
+where key = 'pricing';

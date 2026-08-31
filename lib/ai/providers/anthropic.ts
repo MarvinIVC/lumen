@@ -82,7 +82,7 @@ export function createAnthropicProvider(config: ProviderConfig): LLMProvider {
   const baseUrl = (config.baseUrl ?? ANTHROPIC_BASE_URL).replace(/\/+$/, '');
 
   async function* chat(req: ChatRequest): AsyncIterable<ChatChunk> {
-    const timeout = AbortSignal.timeout(TIMEOUT_MS);
+    const timeout = AbortSignal.timeout(req.timeoutMs ?? TIMEOUT_MS);
     const signal = AbortSignal.any([req.signal, timeout]);
 
     // Everything except the final run instruction is stable — see §4.1.
