@@ -164,13 +164,16 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
 
       - name: Typecheck the edge functions
-        run: |
-          for fn in supabase/functions/*/index.ts; do
-            echo "checking $fn"
-            deno check --config supabase/functions/deno.json "$fn"
-          done
+        run: pnpm check:edge
 
       # Applies both migrations to a clean local Postgres, so a migration that does not apply
       # cannot merge.

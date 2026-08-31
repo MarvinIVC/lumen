@@ -42,7 +42,7 @@ The edge functions have their own two checks, because `tsc` cannot see them (it 
 `supabase/functions`, which needs the Deno globals) and neither can Playwright:
 
 ```bash
-deno check --config supabase/functions/deno.json supabase/functions/*/index.ts
+pnpm check:edge         # deno check — `tsc` cannot see these files
 
 pnpm db:start
 pnpm exec supabase db reset
