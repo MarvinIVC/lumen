@@ -84,9 +84,15 @@ serve(async (request) => {
       system: 'Reply with the single word: ok',
       messages: [{ role: 'user', content: 'ok' }],
       json: false,
-      maxTokens: 1,
+      // Not one token. A model that reasons before answering spends the whole budget thinking and
+      // returns empty text, which this function then reports as "the provider accepted the key but
+      // returned nothing" — rejecting a key that works perfectly. Ask for as little reasoning as
+      // the provider allows and leave room for an actual word.
+      maxTokens: 16,
       temperature: 0,
-      signal: AbortSignal.timeout(20_000),
+      reasoningEffort: 'none',
+      timeoutMs: 30_000,
+      signal: AbortSignal.timeout(30_000),
     })) {
       if (chunk.type === 'text') sawText = true;
       if (chunk.type === 'error') {

@@ -126,7 +126,11 @@ export async function resolveCaller(
   };
 
   if (body.byok) {
-    const apiKey = await decryptSecret(body.byok.ciphertext);
+    // A malformed record — an older client, a half-written localStorage entry, a request built by
+    // hand — must read as "add your key again", not as a 500. `decryptSecret` is only safe on a
+    // string, and everything reaching here came off the wire.
+    const ciphertext = typeof body.byok.ciphertext === 'string' ? body.byok.ciphertext : '';
+    const apiKey = ciphertext ? await decryptSecret(ciphertext) : null;
     if (!apiKey) {
       return {
         caller,

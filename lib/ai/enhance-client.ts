@@ -225,6 +225,11 @@ export async function streamEnhance(
   let document = emptyDocument(request.context, request.options, request.titleHint ?? '');
   const sections = new Map<number, Section>();
   let key: string | null = null;
+  // A stream can stop without saying so — a dropped connection, a closed laptop, a train tunnel.
+  // Nothing throws when that happens: the reader simply runs out of bytes. Unless one of the three
+  // concluding events arrives, the run did not finish, and the student is owed the chance to
+  // resume rather than a partial note presented as though it were the whole thing.
+  let concluded = false;
 
   const publish = () => {
     document = {
@@ -271,6 +276,7 @@ export async function streamEnhance(
           break;
         }
         case 'document': {
+          concluded = true;
           const { document: finished, degraded } = data as {
             document: NoteDocument;
             degraded: boolean;
@@ -284,12 +290,14 @@ export async function streamEnhance(
           break;
         }
         case 'refused':
+          concluded = true;
           handlers.onRefused?.((data as { reason: string }).reason);
           break;
         case 'usage':
           handlers.onUsage?.(data as StreamUsage);
           break;
         case 'error':
+          concluded = true;
           handlers.onError?.(data as { code: string; message: string; resumable: boolean });
           break;
         default:
@@ -298,6 +306,15 @@ export async function streamEnhance(
     },
     request.signal,
   );
+
+  if (!concluded && !request.signal?.aborted) {
+    handlers.onError?.({
+      code: 'interrupted',
+      message:
+        'The connection dropped part-way through. What arrived is saved on this device — try again when you are back online.',
+      resumable: true,
+    });
+  }
 }
 
 /**

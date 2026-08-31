@@ -239,6 +239,27 @@ test.describe('generation', () => {
     await expect(page.getByText(/have not been charged/i)).toBeVisible();
   });
 
+  test('treats a dropped connection as resumable, not as a finished note', async ({ page }) => {
+    await stubUsage(page);
+    // A stream that simply stops: head and one section, then nothing. No error event, no document.
+    // This is what a train tunnel looks like from the client, and the honest reading is that the
+    // run did not finish — not that the note is done and happens to be short.
+    await stubEnhance(
+      page,
+      frame('start', { provider: 'deepseek', model: 'deepseek-v4-flash' }) +
+        frame('head', {
+          head: { title: 'Atomic Structure', summary: 'Partial.', objectives: [] },
+        }) +
+        frame('section', { index: 0, section: RECORDED.response.sections[0] }),
+    );
+
+    await reachNote(page);
+
+    await expect(page.getByText(/connection dropped part-way/i)).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /1\.1 The mole/ })).toBeVisible();
+  });
+
   test('offers to try again after a resumable failure, keeping what arrived', async ({ page }) => {
     await stubUsage(page);
     await stubEnhance(
