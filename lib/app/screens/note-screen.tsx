@@ -254,7 +254,19 @@ export function NoteScreen({ noteId }: { noteId: string }) {
       <main className="mx-auto flex w-full max-w-[76rem] flex-col gap-5 px-5 py-6">
         <div className="mx-auto flex w-full max-w-(--note-shell) flex-col gap-3">
           {note.partial ? (
-            <Notice tone="warning">{appStrings.generate.partialBanner}</Notice>
+            <div className="flex flex-wrap items-center gap-3 rounded-md border border-warning/50 bg-verify px-3 py-2.5">
+              <p className="font-sans text-sm leading-snug text-text">
+                {appStrings.generate.partialBanner}
+              </p>
+              {/* A partial note with no way to finish it is a dead end — that is what a student
+                  saw every time they pressed Stop. The button lives here only when there is no
+                  error row below, which carries its own; two identical buttons is its own bug. */}
+              {note.error ? null : (
+                <Button size="sm" variant="secondary" onClick={retry}>
+                  {appStrings.generate.resumeCta}
+                </Button>
+              )}
+            </div>
           ) : null}
           {note.degraded ? (
             <Notice tone="warning">{appStrings.generate.degradedBanner}</Notice>
