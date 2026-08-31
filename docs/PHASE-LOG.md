@@ -460,6 +460,43 @@ with real captures now that live runs produce passing documents.
 - **`gh secret set` from a script needs the guard at the boundary.** A `--dry-run` flag applied at
   the call sites pushed a set of dummy values into the real repository while printing "would push".
 
+**What phase-05 inherits**
+
+The note workspace is built on top of what the engine actually emits, and four of those facts are
+measured rather than assumed — all from the deployed output, not the fixtures.
+
+1. **Provenance is block-level. Nothing emits inline `spans`.** `lib/ai/schema.ts` has `InlineSpan`
+   and `lib/render/blocks/paragraph.tsx` assembles a paragraph from `spans` when they are there —
+   but the model never produces them, and neither does the gold fixture. Phase-05 §9 asks for
+   accept/reject "per-span or block". Per-block works today; per-span needs either a rubric change
+   (and a `PROMPT_VERSION` bump, and a re-run of the evals) or a decision that block-level is the
+   product. Do not discover this while wiring the UI.
+
+2. **`originalText` is populated, so rejecting a correction can restore the exact wording.**
+   Every `ai-corrected` and `ai-clarified` block in the deployed run carried it, and every
+   `corrections[]` entry carried `original`. Two caveats found in the same run: one student
+   sentence was claimed by _two_ blocks (an `ai-clarified` and an `ai-corrected` sharing the same
+   `originalText`), so "reject" must handle one original mapping to several blocks; and the
+   student's own wording for a corrected block lives **only** in `originalText`, not in any
+   `student` block. That means "My original" reading mode has to splice `originalText` back in, or
+   the mercury calculation — which came back as one `ai-corrected` block — vanishes from the
+   student's own view of their own notes.
+
+3. **`enhance` has no `scope` parameter.** Phase-05 §10 ("regenerate this section") needs one. The
+   credit side is already done: `creditsFor` in `lib/ai/router.ts` prices `kind: 'regen'` at 0.25
+   and `usage_event.kind` accepts it. What is missing is the request field, a prompt that asks for
+   one section's blocks rather than a document, and a validator path that accepts a fragment —
+   `validateNoteDocument` requires a whole document today.
+
+4. **"Ask about this" needs the non-JSON path.** Every provider takes `json: false` already
+   (`supabase/functions/byok` uses it for the one-token key check), but `runEnhance` is JSON-only
+   end to end. That call wants to be its own small function rather than a mode of the pipeline.
+
+Also inherited: `migrateNoteDocument` in `lib/ai/validate.ts` is a version stamp and a stats
+recompute — enough for 1.0.0, and the place version history has to grow. Section ids come back as
+readable slugs (`s-1-1-moles`), which is what the outline rail and any TipTap mapping will want to
+key on.
+
 **Two things a later phase should look at**
 
 1. **At 0.062 CNY per call, the 100 CNY monthly ceiling buys roughly 1,600 enhancements** — fine
