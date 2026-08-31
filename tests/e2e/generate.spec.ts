@@ -258,6 +258,11 @@ test.describe('generation', () => {
     await expect(page.getByText(/connection dropped part-way/i)).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByRole('heading', { name: /1\.1 The mole/ })).toBeVisible();
+
+    // A partial note has to offer a way to finish it. Against the deployed preview, pressing Stop
+    // left a student with two sections, a banner telling them to try again, and nothing to press.
+    await expect(page.getByText(/partial study guide/i)).toBeVisible();
+    await expect(page.getByText(/Nothing was charged/i)).toBeVisible();
   });
 
   test('offers to try again after a resumable failure, keeping what arrived', async ({ page }) => {

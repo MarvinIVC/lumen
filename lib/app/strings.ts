@@ -159,7 +159,7 @@ export const appStrings = {
     resumeCta: 'Try again',
     keepPartial: 'Keep this draft',
     partialBanner:
-      'This is a partial study guide — generation stopped before it finished. Try again when you have a moment.',
+      'This is a partial study guide — generation stopped before it finished. Nothing was charged for it.',
     degradedBanner:
       'Some parts of this did not come back cleanly and were left out rather than guessed at. Generating again usually fixes it.',
     revisedBanner: 'We revised several points after a second check. They are marked in the text.',
