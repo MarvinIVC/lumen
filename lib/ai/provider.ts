@@ -36,6 +36,22 @@ export interface ChatRequest {
   json: boolean;
   maxTokens: number;
   temperature: number;
+  /**
+   * How long to wait for the whole response, in ms. Defaults to 90 s, which is what
+   * 04-AI-ENGINE.md §2 step 3 names as the point at which the fallback provider gets a turn.
+   *
+   * It is a per-call number rather than a constant because that 90 s was written before the
+   * primary model reasoned: a full study guide with reasoning on runs past it, and a request that
+   * always times out is a fallback that always fires. The ceiling is the Supabase edge function's
+   * own 150 s (02-ARCHITECTURE.md §2).
+   */
+  timeoutMs?: number;
+  /**
+   * DeepSeek's V4 models reason before answering, and the reasoning is billed as output and
+   * counted against `maxTokens`. `'none'` turns it off, which is right for mechanical work —
+   * classifying a note, transcribing a page — and wrong for the enhancement itself.
+   */
+  reasoningEffort?: 'none' | 'low' | 'medium' | 'high';
   signal: AbortSignal;
 }
 

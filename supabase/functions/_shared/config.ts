@@ -40,7 +40,7 @@ const DEFAULTS: AppConfig = {
     primary: 'deepseek-v4-flash',
     verify: 'deepseek-v4-pro',
     vision: 'deepseek-v4-flash-vision-exp',
-    fallback: 'gemini-2.5-flash',
+    fallback: 'gemini-3.6-flash',
   },
   limits: {
     max_chars: 60_000,
@@ -81,6 +81,7 @@ export async function loadConfig(): Promise<LoadedConfig> {
     pricing: read('pricing', DEFAULTS.pricing),
     models: read('models', DEFAULTS.models),
     limits: read('limits', DEFAULTS.limits),
+    reasoning: read('reasoning', DEFAULTS.reasoning ?? {}),
     verify_families: read('verify_families', ['stem-quantitative', 'stem-descriptive']),
     feature_flags: read('feature_flags', { ocr_enabled: true }),
   };

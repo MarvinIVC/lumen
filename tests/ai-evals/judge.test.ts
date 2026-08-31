@@ -105,31 +105,40 @@ describe('judging a fixture', () => {
 /**
  * The nightly run. Skipped everywhere else, and deliberately not marked as a pass when it is —
  * a skipped judge is an unjudged build, and the workflow that cares knows the difference.
+ *
+ * **`EVAL_LIVE=1` is required, and the presence of keys is not enough.** Vitest loads `.env.local`
+ * into `process.env`, so the moment a developer put real keys in that file, `pnpm test:ai` started
+ * quietly running seven paid generations instead of the recorded ones — slowly, non-deterministically
+ * and at a cost that grows with every fixture added. A live run has to be asked for.
  */
 const live = createLiveJudge();
-describe.skipIf(!live || !process.env.DEEPSEEK_API_KEY)('live judging (nightly)', () => {
-  for (const evalCase of CASES.filter((entry) => !entry.expectRefusal)) {
-    const reference = resolve(ROOT, 'fixtures', `${evalCase.id.replace(/-u1$/, '-u1')}-good.md`);
-    const gold = resolve(ROOT, 'fixtures/ap-chem-u1-gold.md');
-    const referenceFile = existsSync(reference) ? reference : gold;
+const liveRequested = process.env.EVAL_LIVE === '1';
+describe.skipIf(!liveRequested || !live || !process.env.DEEPSEEK_API_KEY)(
+  'live judging (nightly)',
+  () => {
+    for (const evalCase of CASES.filter((entry) => !entry.expectRefusal)) {
+      const reference = resolve(ROOT, 'fixtures', `${evalCase.id.replace(/-u1$/, '-u1')}-good.md`);
+      const gold = resolve(ROOT, 'fixtures/ap-chem-u1-gold.md');
+      const referenceFile = existsSync(reference) ? reference : gold;
 
-    it(`${evalCase.id} scores at least 4 with nothing below 3`, async () => {
-      const { liveProvider } = await import('./run-fixture');
-      const provider = liveProvider();
-      expect(provider).not.toBeNull();
+      it(`${evalCase.id} scores at least 4 with nothing below 3`, async () => {
+        const { liveProvider } = await import('./run-fixture');
+        const provider = liveProvider();
+        expect(provider).not.toBeNull();
 
-      const result = await runCase(evalCase, provider!);
-      expect(result.document).not.toBeNull();
+        const result = await runCase(evalCase, provider!);
+        expect(result.document).not.toBeNull();
 
-      const judgement = await live!({
-        raw: evalCase.raw,
-        reference: readFileSync(referenceFile, 'utf8'),
-        document: result.document!,
-      });
-      expect(judgement, 'the judge did not return a usable score').not.toBeNull();
+        const judgement = await live!({
+          raw: evalCase.raw,
+          reference: readFileSync(referenceFile, 'utf8'),
+          document: result.document!,
+        });
+        expect(judgement, 'the judge did not return a usable score').not.toBeNull();
 
-      const gate = gateJudgement(judgement!);
-      expect(gate.ok, `${gate.reasons.join('; ')} — ${judgement!.notes}`).toBe(true);
-    }, 300_000);
-  }
-});
+        const gate = gateJudgement(judgement!);
+        expect(gate.ok, `${gate.reasons.join('; ')} — ${judgement!.notes}`).toBe(true);
+      }, 300_000);
+    }
+  },
+);

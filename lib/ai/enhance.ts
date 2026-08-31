@@ -69,6 +69,9 @@ export interface EnhanceRun {
   maxTokens: number;
   temperature: number;
   verifyTokens: number;
+  /** Per call. Undefined means the provider's own default of 90 s. */
+  timeoutMs?: number;
+  reasoningEffort?: 'none' | 'low' | 'medium' | 'high';
   /** `app_config.verify_families`. */
   verifyFamilies: string[];
   signal: AbortSignal;
@@ -219,6 +222,8 @@ export async function* runEnhance(run: EnhanceRun): AsyncGenerator<PipelineEvent
     json: true,
     maxTokens: run.maxTokens,
     temperature: run.temperature,
+    ...(run.timeoutMs ? { timeoutMs: run.timeoutMs } : {}),
+    ...(run.reasoningEffort ? { reasoningEffort: run.reasoningEffort } : {}),
     signal: run.signal,
   };
 
@@ -361,6 +366,7 @@ export async function* runEnhance(run: EnhanceRun): AsyncGenerator<PipelineEvent
       json: true,
       maxTokens: run.verifyTokens,
       temperature: 0,
+      ...(run.timeoutMs ? { timeoutMs: run.timeoutMs } : {}),
       signal: run.signal,
     });
     ledger.add(run.verifier.model, verified.usage);

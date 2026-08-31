@@ -45,6 +45,10 @@ jobs:
       - name: Run the live evals
         if: steps.keys.outputs.have_keys == 'true'
         env:
+          # The live suite has to be asked for. Keys alone do not enable it: Vitest loads
+          # `.env.local` into `process.env`, so any developer with keys on disk would otherwise be
+          # running seven paid generations every time they typed `pnpm test:ai`.
+          EVAL_LIVE: '1'
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: pnpm test:ai

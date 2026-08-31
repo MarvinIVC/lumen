@@ -123,6 +123,8 @@ serve(async (request) => {
     json: true,
     maxTokens: decision.maxTokens,
     temperature: decision.temperature,
+    timeoutMs: decision.timeoutMs,
+    ...(decision.reasoningEffort ? { reasoningEffort: decision.reasoningEffort } : {}),
     signal: controller.signal,
   })) {
     if (chunk.type === 'text') text += chunk.text;

@@ -117,8 +117,15 @@ export function createMockJudge(
   };
 }
 
-/** The nightly judge. Null when there is no key, which is every run but the nightly one. */
-export function createLiveJudge(model = 'gemini-2.5-flash'): Judge | null {
+/**
+ * The nightly judge. Null when there is no key, which is every run but the nightly one.
+ *
+ * `gemini-2.5-flash` is gone: Google returns 404 for it on any API key issued now, pointing at
+ * 3.6. And because every 3.x model thinks before answering, the token budget has to cover the
+ * thinking as well as the six scores — at 1200 it spent the lot thinking and returned nothing,
+ * which reached the gate as "the judge did not return a usable score".
+ */
+export function createLiveJudge(model = 'gemini-3.6-flash'): Judge | null {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
@@ -130,18 +137,53 @@ export function createLiveJudge(model = 'gemini-2.5-flash'): Judge | null {
     pricePerMTokOut: 0,
   });
 
-  return async (input) => {
+  /**
+   * One retry on a retryable failure.
+   *
+   * The free Gemini tier answers 503 "experiencing high demand" often enough that a gate without
+   * this is a gate that cries wolf at 03:17 — and a red build nobody trusts is worse than no
+   * build. Anything not retryable (a bad key, a model that no longer exists) still fails at once,
+   * because those are real and waiting does not fix them.
+   */
+  const askOnce = async (input: Parameters<Judge>[0]) => {
     let text = '';
+    let retryable = false;
     for await (const chunk of provider.chat({
       system: JUDGE_SYSTEM,
       messages: [{ role: 'user', content: buildJudgeMessages(input) }],
       json: true,
-      maxTokens: 1200,
+      maxTokens: 4000,
       temperature: 0,
-      signal: AbortSignal.timeout(120_000),
+      reasoningEffort: 'none',
+      signal: AbortSignal.timeout(180_000),
+      timeoutMs: 180_000,
     })) {
       if (chunk.type === 'text') text += chunk.text;
+      else if (chunk.type === 'error') {
+        retryable = chunk.error.retryable;
+        console.error('judge provider error', chunk.error);
+      } else if (chunk.type === 'done' && chunk.finishReason !== 'stop') {
+        console.error(`judge stopped early: ${chunk.finishReason}`);
+      }
     }
-    return parseJudgement(largestValidJson(text));
+
+    const judgement = parseJudgement(largestValidJson(text));
+    if (!judgement && !retryable) {
+      // "The judge did not return a usable score" is not a diagnosis, and a nightly failure at
+      // 03:17 has to be readable in the morning without re-running anything.
+      console.error(
+        `judge returned ${text.length} chars that did not parse as a judgement:\n${text.slice(0, 400)}`,
+      );
+    }
+    return { judgement, retryable };
+  };
+
+  return async (input) => {
+    const first = await askOnce(input);
+    if (first.judgement || !first.retryable) return first.judgement;
+
+    await new Promise((wait) => setTimeout(wait, 5000));
+    console.error('judge: retrying once after a retryable failure');
+    return (await askOnce(input)).judgement;
   };
 }
