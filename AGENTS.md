@@ -21,9 +21,14 @@ One phase per pull request, branched from `main`.
 
 ```bash
 pnpm install
-cp .env.example .env.local
+pnpm setup:env          # asks for each key, writes .env.local, generates the random ones
 pnpm dev
 ```
+
+`setup:env` is interactive and only asks for what is missing. `--all` re-asks for everything;
+`--github` also pushes the values to this repository's Actions variables and secrets. Without any
+keys the app still runs — ingestion, the review screen and the renderer are all local — but
+generation will report the service as unreachable, which is the honest thing for it to say.
 
 Before opening a PR, run what CI runs:
 
