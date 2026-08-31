@@ -84,7 +84,6 @@ export const appStrings = {
       `${count} files, treated as one lesson. Split them if they are separate.`,
     ocrCta: 'Run OCR',
     ocrCost: '≈ 1 credit',
-    ocrSoon: 'OCR arrives with generation — coming soon',
     ocrFailed:
       'We could not read that page. Your allowance was not touched — try again, or type what it ' +
       'says into the block.',
@@ -191,6 +190,8 @@ export const appStrings = {
     capBody:
       'Lumen is free and the shared budget runs out some days. Your notes are safe on this ' +
       'device — nothing has been lost.',
+
+    unreachableTitle: 'We could not reach the service',
 
     pausedTitle: 'Rebuilding is paused',
     pausedBody:

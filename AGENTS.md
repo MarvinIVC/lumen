@@ -29,13 +29,30 @@ Before opening a PR, run what CI runs:
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm format:check
-pnpm test:unit          # ~333 tests, node
+pnpm test:unit          # ~523 tests, node
+pnpm test:ai            # the eval suite — the release gate for any prompt change
 pnpm test:stories       # axe over every story, real browser
 pnpm build && pnpm test:budget    # first-load JS ceiling on the marketing routes
 pnpm cf:build && pnpm check:worker  # the real Worker answers every public URL
 pnpm test:e2e           # Playwright, chromium + mobile-safari
 pnpm lh && pnpm lh:mobile           # Lighthouse, desktop and emulated 4G
 ```
+
+The edge functions have their own two checks, because `tsc` cannot see them (it excludes
+`supabase/functions`, which needs the Deno globals) and neither can Playwright:
+
+```bash
+deno check --config supabase/functions/deno.json supabase/functions/*/index.ts
+
+pnpm db:start
+pnpm exec supabase db reset
+pnpm exec supabase functions serve --no-verify-jwt --env-file supabase/functions/.env.test &
+pnpm test:edge          # 32 guardrail checks against the real functions, no spend
+```
+
+`test:edge` drives the deployed shape of `enhance` — real auth, real quota reads, real ledger
+writes, real SSE — until it refuses, against a scripted provider that lives inside the same
+runtime. It is the only check that can prove the cost ceiling is enforced rather than described.
 
 Two of those need a flag most people forget:
 
@@ -73,6 +90,7 @@ pipeline that would have caught that bug.
 | First-load JS on `/`                  | 107.5 / 120 KB gz         | `pnpm test:budget`, in CI          |
 | Lighthouse on `/` and `/how-it-works` | 100 / 100 / 100 / 100     | `pnpm lh`, `pnpm lh:mobile`, in CI |
 | Monthly AI spend                      | ceiling ¥100              | `app_config` caps + kill switch    |
+| Measured cost per enhancement         | ¥0.047 median, ¥0.071 max | `pnpm test:ai`, fails at +25%      |
 
 **The Worker ceiling bit in phase-03 and was fixed, not deferred.** Adding the parsers took it to
 3742 KiB — over the ceiling and undeployable. `next.config.ts` now aliases the seven browser-only
@@ -98,6 +116,15 @@ number the Cloudflare API enforces.
   design and the workspace is almost entirely client components. That module is the whole
   exception; do not start a second one.
 - **Commit scopes** are limited to the list in `commitlint.config.mjs`.
+- **Prompts are versioned.** Any edit to a string in `lib/ai/prompts/` bumps `PROMPT_VERSION`,
+  re-runs `pnpm test:ai` and updates the hash in `tests/unit/prompt-cache.test.ts` — which fails on
+  every prompt edit on purpose. See `docs/PROMPTS.md`.
+- **The cached prefix is byte-identical or it is not cached.** Nothing above the run instruction
+  may vary per call: no clock, no id, no title. A regression there is invisible in the output and
+  costs ~31x on input.
+- **`lib/ai/**` is imported by the Deno edge functions as well as by Next**, so its relative
+  imports carry an explicit `.ts` extension and it may not touch a Node or DOM API. Provider code
+  lives in `lib/ai/providers/`, which no client module may import.
 
 ## When you finish a phase
 

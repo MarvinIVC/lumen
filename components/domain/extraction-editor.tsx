@@ -178,9 +178,7 @@ function BlockRow({
                 {`${appStrings.review.ocrCta} (${appStrings.review.ocrCost})`}
               </Button>
             ) : null}
-            <p className="text-xs text-text-muted">
-              {ocrAvailable ? appStrings.review.ocrCost : appStrings.review.ocrSoon}
-            </p>
+            <p className="text-xs text-text-muted">{appStrings.review.ocrCost}</p>
           </div>
         </div>
       ) : (

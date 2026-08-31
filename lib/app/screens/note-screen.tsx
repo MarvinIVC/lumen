@@ -360,21 +360,29 @@ function emptyFor(note: LocalNote): NoteDocument {
 function QuotaCard({ refusal, onRetry }: { refusal: QuotaRefusal; onRetry: () => void }) {
   const paused = refusal.reason === 'kill-switch';
   const community = refusal.reason === 'daily-cap' || refusal.reason === 'monthly-cap';
+  // Anything that is not a refusal we recognise is a service we could not reach. Telling a
+  // student they have used their allowance when the backend simply did not answer is worse than
+  // an error message: it is wrong about their own account, and they cannot check it.
+  const unreachable = refusal.reason === 'unavailable' || refusal.reason === 'rate-limited';
   const resets = resetsIn(refusal.resetsAt);
 
   const title = paused
     ? appStrings.generate.pausedTitle
     : community
       ? appStrings.generate.capTitle
-      : appStrings.generate.quotaTitle;
+      : unreachable
+        ? appStrings.generate.unreachableTitle
+        : appStrings.generate.quotaTitle;
 
   const body = paused
     ? appStrings.generate.pausedBody
     : community
       ? appStrings.generate.capBody
-      : resets
-        ? appStrings.generate.quotaBody(resets)
-        : appStrings.generate.quotaBodyNoReset;
+      : unreachable
+        ? refusal.message
+        : resets
+          ? appStrings.generate.quotaBody(resets)
+          : appStrings.generate.quotaBodyNoReset;
 
   return (
     <div className="flex flex-col gap-5">

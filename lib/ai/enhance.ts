@@ -375,6 +375,13 @@ export async function* runEnhance(run: EnhanceRun): AsyncGenerator<PipelineEvent
     }
   }
 
+  // The model is never asked for `context` or `options` — it has no business restating what it was
+  // told — so the pipeline stamps them on. Without this the document is missing two fields the
+  // renderer reads unconditionally, and the only reason that was survivable is that the browser
+  // client happened to patch them in on its way past. The edge function's `document` event, the
+  // eval harness and every later consumer get a complete document instead.
+  document = { ...document, context: run.input.context, options: run.input.options };
+
   yield { type: 'status', phase: 'finalising' };
   yield { type: 'document', document, issues: validation.issues, degraded };
   yield { type: 'usage', usage: usageOf(ledger, provider, fallbackUsed, true) };

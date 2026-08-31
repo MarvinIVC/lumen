@@ -101,6 +101,10 @@ describe('the happy path', () => {
     const [document] = find(events, 'document');
     expect(document?.document.title).toBe('Moles and Molar Mass');
     expect(document?.degraded).toBe(false);
+    // The renderer reads these unconditionally and the model never emits them, so the pipeline
+    // owes them to every consumer rather than to the browser client alone.
+    expect(document?.document.context).toEqual(INPUT.context);
+    expect(document?.document.options).toEqual(INPUT.options);
     expect(find(events, 'usage')[0]?.usage.charged).toBe(true);
   });
 
