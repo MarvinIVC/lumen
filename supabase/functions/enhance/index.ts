@@ -28,10 +28,13 @@ import { writeUsage } from '../_shared/ledger.ts';
 import { buildPackBlock, genericBlock, matchPack } from '../../../lib/curriculum/load.ts';
 import { domainFamilyFor } from '../../../lib/curriculum/detect.ts';
 import { runEnhance } from '../../../lib/ai/enhance.ts';
+import { runRegenerate } from '../../../lib/ai/regen.ts';
 import { createVerifier, route } from '../../../lib/ai/router.ts';
 import { staticPackSource } from '../../../lib/curriculum/registry.ts';
 import type { CallerRequest } from '../_shared/auth.ts';
 import type { RunUsage } from '../../../lib/ai/enhance.ts';
+import type { RegenUsage } from '../../../lib/ai/regen.ts';
+import type { RegenerateScope } from '../../../lib/ai/prompts/index.ts';
 import type { CallKind, RefusalReason } from '../../../lib/ai/router.ts';
 import type { EnhanceOptions, NoteContext } from '../../../lib/ai/schema.ts';
 
@@ -41,6 +44,33 @@ interface EnhanceBody extends CallerRequest {
   extract?: string;
   titleHint?: string;
   kind?: CallKind;
+  /**
+   * Present to regenerate one section instead of the whole document (phase-05 §10).
+   *
+   * The same endpoint rather than a second one, because everything before the pipeline is
+   * identical — the same auth, the same guardrails, the same pack lookup, the same ledger — and
+   * the two are the same call with a different tail on the prompt. Its presence, not the `kind`
+   * field, is what selects the scoped run: a client that could ask for the cheaper credit weight
+   * and still get a whole document would be a client that could pay a quarter for a full note.
+   */
+  scope?: Partial<RegenerateScope>;
+}
+
+/** A scope the server is prepared to act on: it names a section and shows what is there now. */
+function readScope(raw: EnhanceBody['scope']): RegenerateScope | null {
+  if (!raw || typeof raw.sectionId !== 'string' || !raw.sectionId.trim()) return null;
+  if (typeof raw.currentSection !== 'string' || !raw.currentSection.trim()) return null;
+  return {
+    sectionId: raw.sectionId,
+    sectionTitle: typeof raw.sectionTitle === 'string' ? raw.sectionTitle : '',
+    currentSection: raw.currentSection,
+    // Free text from the student, and it goes to the model inside a clearly delimited block that
+    // the run instruction has already framed as an instruction *about the rewrite*. It cannot
+    // reach the cached prefix, and 04 §4.2's refusal path still applies to whatever it asks for.
+    ...(typeof raw.instruction === 'string' && raw.instruction.trim()
+      ? { instruction: raw.instruction.slice(0, 500) }
+      : {}),
+  };
 }
 
 /** A refusal the student can act on maps to a status their client already branches on. */
@@ -106,7 +136,8 @@ serve(async (request) => {
       domainFamilyFor(body.context?.subject ?? '', body.context?.curriculum ?? 'UNKNOWN'),
   };
   const options: EnhanceOptions = { ...DEFAULT_OPTIONS, ...body.options };
-  const kind: CallKind = body.kind === 'regen' ? 'regen' : 'enhance';
+  const scope = readScope(body.scope);
+  const kind: CallKind = scope ? 'regen' : 'enhance';
 
   const store = createGuardrailStore(resolved.ipHash);
   const keys = {
@@ -152,11 +183,41 @@ serve(async (request) => {
     // stop the rendering.
     request.signal.addEventListener('abort', () => controller.abort());
 
-    let usage: RunUsage | null = null;
+    let usage: RunUsage | RegenUsage | null = null;
 
     if (resolved.issuedAnonId) writer.send('anon', { anonId: resolved.issuedAnonId });
 
     try {
+      if (scope) {
+        // The scoped run. No verify pass and no degrade ladder — `lib/ai/regen.ts` says why, and
+        // the short version is that there is already a section on the student's screen and a
+        // half-usable replacement for it is worse than none.
+        for await (const event of runRegenerate({
+          provider: decision.provider,
+          input: {
+            context,
+            options,
+            packBlock,
+            ...(body.titleHint ? { titleHint: body.titleHint } : {}),
+            extract,
+          },
+          scope,
+          maxTokens: decision.maxTokens,
+          temperature: decision.temperature,
+          timeoutMs: decision.timeoutMs,
+          ...(decision.reasoningEffort ? { reasoningEffort: decision.reasoningEffort } : {}),
+          signal: controller.signal,
+        })) {
+          if (event.type === 'usage') {
+            usage = event.usage;
+            continue;
+          }
+          const { type, ...rest } = event;
+          writer.send(type, rest);
+        }
+        return;
+      }
+
       for await (const event of runEnhance({
         provider: decision.provider,
         fallback: decision.fallback,
@@ -205,7 +266,9 @@ serve(async (request) => {
           tokensOut: usage.tokensOut,
           cachedTokensIn: usage.cachedTokensIn,
           cacheHit: usage.cacheHit,
-          fallbackUsed: usage.fallbackUsed,
+          // Only a full generation has a fallback provider to have used; a scoped regenerate
+          // runs once on the model it was routed to.
+          fallbackUsed: usage.fallbackUsed ?? false,
           costCny: record?.costCny ?? null,
           credits: record?.credits ?? 0,
           model: usage.model,
