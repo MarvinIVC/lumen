@@ -505,3 +505,142 @@ key on.
    the cap.
 2. **Verify runs with reasoning off, like everything else.** It is the one call where thinking
    might pay for itself, and it was switched off with the rest rather than measured separately.
+
+## Phase 05 — The note workspace: read, review, edit
+
+Shipped 2026-09-01. `/app/note/:id` becomes the three-mode workspace: Read, Edit, and a Study tab
+with its empty state (phase-08 builds the tools themselves). Most of Read is the phase-01 renderer
+wired to the real stored document, which is what it was designed for. The work is everything around
+it — a reading mode that tells the truth, provenance a student can act on, an editor that cannot
+lose a block, and two calls phase-04 priced but could not make.
+
+**Two decisions taken with the user before any code, and they should not be re-litigated**
+
+1. **Accept/reject is block-level, and that is the product.** Phase-04 measured that nothing emits
+   inline `spans`. The span path exists anyway — the TipTap mark round-trips them and the UI handles
+   them — but nothing asks the model to produce them, so there is no rubric change, no extra eval
+   run and no cache invalidation. If a later phase wants per-phrase provenance, the UI is already
+   there and the cost is a `PROMPT_VERSION` bump plus a live eval run.
+2. **Rejecting a corrected non-prose block restores a paragraph** of the student's exact wording.
+   `originalText` is prose — `n = 0.5 x 200.6 = 100.3 g` as they wrote it — and forcing it back into
+   a `latex` field prints a raw-source error chip where their working should be.
+
+**Must not undo**
+
+1. **`my-original` is a document transform, not a filter on `origin`.** The one-line filter it
+   replaced was deleting the student's own mercury calculation from their own view of their own
+   notes, because a corrected block's original wording lives **only** in its `originalText` and no
+   `student` block holds it. `lib/notes/reading.ts` is the whole rule; `toMyOriginal` and
+   `keepOnlyMine` must keep agreeing, because one is the view and the other is its destructive twin.
+2. **Block ids are ours and are minted, never asked for.** `assignBlockIds` runs in the validator on
+   the way out of the pipeline and again in `migrateNoteDocument` for documents written before
+   schema 1.1.0. It is idempotent on purpose: it runs on every load, after every regeneration and
+   after every insert, and a version that renumbered each pass would invalidate every saved
+   reference in a document nobody had touched. Nothing in `prompts/` mentions `SCHEMA_VERSION`, so
+   bumping it does not move the cached prefix.
+3. **The IndexedDB `upgrade` is keyed on `oldVersion`.** The v1 body created all three stores
+   unconditionally, which was correct exactly once — for a browser that had never opened the
+   database. Bumping to v2 without the guard would have thrown `ConstraintError` inside the upgrade
+   transaction for every existing student and taken `getDb()` down its `.catch(null)` path: no
+   drafts, no notes, no history, silently. Every future bump adds a numbered block; none of them
+   edits an earlier one.
+4. **TipTap is aliased out of the server compilation**, alongside phase-03's seven browser-only
+   libraries, and `lib/editor/` is entered only through `next/dynamic({ ssr: false })`. Both halves
+   are asserted structurally in `tests/unit/dynamic-imports.test.ts`, because they fail differently:
+   a static import from outside `lib/editor/` ships ~300 KB of ProseMirror to a student who only
+   reads their note, while a non-dynamic import inside it fails the build on the alias — and the
+   tempting "fix" for that is to remove the alias, which puts the Worker back over its ceiling.
+5. **A scoped regenerate lives entirely in the volatile run instruction.** The prefix a regeneration
+   sends is byte-identical to a full run's and hits the same cache. `PROMPT_VERSION` still moved to
+   1.3.0, because the rule is about prompt text rather than about which side of the boundary an edit
+   landed on — and `prompt-cache.test.ts` now hashes `REGENERATE_INSTRUCTION` and `ASK_SYSTEM`,
+   which means the run instruction is under the version guard for the first time.
+6. **A regenerate is never applied until its diff has been read**, and every failure path leaves the
+   section exactly as it was (`01` §5). `runRegenerate` has no verify pass and no degrade ladder,
+   deliberately: the examiner checks a draft against the original notes and a fragment gives it
+   neither, and there is already a section on the student's screen that a half-usable replacement
+   would be worse than.
+7. **`ask` is priced, not free.** Free would make it the cheapest way to run an unmetered chat
+   endpoint against our key, and every guardrail in `02` §7 assumes a provider call costs its caller
+   something. Migration `0002` widens `usage_event.kind` to accept it — a ledger write that violates
+   a check constraint is swallowed by a `.catch()` in the edge function, so the spend stays real and
+   only the record of it disappears.
+
+**Four ways a student's work could have been lost, none of which would have been visible**
+
+1. **The v1 → v2 upgrade** above. Found by writing the e2e seed as a **version 1** database on
+   purpose, which is what a returning student's browser actually contains — and which promptly
+   caught the phase-04 seed doing the same thing in the opposite direction (it opened at v1 after
+   `/app` had already created v2, and threw `VersionError`). Both now seed from `/`, which never
+   touches IndexedDB, after deleting the database.
+2. **Autosave cancelled on unmount.** The debounce is what stops every keystroke hitting IndexedDB;
+   clearing its timer on unmount without flushing turns an 800 ms window from unlikely into
+   _certain_ for anyone who edits and immediately navigates away. It flushes on unmount and on
+   `pagehide`/`visibilitychange` now.
+3. **Bulk actions riding the keystroke debounce.** "Keep only mine" followed by a reload lost the
+   change, and the e2e suite caught it. Accept all, keep only mine, applying a regenerated section,
+   inserting an answer and restoring a version are single deliberate presses with nothing to
+   coalesce; they persist immediately.
+4. **Side effects inside a `setDoc` updater.** An updater has to be a pure function of the previous
+   state; that one pushed an undo entry, took a snapshot and scheduled a write. React is entitled to
+   call it twice — under `reactStrictMode` in development it does — which is two undo entries per
+   edit and two timers racing to write.
+
+**The mapping, and why it is shaped this way**
+
+Twelve block types, and ProseMirror discards anything its schema cannot describe. Editing through a
+schema that only knew about paragraphs would silently delete every formula, diagram, table and
+worked example the moment a student typed — and it would look like it worked. So paragraphs and
+lists are real nodes; the other ten are one atom node carrying the typed block whole, rendered by
+`RenderBlock` and edited through a focused dialog. That makes "zero data loss" structural rather
+than aspirational and concentrates the real risk in the two node types the property test spends its
+effort on.
+
+Three things that are not obvious and are load-bearing:
+
+- **Section headings are nodes, not attributes.** The first cut had them as attributes and produced
+  an editor with no headings in it at all: a wall of blocks with nothing to say where one part of
+  the lesson ended, and no way to fix a heading the model got wrong.
+- **`ProvenanceSpan` carries a per-span ordinal.** ProseMirror merges adjacent text nodes whose
+  marks compare equal, so two consecutive spans with the same origin come back as one — the
+  paragraph still reads correctly and the student's provenance has been quietly rewritten.
+- **The block editor keys its draft on the block object, not on `block.id`.** A block inserted from
+  the menu has no id yet, so keying on the id gave it the same `null` key the dialog was mounted
+  with while closed, and the draft was never seeded: inserting anything opened an empty dialog.
+
+**The round-trip test runs the real ProseMirror schema.** `Schema.nodeFromJSON().toJSON()` is what
+applies the normalisation that actually loses data. Comparing `from-doc` and `to-doc` to each other
+would test that they agree, which they would, right up until ProseMirror disagreed with both.
+
+**Two things the e2e suite found that reading would not have**
+
+- **The editor's `contenteditable` was invisible to anything driving the page by role.** Chrome maps
+  a bare `contenteditable` div to `generic`, not to `textbox`, and ProseMirror does not add the role
+  itself. That is a screen-reader bug that happened to be caught by a test locator.
+- **`useEditor` does not re-render on every transaction in TipTap 3.** Reading
+  `editor.state.selection` during render looks right and is stale, so "Ask about this" stayed
+  disabled however much text was highlighted. The toolbar subscribes to `selectionUpdate` instead.
+  Relatedly: `Home` then `Shift+End` inside a ProseMirror document can leave the selection collapsed
+  — a triple-click is the gesture that actually selects a paragraph.
+
+**What phase-06 inherits**
+
+- **The cloud-sync seam is `persist()` in `lib/app/workspace/use-workspace.ts`** — one function,
+  local-only today, with the flush and debounce already around it.
+- **Save to library, Export and Share are honest stubs** in the action bar. Each says what it will
+  do and why it cannot yet, through `onUnavailable`.
+- **`LocalNote` grew `generatedAt` and `edited`.** The first is the note meta line (`06` §5.7); the
+  second is what the library's "not yet reviewed" filter in `01` §3 will want.
+- **Version history is local and unsynced.** `lib/store/versions.ts` prunes edit snapshots to the
+  most recent 20 and never prunes a generation snapshot; a synced library has to decide whether
+  history travels with a note.
+- **`figure` blocks can be inserted but carry an empty `assetId`.** The renderer draws the labelled
+  slot phase-01 left; wiring the upload to Storage is phase-06's, and `putAssets`/`getAsset` in
+  `lib/store/drafts.ts` are the local half that already works.
+
+**Numbers**
+
+621 unit (was 537) · 34 eval · 35 edge · 121 Storybook axe (was 118) · 183 e2e (21 new). Worker
+**1783.3 / 3072 KiB gz — 58%** (was 1731; TipTap costs 52 KiB because it never reaches the server
+build). `/` 107.7 / 120 KB gz. `/app/note/[id]` first load 226 kB with the editor in a lazy chunk.
+Schema 1.1.0, prompt 1.3.0.

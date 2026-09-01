@@ -34,7 +34,7 @@ Before opening a PR, run what CI runs:
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm format:check
-pnpm test:unit          # ~523 tests, node
+pnpm test:unit          # ~621 tests, node
 pnpm test:ai            # the eval suite — the release gate for any prompt change
 pnpm test:stories       # axe over every story, real browser
 pnpm build && pnpm test:budget    # first-load JS ceiling on the marketing routes
@@ -52,7 +52,7 @@ pnpm check:edge         # deno check — `tsc` cannot see these files
 pnpm db:start
 pnpm exec supabase db reset
 pnpm exec supabase functions serve --no-verify-jwt --env-file supabase/functions/.env.test &
-pnpm test:edge          # 32 guardrail checks against the real functions, no spend
+pnpm test:edge          # 35 guardrail checks against the real functions, no spend
 ```
 
 `test:edge` drives the deployed shape of `enhance` — real auth, real quota reads, real ledger
@@ -91,16 +91,16 @@ pipeline that would have caught that bug.
 
 | Limit                                 | Current                   | Enforced by                        |
 | ------------------------------------- | ------------------------- | ---------------------------------- |
-| Worker size (Cloudflare free plan)    | **1731 / 3072 KiB — 56%** | `wrangler deploy` refuses over     |
-| First-load JS on `/`                  | 107.5 / 120 KB gz         | `pnpm test:budget`, in CI          |
+| Worker size (Cloudflare free plan)    | **1783 / 3072 KiB — 58%** | `wrangler deploy` refuses over     |
+| First-load JS on `/`                  | 107.7 / 120 KB gz         | `pnpm test:budget`, in CI          |
 | Lighthouse on `/` and `/how-it-works` | 100 / 100 / 100 / 100     | `pnpm lh`, `pnpm lh:mobile`, in CI |
 | Monthly AI spend                      | ceiling ¥100              | `app_config` caps + kill switch    |
 | Measured cost per enhancement         | ¥0.062 live, ¥0.047 in CI | `pnpm test:ai`, fails at +25%      |
 
 **The Worker ceiling bit in phase-03 and was fixed, not deferred.** Adding the parsers took it to
-3742 KiB — over the ceiling and undeployable. `next.config.ts` now aliases the seven browser-only
-libraries (pdf.js, mammoth, heic2any, mermaid, katex, smiles-drawer, paged.js) to `false` in the
-_server_ compilation: none of them can execute there, but Next compiles client components for the
+3742 KiB — over the ceiling and undeployable. `next.config.ts` now aliases the browser-only
+libraries (pdf.js, mammoth, heic2any, mermaid, katex, smiles-drawer, paged.js, and phase-05's
+TipTap) to `false` in the _server_ compilation: none of them can execute there, but Next compiles client components for the
 SSR pass, so webpack was emitting all of them into `.next/server` for OpenNext to bundle. That is
 2.2 MB of unreachable JavaScript, and removing the alias list puts the deploy back over the limit.
 Measure with `pnpm exec wrangler deploy --dry-run --outdir=/tmp/wr` — it prints the same gzipped
@@ -113,7 +113,10 @@ number the Cloudflare API enforces.
   parse CSS.
 - **The heavy renderers and the parsers stay dynamic.** KaTeX, Mermaid, smiles-drawer, paged.js,
   mammoth, pdf.js and heic2any each have exactly one `await import()`, in one loader module.
-  `tests/unit/dynamic-imports.test.ts` fails on a static one.
+  `tests/unit/dynamic-imports.test.ts` fails on a static one. **TipTap is the same rule with a
+  different shape**, because an editor cannot be behind an `await import()`: every TipTap import
+  lives under `lib/editor/`, and `lib/editor/` is reached only through `next/dynamic({ ssr: false
+})`. The same test asserts both halves.
 - **Every visible string comes from `messages/{en,zh}.json`.** Key and ICU-placeholder parity between
   locales is a unit test — a missing key renders as its own key path on a live page, silently.
   One scoped exception, decided with the user in phase-03 and recorded in the phase log:
