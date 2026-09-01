@@ -123,4 +123,28 @@ export interface LocalNote {
   model?: string;
   /** True when the second check changed several things — surfaces a gentle banner (04 §6). */
   degraded?: boolean;
+  /** When the document was produced, for the note meta line (06 §5.7). */
+  generatedAt?: number;
+  /** True once the student has edited the document — what "unsaved"/"edited" chrome reads. */
+  edited?: boolean;
+}
+
+/**
+ * Why a snapshot was taken. The reason is not decoration: it decides what survives pruning.
+ *
+ * A `generated` or `regenerated` snapshot is the only copy of what the model actually produced,
+ * and once it is gone "reject every AI change, then change your mind" has nothing to go back to.
+ * Those are kept for ever; the periodic `edit` snapshots are the ones that get trimmed.
+ */
+export type VersionReason = 'generated' | 'regenerated' | 'edit' | 'restore';
+
+/** One point in a note's history (phase-05 §13). */
+export interface NoteVersion {
+  id: string;
+  noteId: string;
+  createdAt: number;
+  reason: VersionReason;
+  /** Shown in the restore list — "Generated", "Section 1.2 regenerated", "Before restoring…". */
+  label: string;
+  doc: NoteDocument;
 }
