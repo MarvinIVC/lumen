@@ -766,9 +766,17 @@ built around — an account buys sync, not permission.
     unit is combined into one deck; two lessons in the same unit produce the same card with a
     different line break, and a key that keeps the break keeps the duplicate.
 
-**Four things that were wrong and would not have looked wrong**
+**Five things that were wrong and would not have looked wrong**
 
-1. **`placeAllNotes` gave a student one course per lesson.** It ran `placeNoteFromContext` over
+1. **Saving a thumbnail made the same device's next edit a conflict.**
+   `/api/assets/thumbnail` is the only write to `note` that does not go through `sync_note`, and the
+   `before update` trigger advances `sync_revision` for it like any other. The browser kept the
+   revision it held before the upload, so its next edit arrived stale and `sync_note` did exactly
+   what it is built to do: filed the student's own edit as a conflicted copy, on one device, with
+   nobody else involved — and every first save after signing in armed it. The route hands the new
+   revision back now and the client records it. **Any future writer to `note` outside `sync_note`
+   inherits this obligation**, and `test:sync` asserts the contract rather than the caller.
+2. **`placeAllNotes` gave a student one course per lesson.** It ran `placeNoteFromContext` over
    every note in parallel, and each call reads the library and then creates the course and unit it
    did not find — so with nothing filed yet, every note read the same empty library and created its
    own "AP Chemistry". Three signed-out lessons from one course became three identical courses in
@@ -776,16 +784,16 @@ built around — an account buys sync, not permission.
    because the local ids differ. Only visible by driving a real sign-in merge in a browser against
    a local Supabase — every seeded end-to-end fixture arrived pre-filed. It is sequential now, and
    `library.spec.ts` seeds unfiled notes and asserts one course.
-2. **`?auth=failed` was written by two routes and read by nobody.** `/auth/callback` and
+3. **`?auth=failed` was written by two routes and read by nobody.** `/auth/callback` and
    `/auth/confirm` are redirects and can render nothing themselves, so an expired or reused magic
    link dropped the student on `/app` signed out, with `appStrings.auth.callbackFailed` sitting
    unused in the strings module. Landing quietly on the workspace reads as success until you go
    looking for your library. `HubScreen` says it now, once, and strips the parameter.
-3. **Eleven end-to-end tests were routing a URL the browser no longer requests.** Moving the AI
+4. **Eleven end-to-end tests were routing a URL the browser no longer requests.** Moving the AI
    calls behind `/api/ai/<function>` left `page.route('**/functions/v1/enhance')` matching nothing,
    so seven generation tests and four regenerate/ask tests failed on a stale fixture rather than on
    the product. Any future change to where a client posts has to move these two constants with it.
-4. **The e2e seed opened `indexedDB.open('lumen', 3)` before the app had ever opened the database**,
+5. **The e2e seed opened `indexedDB.open('lumen', 3)` before the app had ever opened the database**,
    which creates an empty database with no object stores rather than running the app's upgrade —
    the mirror image of the phase-04/05 seed bug, and it failed on _every_ store rather than one.
    The seed waits for the empty state, which is the screen's way of saying `loadLibrary()` resolved,
