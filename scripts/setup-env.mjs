@@ -141,6 +141,14 @@ const GENERATED = [
     generate: () => randomBytes(32).toString('base64'),
     github: 'secret',
   },
+  {
+    // The weekly cron is the only caller; without this the keep-alive endpoint would be an
+    // unauthenticated database ping anyone could run.
+    key: 'KEEPALIVE_SECRET',
+    label: 'Keep-alive cron secret',
+    generate: () => randomBytes(32).toString('base64'),
+    github: 'secret',
+  },
 ];
 
 /* -------------------------------------------------------------------------- *
