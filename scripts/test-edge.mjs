@@ -18,9 +18,11 @@
  */
 import { createCipheriv, randomBytes } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { createClient } from '@supabase/supabase-js';
 
 const BASE = process.env.EDGE_BASE_URL ?? 'http://127.0.0.1:54321/functions/v1';
 const ENC_KEY = process.env.BYOK_ENC_KEY ?? 'Zm9vYmFyZm9vYmFyZm9vYmFyZm9vYmFyMTIzNDU2Nzg=';
+const SUPABASE_URL = new URL('../..', BASE).toString().replace(/\/$/, '');
 
 const CONTEXT = {
   subject: 'Chemistry',
@@ -61,6 +63,19 @@ function sql(statement) {
 
 function setConfig(key, value) {
   sql(`update app_config set value = '${value}'::jsonb where key = '${key}'`);
+}
+
+function localKeys() {
+  const output = execFileSync('pnpm', ['exec', 'supabase', 'status', '-o', 'env'], {
+    encoding: 'utf8',
+  });
+  return Object.fromEntries(
+    output
+      .split('\n')
+      .map((line) => line.match(/^([A-Z_]+)="(.*)"$/))
+      .filter(Boolean)
+      .map((match) => [match[1], match[2]]),
+  );
 }
 
 /** The same envelope `_shared/crypto.ts` writes: v1.<base64 iv>.<base64 ciphertext+tag>. */
@@ -284,6 +299,63 @@ async function testUsageEndpoint() {
   check('the meter says when it resets', typeof body.enhance.resetsAt === 'string');
 }
 
+async function testVerifiedOwnerQuota() {
+  sql('delete from usage_event');
+  sql('delete from daily_cost');
+  setConfig(
+    'quota',
+    '{"anon":{"enhance_per_day":3,"ocr_per_day":3},"verified":{"enhance_per_day":20,"ocr_per_day":20},"byok":{"enhance_per_day":1000}}',
+  );
+  const keys = localKeys();
+  const admin = createClient(SUPABASE_URL, keys.SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+  const email = `quota-${crypto.randomUUID().slice(0, 8)}@example.test`;
+  const password = `Quota-${crypto.randomUUID()}!`;
+  const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  if (created.error || !created.data.user)
+    throw created.error ?? new Error('Could not create user');
+  try {
+    const userClient = createClient(SUPABASE_URL, keys.ANON_KEY, {
+      auth: { persistSession: false },
+    });
+    const signedIn = await userClient.auth.signInWithPassword({ email, password });
+    if (signedIn.error || !signedIn.data.session) throw signedIn.error ?? new Error('No session');
+    const headers = { authorization: `Bearer ${signedIn.data.session.access_token}` };
+    for (let index = 0; index < 20; index += 1) {
+      const run = await enhance(`Verified ${index}. [[TEST:ok]]`, {}, headers);
+      if (!run.response.ok) throw new Error(`Verified call ${index + 1} failed: ${run.text}`);
+    }
+    const refused = await post(
+      'enhance',
+      { extract: 'Verified 21. [[TEST:ok]]', context: CONTEXT },
+      headers,
+    );
+    const refusal = JSON.parse(refused.text);
+    check(
+      'the verified owner is refused after 20 daily calls',
+      refused.response.status === 429 && refusal.error === 'quota',
+      refused.text.slice(0, 120),
+    );
+    const meterResponse = await fetch(`${BASE}/usage`, { headers });
+    const meter = await meterResponse.json();
+    check(
+      'the verified meter shows 20 of 20',
+      meter.tier === 'verified' && meter.enhance.used === 20 && meter.enhance.total === 20,
+      JSON.stringify(meter),
+    );
+    const ownerRows = sql(
+      `select count(*) from usage_event where owner = '${created.data.user.id}' and anon_id is null`,
+    );
+    check('signed-in usage is keyed on owner', Number(ownerRows) === 20, `rows=${ownerRows}`);
+  } finally {
+    await admin.auth.admin.deleteUser(created.data.user.id);
+    // This test deliberately makes twenty calls from one loopback address. Leave later tests a
+    // clean IP window; production keeps the events, but test ordering must not become the guard.
+    sql('delete from usage_event');
+  }
+}
+
 async function testByokSealing() {
   const { response, text } = await post('byok', {
     provider: 'deepseek',
@@ -301,6 +373,44 @@ async function testByokSealing() {
     byok: { provider: 'deepseek', model: 'deepseek-v4-flash', ciphertext: body.ciphertext },
   });
   check('the sealed key can be used', reuse.events.document?.length === 1);
+}
+
+async function testByokAccountSync() {
+  const keys = localKeys();
+  const admin = createClient(SUPABASE_URL, keys.SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+  const email = `byok-${crypto.randomUUID().slice(0, 8)}@example.test`;
+  const password = `Byok-${crypto.randomUUID()}!`;
+  const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  if (created.error || !created.data.user)
+    throw created.error ?? new Error('Could not create user');
+  try {
+    const userClient = createClient(SUPABASE_URL, keys.ANON_KEY, {
+      auth: { persistSession: false },
+    });
+    const signedIn = await userClient.auth.signInWithPassword({ email, password });
+    if (signedIn.error || !signedIn.data.session) throw signedIn.error ?? new Error('No session');
+    const headers = { authorization: `Bearer ${signedIn.data.session.access_token}` };
+    const saved = await post(
+      'byok',
+      { provider: 'deepseek', model: 'deepseek-v4-flash', apiKey: 'sk-account-key' },
+      headers,
+    );
+    const savedBody = JSON.parse(saved.text);
+    const loaded = await fetch(`${BASE}/byok`, { headers });
+    const loadedBody = await loaded.json();
+    check(
+      'a signed-in sealed key syncs across devices',
+      saved.response.ok && loaded.ok && loadedBody.ciphertext === savedBody.ciphertext,
+      JSON.stringify(loadedBody),
+    );
+    const removed = await fetch(`${BASE}/byok`, { method: 'DELETE', headers });
+    const row = await admin.from('profile').select('byok').eq('id', created.data.user.id).single();
+    check('removing a key clears the profile copy', removed.ok && row.data?.byok === null);
+  } finally {
+    await admin.auth.admin.deleteUser(created.data.user.id);
+  }
 }
 
 async function testCors() {
@@ -349,7 +459,9 @@ async function main() {
   await testQuota();
   await testDailyCapAndByok();
   await testUsageEndpoint();
+  await testVerifiedOwnerQuota();
   await testByokSealing();
+  await testByokAccountSync();
   await testKillSwitch();
 
   for (const { name, ok, detail } of results) {

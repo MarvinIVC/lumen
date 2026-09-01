@@ -24,6 +24,7 @@ const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: optional(z.string().min(20)),
   SENTRY_DSN: optional(z.url()),
   TURNSTILE_SECRET: optional(z.string()),
+  KEEPALIVE_SECRET: optional(z.string()),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;

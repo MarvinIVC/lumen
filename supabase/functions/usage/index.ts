@@ -12,7 +12,7 @@ import { createGuardrailStore } from '../_shared/guardrails.ts';
 import { isConfigured } from '../_shared/db.ts';
 import { error, json, serve } from '../_shared/response.ts';
 import { verifyAnonId, clientIp, hashIp } from '../_shared/auth.ts';
-import { userIdFromJwt } from '../_shared/db.ts';
+import { userFromJwt } from '../_shared/db.ts';
 import type { Tier } from '../../../lib/ai/router.ts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -26,9 +26,10 @@ serve(async (request) => {
   const authorization = request.headers.get('authorization') ?? '';
   const bearer = authorization.toLowerCase().startsWith('bearer ') ? authorization.slice(7) : null;
   const isAnonKey = bearer === Deno.env.get('SUPABASE_ANON_KEY');
-  const userId = bearer && !isAnonKey ? await userIdFromJwt(bearer) : null;
+  const user = bearer && !isAnonKey ? await userFromJwt(bearer) : null;
+  const userId = user?.id ?? null;
   const anonId = userId ? null : await verifyAnonId(request.headers.get('x-lumen-anon-id'));
-  const tier: Tier = userId ? 'verified' : 'anon';
+  const tier: Tier = user?.emailConfirmed ? 'verified' : 'anon';
 
   const quota = config.quota[tier];
   const enhanceTotal = quota?.enhance_per_day ?? 0;
