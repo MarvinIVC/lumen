@@ -60,16 +60,32 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          secrets: |
-            SUPABASE_URL
-            KEEPALIVE_SECRET
           command: >-
             ${{ github.event_name == 'pull_request'
               && format('versions upload --preview-alias pr-{0}', github.event.number)
               || 'deploy' }}
+
+      # The weekly `scheduled()` handler is the only thing that reads these, and it only exists on
+      # production. It has to run *after* the deploy: Cloudflare refuses a secret edit while the
+      # newest version of a Worker is not the deployed one (error 10215), and a preview is
+      # `versions upload` — an upload without a deploy — so every preview leaves the Worker in
+      # exactly that state. Setting them before the deploy failed for that reason.
+      - name: Worker secrets for the weekly keep-alive
+        if: github.event_name != 'pull_request'
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           KEEPALIVE_SECRET: ${{ secrets.KEEPALIVE_SECRET }}
+        run: |
+          test -n "$KEEPALIVE_SECRET" || {
+            echo "::error::KEEPALIVE_SECRET is unset; the weekly keep-alive would be refused by its own endpoint."
+            exit 1
+          }
+          trap 'rm -f worker-secrets.json' EXIT
+          jq -n --arg url "$SUPABASE_URL" --arg secret "$KEEPALIVE_SECRET" \
+            '{SUPABASE_URL: $url, KEEPALIVE_SECRET: $secret}' > worker-secrets.json
+          pnpm exec wrangler secret bulk worker-secrets.json
 
       - name: Comment the preview URL
         if: github.event_name == 'pull_request'
