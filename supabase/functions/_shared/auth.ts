@@ -17,7 +17,7 @@
  * without depending on that.
  */
 import { decryptSecret, hmac, timingSafeEqual } from './crypto.ts';
-import { userIdFromJwt } from './db.ts';
+import { userFromJwt } from './db.ts';
 import { verifyTurnstile } from './turnstile.ts';
 import type { Caller } from '../../../lib/ai/router.ts';
 import type { ProviderId } from '../../../lib/ai/provider.ts';
@@ -93,7 +93,8 @@ export async function resolveCaller(
   const bearer = authorization.toLowerCase().startsWith('bearer ') ? authorization.slice(7) : null;
   // The anon key is sent as a bearer token by the Supabase client on every call; it is not a user.
   const isAnonKey = bearer === Deno.env.get('SUPABASE_ANON_KEY');
-  const userId = bearer && !isAnonKey ? await userIdFromJwt(bearer) : null;
+  const user = bearer && !isAnonKey ? await userFromJwt(bearer) : null;
+  const userId = user?.id ?? null;
 
   let anonId: string | null = null;
   let issuedAnonId: string | null = null;
@@ -151,7 +152,7 @@ export async function resolveCaller(
     };
     caller.tier = 'byok';
   } else {
-    caller.tier = userId ? 'verified' : 'anon';
+    caller.tier = user?.emailConfirmed ? 'verified' : 'anon';
   }
 
   return { caller, issuedAnonId, ipHash };

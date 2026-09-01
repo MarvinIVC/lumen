@@ -42,16 +42,25 @@ export async function rpc<T>(name: string, args: Record<string, unknown>): Promi
   return (text ? JSON.parse(text) : null) as T;
 }
 
-/** Verifies a Supabase access token and returns the user id, or null. */
-export async function userIdFromJwt(token: string): Promise<string | null> {
+export interface AuthUser {
+  id: string;
+  emailConfirmed: boolean;
+}
+
+/** Verifies a Supabase access token and returns the quota-relevant user state. */
+export async function userFromJwt(token: string): Promise<AuthUser | null> {
   try {
     const response = await fetch(`${url}/auth/v1/user`, {
       headers: { apikey: serviceKey, authorization: `Bearer ${token}` },
     });
     if (!response.ok) return null;
-    const user = (await response.json()) as { id?: string };
-    return user.id ?? null;
+    const user = (await response.json()) as { id?: string; email_confirmed_at?: string | null };
+    return user.id ? { id: user.id, emailConfirmed: Boolean(user.email_confirmed_at) } : null;
   } catch {
     return null;
   }
+}
+
+export async function userIdFromJwt(token: string): Promise<string | null> {
+  return (await userFromJwt(token))?.id ?? null;
 }

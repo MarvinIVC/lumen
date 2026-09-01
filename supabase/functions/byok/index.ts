@@ -17,7 +17,8 @@
  * The key is never logged, never echoed, and never returned — not even masked.
  */
 import { corsHeaders } from '../_shared/cors.ts';
-import { encryptSecret } from '../_shared/crypto.ts';
+import { decryptSecret, encryptSecret } from '../_shared/crypto.ts';
+import { userFromJwt } from '../_shared/db.ts';
 import { error, json, serve } from '../_shared/response.ts';
 import { createProvider } from '../../../lib/ai/providers/index.ts';
 import type { ProviderId } from '../../../lib/ai/provider.ts';
@@ -27,11 +28,25 @@ interface ByokBody {
   model?: string;
   baseUrl?: string;
   apiKey?: string;
+  ciphertext?: string;
 }
 
 const PROVIDERS = new Set<ProviderId>(['deepseek', 'gemini', 'openai-compatible', 'anthropic']);
 
 serve(async (request) => {
+  const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
+  const user = bearer ? await userFromJwt(bearer) : null;
+
+  if (request.method === 'GET') {
+    if (!user) return error(request, 'unauthorized', 'Sign in to load your saved key.', 401);
+    const stored = await readProfileByok(user.id);
+    return noStore(request, stored ? toClient(stored) : null);
+  }
+  if (request.method === 'DELETE') {
+    if (!user) return error(request, 'unauthorized', 'Sign in to remove your saved key.', 401);
+    await writeProfileByok(user.id, null);
+    return noStore(request, { ok: true });
+  }
   if (request.method !== 'POST') return error(request, 'method_not_allowed', 'POST only.', 405);
   if (!Deno.env.get('BYOK_ENC_KEY')) {
     return error(
@@ -56,11 +71,27 @@ serve(async (request) => {
 
   if (!PROVIDERS.has(provider)) return error(request, 'bad_request', 'Unknown provider.', 400);
   if (!model) return error(request, 'bad_request', 'Which model should we use with that key?', 400);
-  if (!apiKey) return error(request, 'bad_request', 'No key was sent.', 400);
   if (baseUrl && !/^https:\/\//i.test(baseUrl)) {
     // A plaintext base URL would send the student's key over the wire in the clear.
     return error(request, 'bad_request', 'The base URL has to start with https://.', 400);
   }
+
+  // First sign-in can move an existing sealed local key without asking for the plaintext again.
+  if (body.ciphertext) {
+    if (!user) return error(request, 'unauthorized', 'Sign in to sync your saved key.', 401);
+    if (!(await decryptSecret(body.ciphertext))) {
+      return error(
+        request,
+        'bad_request',
+        'That saved key could not be opened. Add it again.',
+        400,
+      );
+    }
+    const stored = profileValue(provider, model, baseUrl, body.ciphertext);
+    await writeProfileByok(user.id, stored);
+    return noStore(request, toClient(stored));
+  }
+  if (!apiKey) return error(request, 'bad_request', 'No key was sent.', 400);
 
   /* One token, to prove the key works before we tell a student it is saved. ---- */
   // Same rule as the router: DeepSeek means wherever this deployment's DeepSeek is.
@@ -119,8 +150,71 @@ serve(async (request) => {
   }
 
   const ciphertext = await encryptSecret(apiKey);
+  const stored = profileValue(provider, model, baseUrl, ciphertext);
+  if (user) await writeProfileByok(user.id, stored);
 
-  return new Response(JSON.stringify({ ciphertext, provider, model, baseUrl: baseUrl ?? null }), {
+  return noStore(request, toClient(stored));
+});
+
+interface ProfileByok {
+  provider: ProviderId;
+  model: string;
+  base_url: string | null;
+  key_ciphertext: string;
+  saved_at: string;
+}
+
+function profileValue(
+  provider: ProviderId,
+  model: string,
+  baseUrl: string | undefined,
+  ciphertext: string,
+): ProfileByok {
+  return {
+    provider,
+    model,
+    base_url: baseUrl ?? null,
+    key_ciphertext: ciphertext,
+    saved_at: new Date().toISOString(),
+  };
+}
+
+function toClient(value: ProfileByok) {
+  return {
+    provider: value.provider,
+    model: value.model,
+    baseUrl: value.base_url,
+    ciphertext: value.key_ciphertext,
+    savedAt: Date.parse(value.saved_at),
+  };
+}
+
+async function readProfileByok(userId: string): Promise<ProfileByok | null> {
+  const response = await fetch(
+    `${Deno.env.get('SUPABASE_URL')}/rest/v1/profile?id=eq.${userId}&select=byok`,
+    { headers: serviceHeaders() },
+  );
+  if (!response.ok) throw new Error(`BYOK profile read failed: ${response.status}`);
+  const rows = (await response.json()) as { byok?: ProfileByok | null }[];
+  return rows[0]?.byok ?? null;
+}
+
+async function writeProfileByok(userId: string, value: ProfileByok | null): Promise<void> {
+  const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/rest/v1/profile?id=eq.${userId}`, {
+    method: 'PATCH',
+    headers: { ...serviceHeaders(), prefer: 'return=minimal' },
+    body: JSON.stringify({ byok: value }),
+  });
+  if (!response.ok) throw new Error(`BYOK profile write failed: ${response.status}`);
+}
+
+function serviceHeaders(): Record<string, string> {
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  return { apikey: key, authorization: `Bearer ${key}`, 'content-type': 'application/json' };
+}
+
+function noStore(request: Request, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
     status: 200,
     headers: {
       'content-type': 'application/json; charset=utf-8',
@@ -128,4 +222,4 @@ serve(async (request) => {
       ...corsHeaders(request),
     },
   });
-});
+}
