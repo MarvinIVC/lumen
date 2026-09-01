@@ -704,3 +704,110 @@ degrade" rather than as "no storage available".
 **1783.3 / 3072 KiB gz — 58%** (was 1731; TipTap costs 52 KiB because it never reaches the server
 build). `/` 107.7 / 120 KB gz. `/app/note/[id]` first load 226 kB with the editor in a lazy chunk.
 Schema 1.1.0, prompt 1.3.0.
+
+---
+
+## Phase 06 — Accounts, the cloud library, sync
+
+Shipped 2026-09-01. Signing out stays fully functional and local; signing in adds sync and the
+library tree. Nothing about making a note changes, and that is the constraint the whole phase is
+built around — an account buys sync, not permission.
+
+**Must not undo**
+
+1. **There is no authenticated Supabase client in the browser, and that is the design.**
+   `@supabase/ssr`'s browser client refreshes its own token, so it needs cookies JavaScript can
+   read; Supabase documents that making that session `httpOnly` is not supported. So the browser
+   never holds a token at all. `lib/supabase/server.server.ts` is the only place a client is
+   constructed, every cookie it writes is `Secure; HttpOnly; SameSite=Lax`, and the same-origin
+   handlers under `app/api/` do the refresh. `/api/ai/<function>` attaches the JWT server-side,
+   which is also what moved signed-in quota onto `owner`. Reaching for `createBrowserClient` to
+   "simplify" this un-does the entire boundary, silently, and everything keeps working.
+2. **No middleware.** Session refresh happens in request-scoped handlers precisely so phase-02's
+   routing invariant — the static marketing routes outranking the `[locale]` segment — is never
+   re-litigated by a matcher.
+3. **`safeAppNext` is the only thing that decides where a callback returns to.** Both auth routes
+   are redirects; a `next` that is not an in-app path is replaced, never followed. `//host` is
+   rejected explicitly, because `startsWith('/app')` alone would not catch it.
+4. **`sync_note` is the whole write path for a note, and it is compare-and-swap.** It locks the row,
+   compares the revision the browser last observed against the row's, and on a mismatch inserts the
+   rejected edit as a conflicted sibling rather than applying it. The revision advances in the
+   `before update` trigger, in the same transaction, so two drains cannot both believe they won.
+   Anything that writes `note.doc` through PostgREST instead bypasses this and can silently
+   overwrite another device.
+5. **The `doc` is one blob and is never field-merged.** Two devices editing the same lesson produce
+   two documents, both kept, one tagged. Merging sections would produce a third document that
+   neither student wrote.
+6. **A first merge with no base revision snapshots the local document before the cloud wins.**
+   `cloud-wins` is the one place the client clock decides anything, and it is only reachable on a
+   first sign-in. The local copy goes to version history first, so "keep cloud" never means "throw
+   mine away" — it means "restore is one click away in history".
+7. **The IndexedDB v3 block is numbered and additive**, per phase-05's rule. It adds `courses`,
+   `units`, `outbox`, `syncMeta` and an `assets.by-note` index, and edits nothing an earlier
+   version created. The `assets` index is added through the upgrade `transaction`, which is the
+   only way to reach an existing store from inside `upgrade`.
+8. **Column grants, not just policies, protect the BYOK ciphertext.** `authenticated` can select
+   and update named columns of `profile`; `byok` is not among them. A policy alone would let a
+   signed-in browser read its own sealed key back out, which is exactly what phase-04 promised it
+   could not do.
+9. **Deletion order is Storage, then the auth user, then this browser.** No database cascade
+   reaches Storage, and the rows naming those objects are about to disappear. `scripts/test-account-delete.mjs`
+   asserts all three.
+10. **`normal()` in `lib/store/library.ts` collapses interior whitespace as well as trimming.** It
+    is the comparison key for both the course match on the first merge and the card dedupe when a
+    unit is combined into one deck; two lessons in the same unit produce the same card with a
+    different line break, and a key that keeps the break keeps the duplicate.
+
+**Three things that were wrong and would not have looked wrong**
+
+1. **`?auth=failed` was written by two routes and read by nobody.** `/auth/callback` and
+   `/auth/confirm` are redirects and can render nothing themselves, so an expired or reused magic
+   link dropped the student on `/app` signed out, with `appStrings.auth.callbackFailed` sitting
+   unused in the strings module. Landing quietly on the workspace reads as success until you go
+   looking for your library. `HubScreen` says it now, once, and strips the parameter.
+2. **Eleven end-to-end tests were routing a URL the browser no longer requests.** Moving the AI
+   calls behind `/api/ai/<function>` left `page.route('**/functions/v1/enhance')` matching nothing,
+   so seven generation tests and four regenerate/ask tests failed on a stale fixture rather than on
+   the product. Any future change to where a client posts has to move these two constants with it.
+3. **The e2e seed opened `indexedDB.open('lumen', 3)` before the app had ever opened the database**,
+   which creates an empty database with no object stores rather than running the app's upgrade —
+   the mirror image of the phase-04/05 seed bug, and it failed on _every_ store rather than one.
+   The seed waits for the empty state, which is the screen's way of saying `loadLibrary()` resolved,
+   which is the app's way of saying v3 exists.
+
+**Decided, and worth not re-deciding**
+
+- **The saved thumbnail is paper, in both themes.** It is an SVG with its own palette, rendered from
+  the document at save time, stored in IndexedDB and mirrored to the private bucket — and phase-07
+  will put the same file in an export. Baking the reader's current theme into a stored artefact
+  would be wrong, and `prefers-color-scheme` inside the file would follow the OS rather than the
+  app's own toggle, which can disagree with it. A white page preview in a dark library is what
+  every other document tool shows, and it is the honest one.
+- **Bulk export says it is phase-07** rather than being a button that does something smaller than
+  its label. "Combine into one deck" ships the deck; the consolidated document is deferred as
+  planned in the phase prompt.
+- **The keep-alive is authenticated and touches the database.** It is the only function nothing
+  else exercises — it runs once a week from a Cloudflare cron — so a version that answered `200`
+  without reading anything, or one any passer-by could run, would look identical from the outside
+  for months. Three checks in `test:edge` now, and `pnpm setup:env` mints `KEEPALIVE_SECRET`
+  alongside the other generated keys so it is not a variable somebody has to remember exists.
+
+**The Worker wrapper**
+
+OpenNext's generated `worker.js` exports only `fetch`, so the weekly trigger needs
+`custom-worker.ts`, which re-exports it and adds `scheduled()`. `wrangler.toml`'s `main` points at
+the wrapper, not at `.open-next/worker.js` — the build order matters (`cf:build` first, then
+Wrangler bundles the wrapper), and `check:worker` exercises exactly that path.
+
+**What phase-07 inherits**
+
+Notes carry `exported_at` and `notion_synced_at` and the cards already render both badges; nothing
+sets them yet. `note_asset` and the private bucket exist with per-user path policies, so an export
+has somewhere to put its files. The phase-05 open question about `renderInline` applying markdown to
+student text is untouched and still lands in phase-07's lap.
+
+**Numbers**
+
+631 unit (was 621) · 34 eval · 43 edge (was 35) · 121 Storybook axe · 188 e2e (8 in the library
+suite). Worker **1934 / 3072 KiB gz — 63%** (was 1783; the Supabase client). `/` 107.7 / 120 KB gz,
+unchanged. `/app/library` first load 200 kB. Schema 1.1.0, prompt 1.3.0 — no prompt string moved.
