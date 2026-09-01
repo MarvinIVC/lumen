@@ -644,9 +644,24 @@ question on the same text and is the right place to decide it once.
 - **Version history is local and unsynced.** `lib/store/versions.ts` prunes edit snapshots to the
   most recent 20 and never prunes a generation snapshot; a synced library has to decide whether
   history travels with a note.
+- **`deleteVersions` has no caller yet, and that is not an oversight.** Nothing deletes a note
+  today, so history cannot be orphaned; phase-06's account deletion is the first thing that can
+  orphan it, and is where the call belongs. `deleteDraft` is the existing pattern — it deletes the
+  draft and its assets in one transaction.
 - **`figure` blocks can be inserted but carry an empty `assetId`.** The renderer draws the labelled
   slot phase-01 left; wiring the upload to Storage is phase-06's, and `putAssets`/`getAsset` in
   `lib/store/drafts.ts` are the local half that already works.
+
+**A hazard phase-09 will arm**
+
+`public/sw.js` caches nothing and has no fetch handler, deliberately, so today a student always
+gets the current bundle. The moment phase-09 adds the offline app-shell strategy that is planned
+for it, **the database version becomes a release-ordering problem**: a cached bundle from before
+phase-05 calls `indexedDB.open('lumen', 1)` against a v2 store, gets `VersionError`, and `getDb()`
+returns `null` through its `.catch()` — so the student opens the app and their entire library is
+silently empty until the worker updates. Whatever caching strategy phase-09 chooses has to make the
+bundle and the schema version update together, or treat a `VersionError` as "reload, do not
+degrade" rather than as "no storage available".
 
 **Numbers**
 
