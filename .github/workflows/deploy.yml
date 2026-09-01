@@ -129,7 +129,14 @@ jobs:
       - uses: supabase/setup-cli@v1
         if: steps.configured.outputs.ready == 'true'
         with:
-          version: latest
+          # Pinned, not `latest`.
+          #
+          # `latest` resolves through the GitHub releases API on every run, and shared runners hit
+          # its rate limit — which failed Deploy on `main` after a docs-only commit, with a red
+          # check that had nothing to do with the change. Pinning also means CI runs the same CLI
+          # as `pnpm exec supabase` locally, because this is the version in `package.json`.
+          # Bump both together.
+          version: 2.116.0
 
       - name: Link
         if: steps.configured.outputs.ready == 'true'
