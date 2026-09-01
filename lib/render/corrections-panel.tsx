@@ -19,9 +19,19 @@ import { renderInline } from './markdown/inline';
  */
 export function CorrectionsPanel({
   corrections,
+  anchorFor,
   className,
 }: {
   corrections: Correction[];
+  /**
+   * Where this correction happened, as an element id.
+   *
+   * The panel is at the bottom of a long document and a correction without a way back to the
+   * sentence it is about is a quiz question — "you wrote X" is only useful next to where you wrote
+   * it. Resolved by the caller because only it knows which block carried the change; phase-05 gave
+   * blocks ids so there is finally something to point at.
+   */
+  anchorFor?: (correction: Correction) => string | null;
   className?: string;
 }) {
   if (corrections.length === 0) return null;
@@ -60,10 +70,24 @@ export function CorrectionsPanel({
                 {renderInline(correction.why, `corr-why-${index}`)}
               </p>
             ) : null}
+            <CorrectionLink anchor={anchorFor?.(correction) ?? null} />
           </li>
         ))}
       </ol>
     </section>
+  );
+}
+
+/** "Show me where" — a plain anchor, so it works before hydration and with JavaScript off. */
+function CorrectionLink({ anchor }: { anchor: string | null }) {
+  if (!anchor) return null;
+  return (
+    <a
+      href={`#${anchor}`}
+      className="mt-2 inline-block text-sm font-medium text-link underline-offset-2 hover:underline"
+    >
+      Show me where
+    </a>
   );
 }
 

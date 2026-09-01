@@ -1,14 +1,17 @@
 'use client';
 
 import { Fragment } from 'react';
+import type { ReactNode } from 'react';
 
 import { cn } from '@/lib/utils/cn';
+import { toMyOriginal } from '@/lib/notes/reading';
 import type {
   Block,
   MarginNoteBlock,
   NoteDocument as NoteDocumentType,
   Section,
 } from '@/lib/ai/schema';
+import type { ReadingMode } from './reading-mode';
 
 import { CorrectionsPanel } from './corrections-panel';
 import { EndNotes } from './end-notes';
@@ -32,6 +35,11 @@ export interface NoteDocumentProps {
   partial?: boolean;
   /** Hides the chrome the print stylesheet replaces: the outline rail and the reading toggle. */
   forPrint?: boolean;
+  /** Set to drive the reading mode from outside — the workspace's action bar does (phase-05 §2). */
+  mode?: ReadingMode;
+  onModeChange?: (mode: ReadingMode) => void;
+  /** Renders per-block chrome — the accept/reject controls the read view offers on AI blocks. */
+  blockActions?: (block: Block) => ReactNode;
   className?: string;
 }
 
@@ -49,28 +57,53 @@ export function NoteDocument({
   doc,
   partial = false,
   forPrint = false,
+  mode,
+  onModeChange,
+  blockActions,
   className,
 }: NoteDocumentProps) {
   return (
-    <ReadingModeProvider>
-      <NoteBody doc={doc} partial={partial} forPrint={forPrint} className={className} />
+    <ReadingModeProvider {...(mode ? { mode } : {})} {...(onModeChange ? { onModeChange } : {})}>
+      <NoteBody
+        doc={doc}
+        partial={partial}
+        forPrint={forPrint}
+        controlled={mode !== undefined}
+        {...(blockActions ? { blockActions } : {})}
+        className={className}
+      />
     </ReadingModeProvider>
   );
 }
 
 function NoteBody({
-  doc,
+  doc: source,
   partial,
   forPrint,
+  controlled,
+  blockActions,
   className,
-}: Required<Omit<NoteDocumentProps, 'className'>> & { className?: string }) {
-  const { shouldRender } = useReadingMode();
+}: {
+  doc: NoteDocumentType;
+  partial: boolean;
+  forPrint: boolean;
+  /** True when the toggle lives outside this component and must not be drawn again. */
+  controlled: boolean;
+  blockActions?: (block: Block) => ReactNode;
+  className?: string;
+}) {
+  const { mode, shouldRender } = useReadingMode();
+  // "My original" is a different document, not a filtered view of this one — the student's own
+  // wording for anything we corrected exists only inside `originalText` and has to be spliced back
+  // in. `lib/notes/reading.ts` carries the case that proved it.
+  const doc = mode === 'my-original' ? toMyOriginal(source) : source;
   const outline = buildOutline(doc);
   const figureNumbers = assignFigureNumbers(doc.sections);
   // Printing turns every margin note into a numbered endnote; on screen the map is empty and the
   // notes render in the margin as usual.
   const endnotes = forPrint ? collectMarginNotes(doc.sections) : [];
   const endnoteNumbers = new Map(endnotes.map((note, index) => [note, index + 1]));
+  const anchors = buildAnchors(doc);
 
   return (
     <div className={cn('lumen-note mx-auto w-full max-w-(--note-shell) px-5 py-10', className)}>
@@ -87,7 +120,7 @@ function NoteBody({
               {doc.title}
             </h1>
 
-            {forPrint ? null : (
+            {forPrint || controlled ? null : (
               <div className="mt-6 border-y border-border py-4">
                 <ReadingModeToggle />
               </div>
@@ -128,6 +161,7 @@ function NoteBody({
               figureNumbers={figureNumbers}
               endnoteNumbers={endnoteNumbers}
               shouldRender={shouldRender}
+              {...(blockActions ? { blockActions } : {})}
               reveal={partial}
             />
           ))}
@@ -135,8 +169,8 @@ function NoteBody({
           {partial ? null : (
             <div className="max-w-(--measure)">
               <EndNotes notes={endnotes} />
-              <CorrectionsPanel corrections={doc.corrections} />
-              <OpenQuestionsPanel questions={doc.openQuestions} />
+              <CorrectionsPanel corrections={doc.corrections} anchorFor={anchors.correction} />
+              <OpenQuestionsPanel questions={doc.openQuestions} anchorFor={anchors.question} />
               <GlossaryList entries={doc.glossary} />
 
               {doc.furtherStudy?.length ? (
@@ -179,6 +213,7 @@ function SectionView({
   figureNumbers,
   endnoteNumbers,
   shouldRender,
+  blockActions,
   reveal,
 }: {
   section: Section;
@@ -186,6 +221,7 @@ function SectionView({
   figureNumbers: Map<Block, number>;
   endnoteNumbers: Map<MarginNoteBlock, number>;
   shouldRender: (origin: Block['origin']) => boolean;
+  blockActions?: (block: Block) => ReactNode;
   /** Fade the section up as it arrives. Only while streaming — the finished note is just there. */
   reveal: boolean;
 }) {
@@ -233,15 +269,26 @@ function SectionView({
 
           // Figures take the measure *and* the margin column. A five-node flowchart squeezed into
           // 68ch comes out at 9px type; a textbook would let it run wide, and so do we.
-          return isFigure(row.block) ? (
-            <div key={index} className="col-start-1 min-w-0 note:col-span-2">
+          const body = (
+            <>
               <RenderBlock block={row.block} figureNumber={figureNumbers.get(row.block) ?? 1} />
+              {blockActions?.(row.block)}
+            </>
+          );
+
+          return isFigure(row.block) ? (
+            <div
+              key={index}
+              id={row.block.id}
+              className="col-start-1 min-w-0 scroll-mt-24 note:col-span-2"
+            >
+              {body}
               {notes}
             </div>
           ) : (
             <Fragment key={index}>
-              <div className="col-start-1 min-w-0">
-                <RenderBlock block={row.block} figureNumber={figureNumbers.get(row.block) ?? 1} />
+              <div id={row.block.id} className="col-start-1 min-w-0 scroll-mt-24">
+                {body}
               </div>
               <div className="note:col-start-2 note:pt-1">{notes}</div>
             </Fragment>
@@ -287,6 +334,35 @@ function groupBlocks(blocks: Block[]): BlockRow[] {
     return orphans.map((note) => ({ block: note, notes: [] }));
   }
   return rows;
+}
+
+/**
+ * Where a correction and an open question point to.
+ *
+ * A correction is matched to the block that carries its `originalText`, which is the strongest
+ * link available: 04 §5 requires every correction to have a matching inline `ai-corrected` mark,
+ * and phase-04 confirmed both fields are populated in the deployed output. Falling back to the
+ * section heading is not a lesser answer for an open question — those are about a section rather
+ * than about one sentence — and for a correction it is the honest one when the text has since been
+ * edited away.
+ */
+function buildAnchors(doc: NoteDocumentType) {
+  const byOriginal = new Map<string, string>();
+  for (const section of doc.sections) {
+    for (const block of section.blocks) {
+      const original = block.originalText?.trim();
+      if (original && block.id && !byOriginal.has(original)) byOriginal.set(original, block.id);
+    }
+  }
+  const sections = new Set(doc.sections.map((section) => section.id));
+
+  return {
+    correction: (correction: NoteDocumentType['corrections'][number]) =>
+      byOriginal.get(correction.original.trim()) ??
+      (sections.has(correction.sectionId) ? correction.sectionId : null),
+    question: (question: NoteDocumentType['openQuestions'][number]) =>
+      sections.has(question.sectionId) ? question.sectionId : null,
+  };
 }
 
 /** Margin notes in reading order, for the printed endnote list. */

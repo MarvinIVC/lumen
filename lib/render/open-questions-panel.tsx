@@ -11,9 +11,12 @@ import { renderInline } from './markdown/inline';
  */
 export function OpenQuestionsPanel({
   questions,
+  anchorFor,
   className,
 }: {
   questions: OpenQuestion[];
+  /** The section this is about, as an element id — same reasoning as the corrections panel. */
+  anchorFor?: (question: OpenQuestion) => string | null;
   className?: string;
 }) {
   if (questions.length === 0) return null;
@@ -40,6 +43,14 @@ export function OpenQuestionsPanel({
             <p className="mt-1 text-sm leading-snug text-text-muted">
               {renderInline(question.why, `oq-why-${index}`)}
             </p>
+            {anchorFor?.(question) ? (
+              <a
+                href={`#${anchorFor(question)}`}
+                className="mt-1.5 inline-block text-sm font-medium text-link underline-offset-2 hover:underline"
+              >
+                Go to that part
+              </a>
+            ) : null}
           </li>
         ))}
       </ol>
