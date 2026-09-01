@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 import { FileIcon, PlusIcon, SparkIcon } from '@/components/ui/icons';
+import { Notice } from '@/lib/app/notice';
 import { appStrings } from '@/lib/app/strings';
 import { APP_NEW, noteHref, reviewHref } from '@/lib/app/routes';
 import { deleteDraft, listDrafts, listNotes } from '@/lib/store/drafts';
@@ -23,6 +24,7 @@ import type { LocalDraft, LocalNote } from '@/lib/store/types';
 export function HubScreen() {
   const [drafts, setDrafts] = useState<LocalDraft[] | null>(null);
   const [notes, setNotes] = useState<LocalNote[]>([]);
+  const [signInFailed, setSignInFailed] = useState(false);
   const toast = useToast();
 
   const refresh = useCallback(async () => {
@@ -37,8 +39,26 @@ export function HubScreen() {
     void refresh();
   }, [refresh]);
 
+  /**
+   * Where an expired or reused sign-in link lands.
+   *
+   * `/auth/callback` and `/auth/confirm` cannot render anything themselves — they are redirects —
+   * so they send the student here with `?auth=failed`. Without this the link silently drops them
+   * on the workspace signed out, which reads as "it worked" until they look for their library.
+   * The parameter is stripped once it has been said, so a reload does not repeat it.
+   */
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('auth') !== 'failed') return;
+    setSignInFailed(true);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('auth');
+    window.history.replaceState(null, '', url.toString());
+  }, []);
+
   return (
     <main className="mx-auto flex w-full max-w-[56rem] flex-col gap-10 px-5 py-10">
+      {signInFailed ? <Notice tone="warning">{appStrings.auth.callbackFailed}</Notice> : null}
+
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-serif text-3xl font-semibold text-text">{appStrings.hub.title}</h1>

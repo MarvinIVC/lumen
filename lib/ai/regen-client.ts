@@ -9,7 +9,6 @@
  * silently replaced a section the moment it arrived would be a quarter-credit gamble on text they
  * had already read and might have preferred.
  */
-import { clientEnv } from '@/lib/env';
 import { anonHeaders, captureAnonId } from './anon-id';
 import { byokRequest, readByok } from './byok-store';
 import { EnhanceRefused, readEventStream, refusalFrom } from './sse-client';
@@ -72,7 +71,6 @@ export async function streamRegenerate(
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      apikey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       ...anonHeaders(),
     },
     body: JSON.stringify(body),

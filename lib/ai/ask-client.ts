@@ -8,7 +8,6 @@
  * student's decision, made after they have read it. That ordering is the feature: an answer that
  * inserted itself would make asking a question an edit.
  */
-import { clientEnv } from '@/lib/env';
 import { anonHeaders, captureAnonId } from './anon-id';
 import { byokRequest, readByok } from './byok-store';
 import { EnhanceRefused, readEventStream, refusalFrom } from './sse-client';
@@ -33,7 +32,7 @@ export interface AskHandlers {
 }
 
 export function askEndpoint(): string {
-  return new URL('/functions/v1/ask', clientEnv.NEXT_PUBLIC_SUPABASE_URL).toString();
+  return '/api/ai/ask';
 }
 
 export async function streamAsk(request: AskRequest, handlers: AskHandlers): Promise<void> {
@@ -41,7 +40,6 @@ export async function streamAsk(request: AskRequest, handlers: AskHandlers): Pro
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      apikey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       ...anonHeaders(),
     },
     body: JSON.stringify({

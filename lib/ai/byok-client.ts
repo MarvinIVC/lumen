@@ -11,13 +11,12 @@
  * student is looking at the field they typed it into, rather than three screens later on the note
  * they were waiting for.
  */
-import { clientEnv } from '@/lib/env';
-import { writeByok } from './byok-store';
+import { readByok, replaceByok, writeByok } from './byok-store';
 import type { StoredByok } from './byok-store';
 import type { ProviderId } from './provider';
 
 export function byokEndpoint(): string {
-  return new URL('/functions/v1/byok', clientEnv.NEXT_PUBLIC_SUPABASE_URL).toString();
+  return '/api/ai/byok';
 }
 
 /** Suggested model per provider — a starting point in the field, never a silent default. */
@@ -47,7 +46,6 @@ export async function saveKey(input: SaveKeyInput): Promise<StoredByok> {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      apikey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     },
     body: JSON.stringify(input),
   });
@@ -68,4 +66,25 @@ export async function saveKey(input: SaveKeyInput): Promise<StoredByok> {
     baseUrl: payload.baseUrl ?? input.baseUrl ?? null,
     ciphertext: payload.ciphertext,
   });
+}
+
+/** Cloud wins when it already has a key; otherwise first sign-in moves the sealed local blob. */
+export async function reconcileAccountKey(): Promise<StoredByok | null> {
+  const response = await fetch(byokEndpoint(), { cache: 'no-store' });
+  if (response.ok) {
+    const cloud = (await response.json()) as StoredByok | null;
+    if (cloud?.ciphertext) return replaceByok(cloud);
+  }
+  const local = readByok();
+  if (!local) return null;
+  const synced = await fetch(byokEndpoint(), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(local),
+  });
+  return synced.ok ? local : null;
+}
+
+export async function removeAccountKey(): Promise<void> {
+  await fetch(byokEndpoint(), { method: 'DELETE' });
 }
