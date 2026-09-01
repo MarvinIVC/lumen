@@ -21,9 +21,12 @@ const RECORDED = JSON.parse(
   readFileSync(resolve(process.cwd(), 'tests/ai-evals/recorded/ap-chem-u1.json'), 'utf8'),
 ) as { response: Record<string, unknown> };
 
-const ENHANCE = '**/functions/v1/enhance';
-const ASK = '**/functions/v1/ask';
-const USAGE = '**/functions/v1/usage';
+// Phase-06 moved every AI call behind a same-origin handler so the browser never holds a Supabase
+// access token. The request the page makes is `/api/ai/<function>`; the Edge Function URL is now
+// only ever reached server-side, where Playwright cannot see it.
+const ENHANCE = '**/api/ai/enhance';
+const ASK = '**/api/ai/ask';
+const USAGE = '**/api/ai/usage';
 
 const CONTEXT = {
   subject: 'Chemistry',

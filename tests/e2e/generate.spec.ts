@@ -21,8 +21,11 @@ const RECORDED = JSON.parse(
   response: { sections: { id: string; title: string }[]; title: string } & Record<string, unknown>;
 };
 
-const ENHANCE = '**/functions/v1/enhance';
-const USAGE = '**/functions/v1/usage';
+// Phase-06 moved every AI call behind a same-origin handler so the browser never holds a Supabase
+// access token. The request the page makes is `/api/ai/<function>`; the Edge Function URL is now
+// only ever reached server-side, where Playwright cannot see it.
+const ENHANCE = '**/api/ai/enhance';
+const USAGE = '**/api/ai/usage';
 
 /** One SSE frame, framed the way `lib/ai/providers/sse.ts` writes them. */
 function frame(event: string, data: unknown): string {
