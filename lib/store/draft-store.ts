@@ -44,6 +44,7 @@ import {
   toStoredDoc,
 } from './drafts';
 import type { LocalDraft, LocalNote } from './types';
+import { readDefaultOptions } from './preferences';
 
 /** A row in the dropzone. Mirrors `UploadItem` and adds what the store needs to retry. */
 export interface UploadRow {
@@ -171,7 +172,7 @@ function blankDraft(): LocalDraft {
     context: { ...EMPTY_CONTEXT },
     notesLanguage: 'en',
     detection: { confidence: 0, source: 'heuristic', isStudyNotes: null, edited: false },
-    options: { ...DEFAULT_OPTIONS },
+    options: readDefaultOptions({ ...DEFAULT_OPTIONS }),
     packId: null,
     packName: null,
     turnstileToken: null,

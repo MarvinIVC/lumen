@@ -25,9 +25,10 @@ export interface StoredDoc {
  */
 export interface StoredAsset {
   id: string;
-  draftId: string;
+  draftId?: string;
+  noteId?: string;
   sourceId: string;
-  kind: 'embedded' | 'page-thumb' | 'photo';
+  kind: 'embedded' | 'page-thumb' | 'photo' | 'note-thumbnail' | 'figure';
   mime: string;
   bytes: ArrayBuffer;
   width: number;
@@ -82,6 +83,18 @@ export interface LocalDraft {
 export interface LocalNote {
   id: string;
   localId: string;
+  /** Cloud ids are additive: the local id remains the route and IndexedDB key forever. */
+  cloudId?: string;
+  cloudRevision?: number;
+  cloudUpdatedAt?: string;
+  courseId?: string | null;
+  unitId?: string | null;
+  thumbnailAssetId?: string | null;
+  thumbnailPath?: string | null;
+  exportedAt?: string | null;
+  notionSyncedAt?: string | null;
+  conflictOf?: string | null;
+  conflictStatus?: 'unresolved' | 'resolved' | null;
   createdAt: number;
   updatedAt: number;
   title: string;
@@ -147,4 +160,49 @@ export interface NoteVersion {
   /** Shown in the restore list — "Generated", "Section 1.2 regenerated", "Before restoring…". */
   label: string;
   doc: NoteDocument;
+}
+
+export interface LocalCourse {
+  id: string;
+  cloudId?: string;
+  ownerId?: string;
+  subject: string;
+  curriculum: string;
+  name: string;
+  packId?: string | null;
+  color?: string | null;
+  ordinal: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface LocalUnit {
+  id: string;
+  cloudId?: string;
+  courseId: string;
+  name: string;
+  ordinal: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type SyncEntity = 'course' | 'unit' | 'note' | 'asset';
+export type SyncOperation = 'upsert' | 'delete';
+
+export interface OutboxEntry {
+  id: string;
+  entity: SyncEntity;
+  entityId: string;
+  operation: SyncOperation;
+  createdAt: number;
+  attempts: number;
+  /** Deletes cannot derive their payload after the local row is gone. */
+  payload?: unknown;
+}
+
+export interface SyncMeta {
+  id: 'state';
+  deviceId: string;
+  ownerId: string | null;
+  lastPulledAt: string | null;
 }
