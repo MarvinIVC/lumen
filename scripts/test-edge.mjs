@@ -413,6 +413,36 @@ async function testByokAccountSync() {
   }
 }
 
+/**
+ * The weekly keep-alive.
+ *
+ * It is the one function nothing else exercises: it runs once a week from a Cloudflare cron and
+ * its whole job is to touch the database so the free Supabase project never idles into a pause.
+ * A version that answered 200 without reading anything, or one that any passer-by could run,
+ * would both look exactly like this one from the outside for months.
+ */
+async function testKeepalive() {
+  // The value in `supabase/functions/.env.test`, which is what the served function reads.
+  const secret = 'test-keepalive-secret';
+  const open = await fetch(`${BASE}/cron-keepalive`);
+  check('the keep-alive refuses a caller with no secret', open.status === 401, String(open.status));
+
+  const wrong = await fetch(`${BASE}/cron-keepalive`, {
+    headers: { 'x-keepalive-secret': `${secret}-wrong` },
+  });
+  check('the keep-alive refuses the wrong secret', wrong.status === 401, String(wrong.status));
+
+  const response = await fetch(`${BASE}/cron-keepalive`, {
+    headers: { 'x-keepalive-secret': secret },
+  });
+  const body = await response.json().catch(() => ({}));
+  check(
+    'the keep-alive actually reaches the database',
+    response.status === 200 && body.ok === true && body.databaseReached === true,
+    JSON.stringify(body).slice(0, 160),
+  );
+}
+
 async function testCors() {
   // ALLOWED_ORIGINS is unset here, which is the local-development case: any origin is echoed back.
   // The allowlist matching itself is a pure function and is unit tested in tests/unit/cors.test.ts
@@ -463,6 +493,7 @@ async function main() {
   await testByokSealing();
   await testByokAccountSync();
   await testKillSwitch();
+  await testKeepalive();
 
   for (const { name, ok, detail } of results) {
     console.log(
