@@ -11,13 +11,12 @@
  */
 import { rpc } from './db.ts';
 import { estimateCost } from '../../../lib/ai/router.ts';
-import type { CallKind, PricingTable, UsageRecord } from '../../../lib/ai/router.ts';
-import type { RunUsage } from '../../../lib/ai/enhance.ts';
+import type { CallKind, LedgerUsage, PricingTable, UsageRecord } from '../../../lib/ai/router.ts';
 
 export interface LedgerInput {
   caller: { userId: string | null; anonId: string | null };
   kind: CallKind;
-  usage: RunUsage;
+  usage: LedgerUsage;
   credits: number;
   pricing: PricingTable;
   ipHash: string | null;
@@ -26,7 +25,7 @@ export interface LedgerInput {
 }
 
 /** Sums the per-model cost of a run — a verify pass may have used a different, dearer model. */
-export function costOf(usage: RunUsage, pricing: PricingTable, at = new Date()): number {
+export function costOf(usage: LedgerUsage, pricing: PricingTable, at = new Date()): number {
   let total = 0;
   for (const [model, tokens] of Object.entries(usage.byModel)) {
     total += estimateCost(
