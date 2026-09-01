@@ -187,7 +187,7 @@ export const Notes: Story = {
         course="AP Chemistry"
         unit="Unit 1"
         updatedAt="2026-08-24"
-        corrections={4}
+        aiAdded={4}
         openQuestions={2}
       />
       <NoteCard
@@ -196,7 +196,7 @@ export const Notes: Story = {
         course="AP US History"
         unit="Period 3"
         updatedAt="2026-08-19"
-        corrections={0}
+        aiAdded={0}
         openQuestions={0}
         localOnly
       />
