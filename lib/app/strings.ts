@@ -199,6 +199,111 @@ export const appStrings = {
       'Your notes are safe on this device. Try again a little later.',
   },
 
+  /**
+   * The note workspace (phase-05). Copy voice is 01-PRODUCT.md §6 throughout: what happened, what
+   * it costs, and what to do next — never a warning that leaves a student with nothing to press.
+   */
+  workspace: {
+    read: 'Read',
+    edit: 'Edit',
+    study: 'Study',
+    saveToLibrary: 'Save to library',
+    saveToLibraryHint: 'Sign in to keep this across your devices.',
+    exportCta: 'Export',
+    exportSoon: 'Exporting arrives in the next build.',
+    shareCta: 'Share',
+    shareSoon: 'Sharing arrives in the next build.',
+    regenerate: 'Regenerate',
+    regenerateSection: 'Regenerate this section',
+    history: 'Version history',
+    undo: 'Undo',
+    saving: 'Saving…',
+    saved: 'Saved on this device',
+    offlineBanner:
+      'You are offline — your changes are saved on this device and will sync when you sign in.',
+    meta: (model: string, when: string, mode: string) =>
+      `Rebuilt with ${model} · ${when} · ${mode} mode`,
+    metaNoModel: (when: string, mode: string) => `${when} · ${mode} mode`,
+
+    acceptAll: 'Accept all',
+    keepOnlyMine: 'Keep only mine',
+    reviewAi: 'Review each AI change',
+    accept: 'Accept',
+    reject: 'Reject',
+    acceptHint: 'Keep this and mark it as yours.',
+    rejectAddedHint: 'Remove this.',
+    rejectChangedHint: 'Put your own wording back.',
+    reviewProgress: (done: number, total: number) => `${done} of ${total} reviewed`,
+    reviewDone: 'Everything is reviewed.',
+    nothingToReview: 'Nothing here was written by AI — this note is all yours.',
+    originalEmpty:
+      'These notes came back almost entirely rebuilt, so there is very little of the original to show.',
+
+    regenTitle: 'Rewrite this section',
+    regenBody:
+      'We will rewrite this section only. Tell us what to change if you have something in mind.',
+    regenPlaceholder: 'e.g. add a worked example with real numbers',
+    regenCost: 'Costs a quarter of a credit.',
+    regenCostFree: 'Free — you are using your own key.',
+    regenRunning: 'Rewriting this section…',
+    regenApply: 'Use the new version',
+    regenDiscard: 'Keep what I had',
+    regenUnchanged: 'The rewrite came back the same. Nothing to change.',
+    regenKeptOriginal: 'We kept the section you had.',
+    diffAdded: 'New',
+    diffRemoved: 'Removed',
+    diffKept: 'Unchanged',
+    diffSummary: (added: number, removed: number) =>
+      `${added} new, ${removed} removed. Read it before you keep it.`,
+
+    askTitle: 'Ask about this',
+    askPlaceholder: 'What do you want to know about it?',
+    askRunning: 'Thinking…',
+    askInsertMargin: 'Add as a margin note',
+    askInsertParagraph: 'Add as a paragraph',
+    askDismiss: 'Just reading, thanks',
+    askSelectFirst: 'Select some text first, then ask about it.',
+
+    insert: 'Insert',
+    insertEquation: 'Equation',
+    insertStructure: 'Chemical structure',
+    insertDiagram: 'Diagram',
+    insertWorkedExample: 'Worked example',
+    insertCallout: 'Callout',
+    insertTable: 'Table',
+    insertImage: 'Image',
+
+    editBlock: 'Edit',
+    deleteBlock: 'Delete',
+    latexLabel: 'LaTeX',
+    latexHint: 'Chemistry uses mhchem: \\ce{CO3^2-}.',
+    smilesLabel: 'SMILES',
+    smilesHint: 'The structure updates as you type.',
+    mermaidLabel: 'Mermaid',
+    mermaidHint: 'Flowcharts, sequences, timelines and mind maps.',
+    previewInvalid: 'That does not parse yet — the preview will appear when it does.',
+    saveBlock: 'Save',
+    cancel: 'Cancel',
+
+    historyTitle: 'Version history',
+    historyEmpty: 'Nothing to go back to yet. We save a version each time this note changes.',
+    historyRestore: 'Restore',
+    historyCurrent: 'Current',
+    historyReason: {
+      generated: 'Generated',
+      regenerated: 'Section rewritten',
+      edit: 'While you were editing',
+      restore: 'Before restoring',
+    } as Record<string, string>,
+
+    studySoonTitle: 'Flashcards and a quiz, next',
+    studySoonBody:
+      'Your note already carries the material for them. The study tools themselves land in the ' +
+      'next build.',
+    studyCounts: (cards: number, questions: number) =>
+      `${cards} ${cards === 1 ? 'flashcard' : 'flashcards'} · ${questions} quiz ${questions === 1 ? 'question' : 'questions'} ready`,
+  },
+
   settings: {
     title: 'Settings',
     lead: 'Everything here is stored on this device.',

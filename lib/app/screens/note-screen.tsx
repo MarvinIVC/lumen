@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FileIcon, SparkIcon } from '@/components/ui/icons';
 import { StreamingDoc } from '@/components/domain/streaming-doc';
-import { NoteDocument as NoteDocumentView } from '@/lib/render/NoteDocument';
 import { Notice } from '@/lib/app/notice';
+import { Workspace } from '@/lib/app/workspace/workspace';
 import { appStrings } from '@/lib/app/strings';
 import { APP_NEW, APP_SETTINGS, reviewHref } from '@/lib/app/routes';
 import { AI_DISCLAIMER } from '@/lib/config';
 import { EnhanceRefused, streamEnhance } from '@/lib/ai/enhance-client';
-import type { GenerationPhase, QuotaRefusal, StreamUsage } from '@/lib/ai/enhance-client';
+import type { GenerationPhase, QuotaRefusal } from '@/lib/ai/enhance-client';
 import { resetsIn } from '@/lib/ai/usage-client';
 import { blocksToText } from '@/lib/ingest/normalize';
 import { loadNote, saveNote } from '@/lib/store/drafts';
@@ -46,7 +46,6 @@ export function NoteScreen({ noteId }: { noteId: string }) {
   const [phase, setPhase] = useState<GenerationPhase>('generating');
   const [running, setRunning] = useState(false);
   const [refusal, setRefusal] = useState<QuotaRefusal | null>(null);
-  const [usage, setUsage] = useState<StreamUsage | null>(null);
   const abort = useRef<AbortController | null>(null);
   // Generation must start at most once per mount, and `note` changing must not be able to
   // retrigger it — this is the guard that keeps a re-render from costing a credit.
@@ -111,7 +110,6 @@ export function NoteScreen({ noteId }: { noteId: string }) {
           },
           onUsage: (spent) => {
             model = spent.model;
-            setUsage(spent);
           },
           onError: (error) => {
             failure = error;
@@ -147,6 +145,9 @@ export function NoteScreen({ noteId }: { noteId: string }) {
       ...(refused ? { refusal: refused } : {}),
       ...(failure ? { error: failure } : {}),
       ...(model ? { model } : {}),
+      // The note meta line says when this was rebuilt (06 §5.7), and `createdAt` is when the
+      // *draft* was made — often a different day from the day a student finally pressed the button.
+      ...(document_ ? { generatedAt: Date.now() } : {}),
       degraded: wasDegraded,
     };
     await saveNote(saved);
@@ -250,53 +251,47 @@ export function NoteScreen({ noteId }: { noteId: string }) {
 
   /* The document, finished or partial ------------------------------------- */
   if (document) {
-    return (
-      <main className="mx-auto flex w-full max-w-[76rem] flex-col gap-5 px-5 py-6">
-        <div className="mx-auto flex w-full max-w-(--note-shell) flex-col gap-3">
-          {note.partial ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-md border border-warning/50 bg-verify px-3 py-2.5">
-              <p className="font-sans text-sm leading-snug text-text">
-                {appStrings.generate.partialBanner}
-              </p>
-              {/* A partial note with no way to finish it is a dead end — that is what a student
+    // Everything above the document is generation-time news — a partial run, a degraded result, a
+    // second check that changed several things, a failure that can be resumed. It is handed to the
+    // workspace rather than rendered around it, so it sits under the sticky action bar with the
+    // offline banner instead of scrolling away above it.
+    const banners = (
+      <>
+        {note.partial ? (
+          <div className="flex flex-wrap items-center gap-3 rounded-md border border-warning/50 bg-verify px-3 py-2.5">
+            <p className="font-sans text-sm leading-snug text-text">
+              {appStrings.generate.partialBanner}
+            </p>
+            {/* A partial note with no way to finish it is a dead end — that is what a student
                   saw every time they pressed Stop. The button lives here only when there is no
                   error row below, which carries its own; two identical buttons is its own bug. */}
-              {note.error ? null : (
-                <Button size="sm" variant="secondary" onClick={retry}>
-                  {appStrings.generate.resumeCta}
-                </Button>
-              )}
-            </div>
-          ) : null}
-          {note.degraded ? (
-            <Notice tone="warning">{appStrings.generate.degradedBanner}</Notice>
-          ) : null}
-          {document.factCheck.verdict === 'significant-fixes' ? (
-            <Notice tone="accent">{appStrings.generate.revisedBanner}</Notice>
-          ) : null}
-          {note.error ? (
-            <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-bg-sunken px-3 py-2.5">
-              <p className="font-sans text-sm text-text">{note.error.message}</p>
-              {note.error.resumable ? (
-                <Button size="sm" variant="secondary" onClick={retry}>
-                  {appStrings.generate.errorRetry}
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-
-        <NoteDocumentView doc={document} />
-
-        <footer className="mx-auto flex w-full max-w-(--note-shell) flex-col gap-2 border-t border-border pt-4">
-          <p className="font-sans text-xs text-text-muted">
-            {note.model ? `${appStrings.generate.rebuiltWith(note.model)} · ` : ''}
-            {usage?.cacheHit ? 'Prompt cache hit · ' : ''}
-            {AI_DISCLAIMER}
-          </p>
-        </footer>
-      </main>
+            {note.error ? null : (
+              <Button size="sm" variant="secondary" onClick={retry}>
+                {appStrings.generate.resumeCta}
+              </Button>
+            )}
+          </div>
+        ) : null}
+        {note.degraded ? (
+          <Notice tone="warning">{appStrings.generate.degradedBanner}</Notice>
+        ) : null}
+        {document.factCheck.verdict === 'significant-fixes' ? (
+          <Notice tone="accent">{appStrings.generate.revisedBanner}</Notice>
+        ) : null}
+        {note.error ? (
+          <div className="flex flex-wrap items-center gap-3 rounded-md border border-border bg-bg-sunken px-3 py-2.5">
+            <p className="font-sans text-sm text-text">{note.error.message}</p>
+            {note.error.resumable ? (
+              <Button size="sm" variant="secondary" onClick={retry}>
+                {appStrings.generate.errorRetry}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+      </>
     );
+
+    return <Workspace note={note} document={document} banners={banners} onRefused={setRefusal} />;
   }
 
   /* Nothing generated yet ------------------------------------------------- */
