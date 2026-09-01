@@ -17,7 +17,7 @@ export function isOcrAvailable(): boolean {
 }
 
 export function ocrEndpoint(): string {
-  return new URL('/functions/v1/ocr', clientEnv.NEXT_PUBLIC_SUPABASE_URL).toString();
+  return '/api/ai/ocr';
 }
 
 export interface OcrRequest {
@@ -68,7 +68,6 @@ export async function runOcr(request: OcrRequest): Promise<OcrResult> {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      apikey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       ...anonHeaders(),
     },
     body: JSON.stringify({

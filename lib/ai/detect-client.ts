@@ -37,7 +37,7 @@ export function isDetectAvailable(): boolean {
 }
 
 export function detectEndpoint(): string {
-  return new URL('/functions/v1/detect', clientEnv.NEXT_PUBLIC_SUPABASE_URL).toString();
+  return '/api/ai/detect';
 }
 
 export interface DetectRemoteOptions {
@@ -60,7 +60,6 @@ export async function detectRemote(
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        apikey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         ...anonHeaders(),
       },
       body: JSON.stringify({

@@ -45,6 +45,15 @@ export function writeByok(value: Omit<StoredByok, 'savedAt'>): StoredByok {
   return stored;
 }
 
+export function replaceByok(value: StoredByok): StoredByok {
+  try {
+    globalThis.localStorage?.setItem(KEY, JSON.stringify(value));
+  } catch {
+    // The caller still keeps this object for the current session.
+  }
+  return value;
+}
+
 export function clearByok(): void {
   try {
     globalThis.localStorage?.removeItem(KEY);

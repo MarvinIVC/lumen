@@ -8,7 +8,6 @@
  * shows the full allowance rather than an error, because being wrong in the student's favour for
  * one screen is better than a broken widget on the page they came to use.
  */
-import { clientEnv } from '@/lib/env';
 import { anonHeaders, captureAnonId } from './anon-id';
 
 export interface UsageLine {
@@ -25,13 +24,13 @@ export interface UsageSnapshot {
 }
 
 export function usageEndpoint(): string {
-  return new URL('/functions/v1/usage', clientEnv.NEXT_PUBLIC_SUPABASE_URL).toString();
+  return '/api/ai/usage';
 }
 
 export async function fetchUsage(signal?: AbortSignal): Promise<UsageSnapshot | null> {
   try {
     const response = await fetch(usageEndpoint(), {
-      headers: { apikey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY, ...anonHeaders() },
+      headers: anonHeaders(),
       ...(signal ? { signal } : {}),
     });
     if (!response.ok) return null;

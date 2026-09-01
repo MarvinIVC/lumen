@@ -17,7 +17,6 @@
  *   It does not throw. Every failure arrives as an `error` event with a message written for a
  *   student, because there is no screen here where a stack trace would help.
  */
-import { clientEnv } from '@/lib/env';
 import { EnhanceRefused, readEventStream, refusalFrom } from './sse-client';
 
 // Re-exported so the refusal vocabulary has one import site for callers, wherever it happens to
@@ -65,7 +64,7 @@ export interface EnhanceRequest {
 }
 
 export function enhanceEndpoint(): string {
-  return new URL('/functions/v1/enhance', clientEnv.NEXT_PUBLIC_SUPABASE_URL).toString();
+  return '/api/ai/enhance';
 }
 
 /* -------------------------------------------------------------------------- *
@@ -155,7 +154,6 @@ export async function streamEnhance(
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      apikey: clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       ...anonHeaders(),
     },
     body: JSON.stringify(body),
