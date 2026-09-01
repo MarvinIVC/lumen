@@ -12,7 +12,7 @@
 #   pnpm cf:deploy    build and deploy
 
 name = "lumen"
-main = ".open-next/worker.js"
+main = "custom-worker.ts"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
@@ -29,6 +29,5 @@ enabled = true
 NEXT_PUBLIC_ENV = "production"
 
 # Weekly ping so the free Supabase project never idles into a pause (02-ARCHITECTURE.md §2).
-# Enable once a production Supabase project exists (phase-06).
-# [triggers]
-# crons = ["0 6 * * 1"]
+[triggers]
+crons = ["0 6 * * 1"]
