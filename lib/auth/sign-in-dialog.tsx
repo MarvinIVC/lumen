@@ -19,12 +19,12 @@ export function SignInDialog({
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<'email' | 'google' | null>(null);
 
   const magicLink = async (event: React.FormEvent) => {
     event.preventDefault();
     setSending(true);
-    setError(false);
+    setError(null);
     try {
       const response = await fetch('/api/auth/magic-link', {
         method: 'POST',
@@ -34,15 +34,20 @@ export function SignInDialog({
       if (!response.ok) throw new Error('sign-in failed');
       setSent(true);
     } catch {
-      setError(true);
+      setError('email');
     } finally {
       setSending(false);
     }
   };
 
+  /**
+   * Google is a provider a deployment either has configured or has not, and Supabase says so by
+   * refusing the call. "Check the address and try again" would be advice about the wrong field, so
+   * this failure names itself and points at the link that does work.
+   */
   const google = async () => {
     setSending(true);
-    setError(false);
+    setError(null);
     try {
       const response = await fetch('/api/auth/google', {
         method: 'POST',
@@ -53,7 +58,7 @@ export function SignInDialog({
       if (!response.ok || !result.url) throw new Error('sign-in failed');
       window.location.assign(result.url);
     } catch {
-      setError(true);
+      setError('google');
       setSending(false);
     }
   };
@@ -97,7 +102,7 @@ export function SignInDialog({
 
             {error ? (
               <p role="alert" className="text-sm text-danger">
-                {appStrings.auth.failed}
+                {error === 'google' ? appStrings.auth.googleFailed : appStrings.auth.failed}
               </p>
             ) : null}
           </div>

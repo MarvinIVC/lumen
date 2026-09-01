@@ -26,6 +26,7 @@ export const appStrings = {
     sentTitle: 'Check your email',
     sentBody: (email: string) => `We sent a sign-in link to ${email}. You can close this window.`,
     failed: 'We could not start sign-in. Check the address and try again.',
+    googleFailed: 'Google sign-in is not available here. The email link above works now.',
     callbackFailed: 'That sign-in link did not work. It may have expired — ask for a fresh one.',
     signedOut: 'Signed out. Your notes still work on this device.',
     syncing: 'Bringing your library together…',
