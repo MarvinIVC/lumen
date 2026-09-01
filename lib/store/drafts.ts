@@ -9,6 +9,8 @@
 import { getDb } from './db';
 import type { LocalDraft, LocalNote, StoredAsset, StoredDoc } from './types';
 import type { ExtractedAsset, ExtractedDoc } from '@/lib/ingest/types';
+import { queueMutation } from './outbox';
+import { saveNoteThumbnail } from './thumbnails';
 
 export async function saveDraft(draft: LocalDraft): Promise<void> {
   const db = await getDb();
@@ -137,9 +139,22 @@ export async function getAsset(id: string): Promise<StoredAsset | null> {
  * Notes
  * -------------------------------------------------------------------------- */
 
-export async function saveNote(note: LocalNote): Promise<void> {
+export async function saveNote(
+  note: LocalNote,
+  options: { queue?: boolean; preserveUpdatedAt?: boolean; thumbnail?: boolean } = {},
+): Promise<void> {
   const db = await getDb();
-  await db?.put('notes', { ...note, updatedAt: Date.now() });
+  const thumbnailAssetId =
+    note.generated && options.thumbnail !== false
+      ? await saveNoteThumbnail(note.id, note.generated, options.queue ?? true)
+      : note.thumbnailAssetId;
+  const saved = {
+    ...note,
+    ...(thumbnailAssetId ? { thumbnailAssetId } : {}),
+    updatedAt: options.preserveUpdatedAt ? note.updatedAt : Date.now(),
+  };
+  await db?.put('notes', saved);
+  if (options.queue ?? true) await queueMutation('note', note.id);
 }
 
 export async function loadNote(id: string): Promise<LocalNote | null> {
@@ -152,6 +167,27 @@ export async function listNotes(limit = 50): Promise<LocalNote[]> {
   if (!db) return [];
   const all = await db.getAllFromIndex('notes', 'by-updatedAt');
   return all.reverse().slice(0, limit);
+}
+
+export async function deleteNote(id: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const note = await db.get('notes', id);
+  if (!note) return;
+  const tx = db.transaction(['notes', 'versions', 'assets'], 'readwrite');
+  const versionIds = await tx.objectStore('versions').index('by-note').getAllKeys(id);
+  const assetIds = await tx.objectStore('assets').index('by-note').getAllKeys(id);
+  await Promise.all([
+    tx.objectStore('notes').delete(id),
+    ...versionIds.map((key) => tx.objectStore('versions').delete(key)),
+    ...assetIds.map((key) => tx.objectStore('assets').delete(key)),
+  ]);
+  await tx.done;
+  await queueMutation('note', id, 'delete', {
+    localId: note.localId,
+    cloudId: note.cloudId ?? null,
+    thumbnailPath: note.thumbnailPath ?? null,
+  });
 }
 
 /* -------------------------------------------------------------------------- *
