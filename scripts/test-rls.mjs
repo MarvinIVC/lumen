@@ -112,11 +112,34 @@ try {
     .single();
   if (childResult.error) throw childResult.error;
 
+  // The other two transitively-owned tables, and the one that is owned directly.
+  const cardResult = await a.client
+    .from('flashcard')
+    .insert({ note: note.id, front: 'What is a mole?', back: '6.022e23' })
+    .select()
+    .single();
+  if (cardResult.error) throw cardResult.error;
+  const quizResult = await a.client
+    .from('quiz_item')
+    .insert({ note: note.id, kind: 'short-answer', prompt: 'Define a mole.', answer: '6.022e23' })
+    .select()
+    .single();
+  if (quizResult.error) throw quizResult.error;
+  const integrationResult = await a.client
+    .from('integration')
+    .insert({ owner: a.id, kind: 'notion', token_ciphertext: 'sealed' })
+    .select()
+    .single();
+  if (integrationResult.error) throw integrationResult.error;
+
   for (const [table, id] of [
     ['course', course.id],
     ['unit', unit.id],
     ['note', note.id],
     ['note_asset', childResult.data.id],
+    ['flashcard', cardResult.data.id],
+    ['quiz_item', quizResult.data.id],
+    ['integration', integrationResult.data.id],
   ]) {
     const result = await b.client.from(table).select('*').eq('id', id);
     assert(!result.error, `User B's ${table} read errored instead of returning no rows`);
@@ -142,6 +165,22 @@ try {
   const stolenDelete = await b.client.from('note').delete().eq('id', note.id).select();
   assert(!stolenDelete.error, 'A hidden delete should affect zero rows, not expose policy details');
   assert(stolenDelete.data?.length === 0, "User B deleted user A's note");
+
+  // `select('*')` on `profile` errors for everyone, owner included, because `*` expands to
+  // columns the grant withholds — so the isolation check has to name the readable ones.
+  const foreignProfile = await b.client
+    .from('profile')
+    .select('id,display_name,locale,prefs')
+    .eq('id', a.id);
+  assert(!foreignProfile.error, "User B's profile read errored instead of returning no rows");
+  assert(foreignProfile.data?.length === 0, "User B read user A's profile row");
+
+  // Phase-04 promised the sealed key cannot be read back out. That is a column grant, not a
+  // policy: the row is user A's own, and they must still not be able to select the ciphertext.
+  const ownBoyk = await a.client.from('profile').select('byok').eq('id', a.id);
+  assert(Boolean(ownBoyk.error), 'The BYOK ciphertext was readable by its own owner');
+  const writeByok = await a.client.from('profile').update({ byok: 'forged' }).eq('id', a.id);
+  assert(Boolean(writeByok.error), 'The BYOK ciphertext was writable from the browser');
 
   const configRead = await b.client.from('app_config').select('*');
   assert(
