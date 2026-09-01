@@ -8,7 +8,9 @@ import { cn } from '@/lib/utils/cn';
 export interface LibraryNode {
   id: string;
   label: string;
+  kind?: 'subject' | 'course' | 'unit' | 'note';
   count?: number;
+  color?: string | null;
   children?: LibraryNode[];
 }
 
@@ -16,6 +18,8 @@ export interface LibraryTreeProps {
   nodes: LibraryNode[];
   selectedId?: string;
   onSelect?: (id: string) => void;
+  onDropNote?: (noteId: string, unitId: string) => void;
+  ariaLabel?: string;
   className?: string;
 }
 
@@ -26,11 +30,25 @@ export interface LibraryTreeProps {
  * units wants to skip a whole course with one key, and that only works if the assistive tech
  * knows this is a tree. Phase-06 wires it to the store; the shape is settled here.
  */
-export function LibraryTree({ nodes, selectedId, onSelect, className }: LibraryTreeProps) {
+export function LibraryTree({
+  nodes,
+  selectedId,
+  onSelect,
+  onDropNote,
+  ariaLabel = 'Your library',
+  className,
+}: LibraryTreeProps) {
   return (
-    <ul role="tree" aria-label="Your library" className={cn('font-sans text-sm', className)}>
+    <ul role="tree" aria-label={ariaLabel} className={cn('font-sans text-sm', className)}>
       {nodes.map((node) => (
-        <TreeNode key={node.id} node={node} depth={0} selectedId={selectedId} onSelect={onSelect} />
+        <TreeNode
+          key={node.id}
+          node={node}
+          depth={0}
+          selectedId={selectedId}
+          onSelect={onSelect}
+          onDropNote={onDropNote}
+        />
       ))}
     </ul>
   );
@@ -41,11 +59,13 @@ function TreeNode({
   depth,
   selectedId,
   onSelect,
+  onDropNote,
 }: {
   node: LibraryNode;
   depth: number;
   selectedId?: string;
   onSelect?: (id: string) => void;
+  onDropNote?: (noteId: string, unitId: string) => void;
 }) {
   const [open, setOpen] = useState(depth === 0);
   const hasChildren = Boolean(node.children?.length);
@@ -58,6 +78,15 @@ function TreeNode({
         aria-selected={selected}
         aria-expanded={hasChildren ? open : undefined}
         tabIndex={selected ? 0 : -1}
+        onDragOver={(event) => {
+          if (node.kind === 'unit') event.preventDefault();
+        }}
+        onDrop={(event) => {
+          if (node.kind !== 'unit') return;
+          event.preventDefault();
+          const noteId = event.dataTransfer.getData('application/x-lumen-note');
+          if (noteId) onDropNote?.(noteId, node.id.replace(/^unit:/, ''));
+        }}
         onClick={() => {
           if (hasChildren) setOpen((value) => !value);
           onSelect?.(node.id);
@@ -88,7 +117,7 @@ function TreeNode({
           />
         ) : (
           <span aria-hidden="true" className="shrink-0 text-sm">
-            {depth === 0 ? <FlaskIcon /> : <BookIcon />}
+            {node.kind === 'subject' ? <FlaskIcon /> : <BookIcon />}
           </span>
         )}
         <span className="flex-1 truncate">{node.label}</span>
@@ -106,6 +135,7 @@ function TreeNode({
               depth={depth + 1}
               selectedId={selectedId}
               onSelect={onSelect}
+              onDropNote={onDropNote}
             />
           ))}
         </ul>
