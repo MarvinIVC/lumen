@@ -19,6 +19,8 @@ import type { ChatMessage } from '../provider.ts';
 import type { CurriculumPackBlock } from '../../curriculum/load.ts';
 import type { DomainFamily, EnhanceOptions, NoteContext } from '../schema.ts';
 
+import { ASK_SYSTEM, buildAskUser } from './ask.ts';
+import type { BuildAskPromptInput } from './ask.ts';
 import { DOMAIN_TEMPLATE_BLOCKS, domainTemplateBlock } from './domains.ts';
 import { DETECT_SYSTEM } from './detect.ts';
 import { RUBRIC_SYSTEM } from './rubric.ts';
@@ -26,6 +28,8 @@ import { VERIFY_SYSTEM, verifySystem } from './verify.ts';
 
 export { PROMPT_VERSION } from '../versions.ts';
 export { RUBRIC_SYSTEM, DOMAIN_TEMPLATE_BLOCKS, DETECT_SYSTEM, VERIFY_SYSTEM, verifySystem };
+export { ASK_SYSTEM };
+export type { BuildAskPromptInput } from './ask.ts';
 export { SCHEMA_BLOCK } from './schema-block.ts';
 
 export interface BuildEnhancePromptInput {
@@ -35,6 +39,26 @@ export interface BuildEnhancePromptInput {
   titleHint?: string;
   /** The extracted notes, verbatim. May contain `[IMAGE: alt/ocr]` markers. */
   extract: string;
+  /** Set to regenerate one section instead of the whole document (phase-05 §10). */
+  scope?: RegenerateScope;
+}
+
+/**
+ * "Do this one section again" (phase-05 §10).
+ *
+ * The whole of the request lives in the volatile run instruction — deliberately, and it is the
+ * reason this is a field on the existing input rather than a prompt of its own. A regenerate wants
+ * the same rubric, the same curriculum pack and the same domain template as the generation it is
+ * amending; assembling them the same way means the cached prefix is byte-identical to a full run's,
+ * so the section a student re-rolls costs input tokens at the cached rate like everything else.
+ */
+export interface RegenerateScope {
+  sectionId: string;
+  sectionTitle: string;
+  /** The section as it stands, as json — what the model is being asked to improve on. */
+  currentSection: string;
+  /** The student's own words: "add a worked example with real numbers". */
+  instruction?: string;
 }
 
 export interface BuiltPrompt {
@@ -90,9 +114,53 @@ export function buildRunInstruction(input: BuildEnhancePromptInput): string {
     '--- BEGIN STUDENT NOTES (verbatim, may include [IMAGE: alt/ocr]) ---',
     extract,
     '--- END STUDENT NOTES ---',
-    'Produce the NoteDocument json now.',
   );
+
+  if (input.scope) {
+    lines.push(...regenerateLines(input.scope));
+  } else {
+    lines.push('Produce the NoteDocument json now.');
+  }
   return lines.join('\n');
+}
+
+/**
+ * The scoped tail.
+ *
+ * Two things it insists on, both because the alternative is a document the client cannot use:
+ * the reply is a single section under a `section` key rather than a bare array or a whole
+ * document, and it keeps the id it was given. Section ids are what every `sectionId` in the
+ * document points at — the flashcards, the quiz, the corrections, the outline — and a regenerate
+ * that renamed one would strand all of them at once. The client re-imposes the id anyway
+ * (`replaceSection`), but a model that returns the right one is a model that understood the task.
+ */
+export const REGENERATE_INSTRUCTION = [
+  'REGENERATE ONE SECTION ONLY. Do not return the whole document.',
+  'Return json of exactly this shape and nothing else:',
+  '{ "section": { "id": string, "title": string, "level": 2|3, "blocks": [ …block schema… ] },',
+  '  "corrections": [...], "openQuestions": [...], "glossary": [...] }',
+  'The three lists are optional and must only contain entries about this section.',
+  'Keep the section id you were given. Obey the same rubric and the same block schema as a full',
+  'document, including every rule about formulas, units, captions, alt text and provenance.',
+].join('\n');
+
+function regenerateLines(scope: RegenerateScope): string[] {
+  const lines = [
+    REGENERATE_INSTRUCTION,
+    `SECTION ID: ${scope.sectionId}`,
+    `SECTION HEADING: ${scope.sectionTitle}`,
+    '--- BEGIN CURRENT SECTION JSON ---',
+    scope.currentSection,
+    '--- END CURRENT SECTION JSON ---',
+  ];
+  if (scope.instruction?.trim()) {
+    lines.push(
+      "STUDENT'S INSTRUCTION FOR THIS REWRITE (follow it unless it would make the section wrong):",
+      scope.instruction.trim(),
+    );
+  }
+  lines.push('Produce the section json now.');
+  return lines;
 }
 
 export function buildEnhancePrompt(input: BuildEnhancePromptInput): BuiltPrompt {
@@ -139,5 +207,17 @@ export function buildVerifyPrompt(input: {
       },
     ],
     cachePrefix: system,
+  };
+}
+
+/**
+ * The ask-about-this prompt (§11). Not cached: the passage is different every time, and at this
+ * size there is nothing above it worth caching.
+ */
+export function buildAskPrompt(input: BuildAskPromptInput): BuiltPrompt {
+  return {
+    system: ASK_SYSTEM,
+    messages: [{ role: 'user', content: buildAskUser(input) }],
+    cachePrefix: ASK_SYSTEM,
   };
 }

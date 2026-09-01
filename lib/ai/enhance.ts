@@ -26,6 +26,7 @@ import { applyPatches, parseVerifyResult, shouldVerify } from './verify.ts';
 import { degradeDocument, validateNoteDocument } from './validate.ts';
 import type { BuildEnhancePromptInput } from './prompts/index.ts';
 import type { ChatRequest, ChatUsage, LLMProvider, ProviderError, ProviderId } from './provider.ts';
+import type { LedgerUsage } from './router.ts';
 import type { EnhanceOptions, NoteDocument, ValidationIssue } from './schema.ts';
 
 export type PipelinePhase =
@@ -46,18 +47,10 @@ export type PipelineEvent =
 
 export type PipelineErrorCode = 'provider' | 'unparseable' | 'empty' | 'aborted';
 
-export interface RunUsage {
-  tokensIn: number;
-  tokensOut: number;
-  cachedTokensIn: number;
-  /** Per model, because the verify pass may run on a different one from the draft. */
-  byModel: Record<string, { tokensIn: number; tokensOut: number; cachedTokensIn: number }>;
-  provider: ProviderId;
-  model: string;
+/** `byModel` is per model because the verify pass may run on a different one from the draft. */
+export interface RunUsage extends LedgerUsage {
   fallbackUsed: boolean;
   cacheHit: boolean;
-  /** False for a refusal, an abort or a failure — none of those may cost a student a credit. */
-  charged: boolean;
 }
 
 export interface EnhanceRun {

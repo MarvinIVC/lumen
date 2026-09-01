@@ -18,6 +18,12 @@
  *   student, because there is no screen here where a stack trace would help.
  */
 import { clientEnv } from '@/lib/env';
+import { EnhanceRefused, readEventStream, refusalFrom } from './sse-client';
+
+// Re-exported so the refusal vocabulary has one import site for callers, wherever it happens to
+// be defined. `sse-client` owns it because the regenerate and ask streams refuse the same way.
+export { EnhanceRefused };
+export type { QuotaRefusal, RefusalReason } from './sse-client';
 import { anonHeaders, captureAnonId } from './anon-id';
 import { byokRequest, readByok } from './byok-store';
 import { SCHEMA_VERSION, PROMPT_VERSION } from './versions';
@@ -36,37 +42,6 @@ export interface StreamUsage {
   credits: number;
   model: string;
   provider: string;
-}
-
-/**
- * The reasons a call is refused before it runs. `unavailable` is not one the server sends: it is
- * what the client calls anything it could not make sense of, and keeping it in the union rather
- * than widening `reason` to `string` is what stops a 503 from an unreachable backend being shown
- * to a student as a quota card.
- */
-export type RefusalReason =
-  | 'kill-switch'
-  | 'monthly-cap'
-  | 'daily-cap'
-  | 'quota'
-  | 'rate-limited'
-  | 'too_large'
-  | 'unavailable';
-
-const KNOWN_REASONS = new Set<string>([
-  'kill-switch',
-  'monthly-cap',
-  'daily-cap',
-  'quota',
-  'rate-limited',
-  'too_large',
-]);
-
-export interface QuotaRefusal {
-  reason: RefusalReason;
-  message: string;
-  resetsAt: string | null;
-  byokHelps: boolean;
 }
 
 export interface EnhanceHandlers {
@@ -155,13 +130,6 @@ export function emptyDocument(
  * The stream
  * -------------------------------------------------------------------------- */
 
-export class EnhanceRefused extends Error {
-  constructor(readonly refusal: QuotaRefusal) {
-    super(refusal.message);
-    this.name = 'EnhanceRefused';
-  }
-}
-
 /**
  * Runs one generation. Resolves when the stream ends, however it ends.
  *
@@ -196,31 +164,9 @@ export async function streamEnhance(
 
   captureAnonId(response);
 
-  if (!response.ok || !response.body) {
-    // The default, and the one that matters: anything we cannot read is a service we could not
-    // reach, never an allowance the student has spent. A 503 from a gateway used to render as
-    // "that is all the free study guides for today", which is a lie about their own account.
-    const refusal: QuotaRefusal = {
-      reason: 'unavailable',
-      message:
-        'We could not reach the study-guide service just now. Your notes are safe on this device — try again in a moment.',
-      resetsAt: null,
-      byokHelps: false,
-    };
-    try {
-      const parsed = (await response.json()) as Partial<QuotaRefusal> & { error?: string };
-      const claimed = parsed.reason ?? parsed.error ?? '';
-      if (KNOWN_REASONS.has(claimed)) {
-        refusal.reason = claimed as RefusalReason;
-        if (parsed.message) refusal.message = parsed.message;
-        refusal.resetsAt = parsed.resetsAt ?? null;
-        refusal.byokHelps = parsed.byokHelps ?? false;
-      }
-    } catch {
-      // A gateway error page rather than our JSON. The default above is the honest reading.
-    }
-    throw new EnhanceRefused(refusal);
-  }
+  // Anything we cannot read is a service we could not reach, never an allowance the student has
+  // spent — `refusalFrom` is where that rule lives.
+  if (!response.ok || !response.body) throw new EnhanceRefused(await refusalFrom(response));
 
   let document = emptyDocument(request.context, request.options, request.titleHint ?? '');
   const sections = new Map<number, Section>();
@@ -314,60 +260,5 @@ export async function streamEnhance(
         'The connection dropped part-way through. What arrived is saved on this device — try again when you are back online.',
       resumable: true,
     });
-  }
-}
-
-/**
- * Reads `text/event-stream` off a fetch body.
- *
- * A separate, smaller reader from `lib/ai/providers/sse.ts` on purpose: that one is for talking to
- * providers and runs on the server, and importing it here would pull the provider modules into the
- * client graph — which `tests/unit/no-client-secrets.test.ts` exists to prevent.
- */
-async function readEventStream(
-  body: ReadableStream<Uint8Array>,
-  onEvent: (event: string, data: unknown) => void,
-  signal?: AbortSignal,
-): Promise<void> {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  try {
-    while (true) {
-      if (signal?.aborted) return;
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      let boundary = buffer.indexOf('\n\n');
-      while (boundary >= 0) {
-        emit(buffer.slice(0, boundary), onEvent);
-        buffer = buffer.slice(boundary + 2);
-        boundary = buffer.indexOf('\n\n');
-      }
-    }
-    if (buffer.trim()) emit(buffer, onEvent);
-  } catch {
-    // An aborted read is how "Cancel" is implemented. Anything else has already been reported by
-    // the server as an `error` event, or is a dropped connection the caller sees as a stalled run.
-  } finally {
-    reader.releaseLock();
-  }
-}
-
-function emit(frame: string, onEvent: (event: string, data: unknown) => void): void {
-  let name: string | null = null;
-  const data: string[] = [];
-  for (const line of frame.split('\n')) {
-    if (line.startsWith('event: ')) name = line.slice(7).trim();
-    else if (line.startsWith('data: ')) data.push(line.slice(6));
-  }
-  if (!name) return;
-  try {
-    onEvent(name, data.length > 0 ? JSON.parse(data.join('\n')) : null);
-  } catch {
-    // A frame we cannot parse is a frame we ignore; the `document` event is what matters and it
-    // either arrives whole or not at all.
   }
 }

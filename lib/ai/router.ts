@@ -22,7 +22,7 @@ import type { LLMProvider, ProviderId } from './provider.ts';
 import type { EnhanceOptions, NoteContext } from './schema.ts';
 
 export type Tier = 'anon' | 'verified' | 'byok';
-export type CallKind = 'enhance' | 'ocr' | 'regen' | 'detect' | 'verify';
+export type CallKind = 'enhance' | 'ocr' | 'regen' | 'detect' | 'verify' | 'ask';
 
 export interface Caller {
   tier: Tier;
@@ -209,6 +209,11 @@ export function creditsFor(input: Pick<RouteInput, 'kind' | 'options' | 'config'
       return weights[input.options.mode] ?? 1;
     case 'regen':
       return weights.regen ?? 0.25;
+    // Priced alongside a regeneration deliberately. Free would make it the cheapest way to run an
+    // unmetered chat endpoint against our key, and every guardrail in 02 §7 assumes a provider
+    // call costs its caller something.
+    case 'ask':
+      return weights.ask ?? weights.regen ?? 0.25;
     case 'ocr':
       return weights.ocr_page ?? 0.15;
     // Detection and verification are part of the machinery rather than something a student asked
@@ -424,6 +429,9 @@ export function createVerifier(
 const TEMPERATURES: Record<CallKind, number> = {
   enhance: 0.3,
   regen: 0.3,
+  // Explaining a passage is not creative work; a student asking the same question twice and
+  // getting two different answers would rightly trust neither.
+  ask: 0.1,
   ocr: 0,
   detect: 0,
   verify: 0,
@@ -431,7 +439,13 @@ const TEMPERATURES: Record<CallKind, number> = {
 
 export function maxTokensFor(input: Pick<RouteInput, 'kind' | 'options' | 'config'>): number {
   const caps = input.config.limits.max_tokens;
-  if (input.kind === 'enhance' || input.kind === 'regen') return caps[input.options.mode] ?? 8000;
+  if (input.kind === 'enhance') return caps[input.options.mode] ?? 8000;
+  // A regeneration is one section. Letting it inherit the whole-document ceiling would let a
+  // re-roll of two paragraphs cost as much as the generation that produced the entire note, and
+  // the mode cap is the wrong ceiling for it in every mode.
+  if (input.kind === 'regen') {
+    return caps.regen ?? Math.min(caps[input.options.mode] ?? 8000, 4000);
+  }
   return caps[input.kind] ?? 4000;
 }
 
@@ -497,6 +511,34 @@ export function estimateCost(
   // Five decimals is what `usage_event.cost_cny` stores; rounding here keeps the ledger and the
   // running total in agreement instead of drifting by fractions of a fen.
   return Math.round(cost * 100_000) / 100_000;
+}
+
+/**
+ * What the ledger needs to know about a run, whatever kind of run it was.
+ *
+ * Three pipelines write to one `usage_event` table — the full enhancement, a scoped regeneration
+ * and "ask about this" — and the ledger must not have to know which. `byModel` is the field that
+ * makes the enhancement's shape general rather than special: only it can spend on two models in
+ * one call (the verify pass runs on its own), but pricing every run from the per-model split means
+ * the cost calculation has exactly one code path instead of one that is correct and one that is
+ * close enough.
+ */
+export interface LedgerUsage {
+  tokensIn: number;
+  tokensOut: number;
+  cachedTokensIn: number;
+  byModel: Record<string, { tokensIn: number; tokensOut: number; cachedTokensIn: number }>;
+  provider: ProviderId;
+  model: string;
+  /** False for a refusal, an abort or a failure — none of those may cost a student a credit. */
+  charged: boolean;
+  /**
+   * Optional because they are the caller's business rather than the ledger's: nothing here prices
+   * on them. They are declared so the four call sites that *do* track them can pass their usage
+   * object straight through instead of stripping fields on the way to a write that ignores them.
+   */
+  fallbackUsed?: boolean;
+  cacheHit?: boolean;
 }
 
 export interface UsageRecord {
