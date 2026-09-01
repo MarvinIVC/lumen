@@ -325,7 +325,9 @@ function NoteBlockView({ node, deleteNode }: NodeViewProps) {
       className="relative my-2"
     >
       <ProvenanceFrame origin={origin} blockId={blockId}>
-        <RenderBlock block={block} />
+        {/* `bare` because the frame above already carries the provenance treatment; letting the
+            renderer add its own puts a tinted box inside a tinted box. */}
+        <RenderBlock block={block} bare={origin !== 'student'} />
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           <Button
             size="sm"
