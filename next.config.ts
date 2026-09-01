@@ -69,6 +69,8 @@ const nextConfig: NextConfig = {
         '@tiptap/core': false,
         '@tiptap/pm': false,
         '@tiptap/starter-kit': false,
+        // ZIP creation only runs after the student presses Data export in Settings.
+        fflate: false,
       };
     }
     return config;

@@ -190,6 +190,12 @@ jobs:
       - name: Verify migrations apply from scratch
         run: supabase db reset
 
+      - name: Row-level security isolation
+        run: pnpm test:rls
+
+      - name: Offline conflict preservation
+        run: pnpm test:sync
+
       # The three-layer cost ceiling is a claim about auth, Postgres, a streaming response and a
       # ledger write all agreeing, and the only way to check it is to drive the real functions
       # until they refuse. The provider is `supabase/functions/test-provider`, scripted and free.
@@ -202,3 +208,6 @@ jobs:
 
       - name: Guardrail integration tests
         run: node scripts/test-edge.mjs
+
+      - name: Account deletion integration test
+        run: pnpm test:account-delete
