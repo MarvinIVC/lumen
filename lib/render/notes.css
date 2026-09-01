@@ -110,3 +110,71 @@ svg.lumen-structure .sub {
 .lumen-note :is(td, th) {
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------------------------------------------------------------- *
+ * The editor (phase-05 §8).
+ *
+ * ProseMirror renders bare `<p>`, `<ul>` and `<section>` elements with no classes of their own, so
+ * the rhythm the read view gets from Tailwind utilities has to be restated here as element rules.
+ * The alternative — a `renderHTML` on every node that emits the same class strings the renderer
+ * uses — would put the design in two places and let them drift, which is the failure this file
+ * exists to prevent for maths and diagrams already.
+ *
+ * These are the *only* styles that differ between reading a note and editing it, and every one of
+ * them is chrome rather than content: a caret, a focus ring, an empty-paragraph placeholder.
+ * ---------------------------------------------------------------- */
+.prose-note :is(p, ul, ol) {
+  margin-block: var(--space-4);
+}
+
+.prose-note :is(ul, ol) {
+  padding-inline-start: var(--space-5);
+}
+
+.prose-note ul {
+  list-style: disc;
+}
+
+.prose-note ol {
+  list-style: decimal;
+}
+
+.prose-note li::marker {
+  color: var(--text-muted);
+}
+
+.prose-note [data-section-heading] {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  margin-block: var(--space-4) var(--space-3);
+  text-wrap: balance;
+}
+
+.prose-note h2[data-section-heading] {
+  font-size: var(--fs-2xl);
+}
+
+.prose-note h3[data-section-heading] {
+  font-size: var(--fs-lg);
+  letter-spacing: 0.01em;
+}
+
+/* A section is the editable unit; the rule above its heading is what makes that visible, and it
+   matches the read view's own section rule exactly. */
+.prose-note section + section {
+  margin-block-start: var(--space-7);
+  border-block-start: 1px solid var(--border);
+  padding-block-start: var(--space-6);
+}
+
+/* The caret needs somewhere to be in an empty document. Without a minimum height a note whose
+   blocks have all been rejected is a zero-pixel target. */
+.prose-note {
+  min-height: 12rem;
+}
+
+.prose-note .ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-note);
+}

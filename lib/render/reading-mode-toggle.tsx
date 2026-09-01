@@ -13,7 +13,23 @@ import type { ReadingMode } from './reading-mode';
  * "My original" is a genuinely useful way to read the note, not a diminished version of it. And a
  * radiogroup rather than tabs — see `SegmentedControl` for why that distinction has teeth.
  */
-export function ReadingModeToggle({ className }: { className?: string }) {
+export function ReadingModeToggle({
+  disabled = [],
+  size,
+  className,
+}: {
+  /**
+   * Modes that have nothing to show.
+   *
+   * A note rebuilt from a photo of a whiteboard can be almost entirely `ai-added`, and "My
+   * original" on it is a blank page — which reads as a broken feature rather than as a true answer.
+   * The option stays visible and disabled, because removing it would answer the student's question
+   * ("did you keep any of mine?") by not asking it.
+   */
+  disabled?: ReadingMode[];
+  size?: 'sm' | 'md';
+  className?: string;
+}) {
   const { mode, setMode } = useReadingMode();
   const current = READING_MODES.find((entry) => entry.value === mode);
 
@@ -23,7 +39,12 @@ export function ReadingModeToggle({ className }: { className?: string }) {
         label="What to show"
         value={mode}
         onValueChange={setMode}
-        options={READING_MODES.map((entry) => ({ value: entry.value, label: entry.label }))}
+        {...(size ? { size } : {})}
+        options={READING_MODES.map((entry) => ({
+          value: entry.value,
+          label: entry.label,
+          ...(disabled.includes(entry.value) ? { disabled: true } : {}),
+        }))}
       />
       <p className="text-xs text-text-muted" aria-live="polite">
         {current?.hint}
