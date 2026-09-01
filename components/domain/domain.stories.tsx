@@ -178,6 +178,21 @@ export const Quota: Story = {
   ),
 };
 
+/**
+ * A stand-in for the preview `saveNoteThumbnail` stores. The real file is paper-coloured, because
+ * it is also what an export puts on a page; this one uses the CSS system colours so the harness
+ * has no palette of its own to keep in step with the tokens.
+ */
+const THUMBNAIL =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500">' +
+      '<rect width="800" height="500" fill="Canvas"/>' +
+      '<text x="58" y="78" style="font:700 34px Georgia,serif" fill="CanvasText">Gas laws</text>' +
+      '<text x="58" y="146" style="font:18px system-ui" fill="GrayText">Pressure, volume and the mole.</text>' +
+      '</svg>',
+  );
+
 export const Notes: Story = {
   render: () => (
     <div className="grid max-w-3xl gap-4 sm:grid-cols-2">
@@ -199,6 +214,19 @@ export const Notes: Story = {
         aiAdded={0}
         openQuestions={0}
         localOnly
+      />
+      <NoteCard
+        href="#"
+        title="Gas laws"
+        course="AP Chemistry"
+        unit="Unit 2"
+        updatedAt="2026-09-01"
+        aiAdded={7}
+        openQuestions={1}
+        thumbnailUrl={THUMBNAIL}
+        exported
+        inNotion
+        conflicted
       />
     </div>
   ),
