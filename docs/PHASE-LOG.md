@@ -652,6 +652,41 @@ question on the same text and is the right place to decide it once.
   slot phase-01 left; wiring the upload to Storage is phase-06's, and `putAssets`/`getAsset` in
   `lib/store/drafts.ts` are the local half that already works.
 
+**The nightly live eval fired for the first time, and found something phase-05 depends on**
+
+The `AI evals (nightly)` workflow ran against the real model for the first time in the project's
+history on 2026-09-01, hours after this phase merged. **40 of its 41 checks passed.** The one that
+did not is the LLM judge on `photo-ocr` — A-Level Physics, the hardest fixture there is, an OCR'd
+photo with an unreadable page. It scored `provenanceCorrectness` **2 of 5** (average 3.83 against a
+4.0 gate) with this reason:
+
+> AI-generated expansions and full sentences (such as in block `s-1-intro-b0` and
+> `s-5-intensity-b0`) were mislabeled as `student` origin rather than `ai-added`.
+
+**It is not a phase-05 regression, and that is checkable rather than assumed.** The scope lines this
+phase added to the run instruction are emitted only when `scope` is set —
+`prompt-cache.test.ts` asserts an unscoped run instruction is byte-identical to what it was before
+the field existed — and `PROMPT_VERSION` appears nowhere in any prompt string, only in comments and
+a re-export, so bumping it to 1.3.0 cannot change a single token the model sees. There is also no
+baseline to regress from: this was the workflow's first run.
+
+**But it lands squarely on what this phase built, which is why it is here rather than in a
+footnote.** Every trust surface in the workspace reads `origin`. If the model marks its own
+expansions `student`, then "My original" shows a student our sentences as their own — the exact lie
+the mode exists to prevent — and "keep only mine" keeps our content. The renderer, the accept/reject
+queue and the reading modes are all correct; the _input_ is wrong, and no amount of care in
+`lib/notes/` can detect it.
+
+What is **not** known: whether it reproduces. One sample, at temperature 0.3, scored by an LLM
+judge, on a fixture whose input is OCR of a photograph — every one of those is a source of variance,
+and 3.83 against 4.0 is a near miss rather than a collapse. Establishing that costs a live run,
+which `AGENTS.md` says must be asked for, so it has not been re-run.
+
+Whoever picks this up: the fix, if it reproduces, is a rubric change in `lib/ai/prompts/rubric.ts`
+making provenance labelling explicit for _expanded_ sentences — which is a `PROMPT_VERSION` bump,
+a full live eval re-run across all eight fixtures, and a real risk of moving the seven that
+currently pass. That is phase-sized work with a spend attached, not a tidy-up.
+
 **A hazard phase-09 will arm**
 
 `public/sw.js` caches nothing and has no fetch handler, deliberately, so today a student always
