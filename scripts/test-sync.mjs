@@ -74,10 +74,47 @@ try {
   const deduped = await client.from('note').select('id').eq('local_id', localId);
   assert(deduped.data?.length === 1, 'A replay duplicated a localId');
 
-  // Both devices pulled revision 1 before going offline.
-  const deviceA = await push(localId, 1, 'device-a', 'Device A lesson', 'from A');
-  assert(deviceA.outcome === 'applied' && deviceA.revision === 2, 'Device A edit did not apply');
-  const deviceB = await push(localId, 1, 'device-b', 'Device B lesson', 'from B');
+  // Any writer other than `sync_note` still advances the revision, so it has to hand the new one
+  // back or the next edit from that same device arrives stale. `/api/assets/thumbnail` is the only
+  // such writer today, and this is what it costs to forget: a conflicted copy of the student's own
+  // note, on one device, with nobody else involved.
+  const beforeThumbnail = await client
+    .from('note')
+    .select('id,sync_revision')
+    .eq('local_id', localId)
+    .single();
+  if (beforeThumbnail.error) throw beforeThumbnail.error;
+  const thumbnailWrite = await client
+    .from('note')
+    .update({ thumbnail_path: `${created.data.user.id}/${beforeThumbnail.data.id}/thumbnail.svg` })
+    .eq('id', beforeThumbnail.data.id)
+    .select('sync_revision')
+    .single();
+  if (thumbnailWrite.error) throw thumbnailWrite.error;
+  assert(
+    thumbnailWrite.data.sync_revision === beforeThumbnail.data.sync_revision + 1,
+    'A direct note write did not advance the revision, so the CAS contract is not what sync assumes',
+  );
+  const afterThumbnail = await push(
+    localId,
+    thumbnailWrite.data.sync_revision,
+    'device-a',
+    'Shared lesson',
+    'after thumbnail',
+  );
+  assert(
+    afterThumbnail.outcome === 'applied',
+    'An edit carrying the revision the thumbnail write returned was not applied',
+  );
+
+  // Both devices pulled this revision before going offline.
+  const shared = afterThumbnail.revision;
+  const deviceA = await push(localId, shared, 'device-a', 'Device A lesson', 'from A');
+  assert(
+    deviceA.outcome === 'applied' && deviceA.revision === shared + 1,
+    'Device A edit did not apply',
+  );
+  const deviceB = await push(localId, shared, 'device-b', 'Device B lesson', 'from B');
   assert(
     deviceB.outcome === 'conflict' && deviceB.conflictLocalId,
     'Stale device B edit was not preserved',

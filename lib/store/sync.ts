@@ -159,12 +159,23 @@ async function pushEntry(entry: OutboxEntry, deviceId: string): Promise<boolean>
     form.set('file', new File([asset.bytes], 'thumbnail.svg', { type: asset.mime }));
     const uploaded = await fetch('/api/assets/thumbnail', { method: 'POST', body: form });
     if (!uploaded.ok) throw new Error('thumbnail push failed');
-    const result = (await uploaded.json()) as { path?: string };
+    const result = (await uploaded.json()) as {
+      path?: string;
+      revision?: number;
+      updatedAt?: string;
+    };
+    // The upload wrote `thumbnail_path` itself, so there is nothing left to push — but it also
+    // moved the revision, and keeping the old one would make this device's next edit arrive stale
+    // and come back as a conflicted copy of the student's own note.
     await saveNote(
-      { ...note, thumbnailPath: result.path ?? note.thumbnailPath },
+      {
+        ...note,
+        thumbnailPath: result.path ?? note.thumbnailPath,
+        cloudRevision: result.revision ?? note.cloudRevision,
+        cloudUpdatedAt: result.updatedAt ?? note.cloudUpdatedAt,
+      },
       { queue: false, preserveUpdatedAt: true, thumbnail: false },
     );
-    await queueMutation('note', note.id);
     return true;
   }
 
