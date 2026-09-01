@@ -231,3 +231,61 @@ test('an expired sign-in link says so instead of landing silently signed out', a
   await page.reload();
   await expect(page.getByText('That sign-in link did not work')).toBeHidden();
 });
+
+test('lessons that have never been filed produce one course, not one course each', async ({
+  page,
+}) => {
+  await page.goto('/app/library');
+  await expect(page.getByText('Your first lesson will live here')).toBeVisible();
+
+  // Notes as they exist for a student who has only ever been signed out: a course and a unit in
+  // the context, and no row for either. The library files them on first sight, and it used to do
+  // that in parallel — every note reading the same empty library and creating its own course.
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('lumen', 3);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const now = Date.now();
+    const context = {
+      subject: 'Chemistry',
+      curriculum: 'AP',
+      course: 'AP Chemistry',
+      unit: 'Atomic structure',
+      topic: null,
+      language: 'en',
+    };
+    const tx = db.transaction(['notes'], 'readwrite');
+    for (const [id, title] of [
+      ['note-a', 'Moles and molar mass'],
+      ['note-b', 'Gas laws'],
+      ['note-c', 'Reaction rates'],
+    ]) {
+      tx.objectStore('notes').put({
+        id,
+        localId: id,
+        title,
+        status: 'ready',
+        createdAt: now,
+        updatedAt: now,
+        context,
+        options: { mode: 'complete', depth: 'match', visuals: 'auto', voice: 'keep-mine' },
+        draftId: `draft-${id}`,
+        source: { kind: 'paste', filenames: [], extractedCharCount: 30, ocrPages: 0 },
+        doc: { blocks: [], meta: { charCount: 0, pageCount: 0, sourceFiles: [] } },
+      });
+    }
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  });
+  await page.reload();
+
+  await expect(page.getByRole('treeitem', { name: /AP Chemistry/ })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /All notes/ })).toContainText('3');
+  await page.getByRole('treeitem', { name: /AP Chemistry/ }).click();
+  await expect(page.getByRole('treeitem', { name: /Atomic structure/ })).toHaveCount(1);
+});

@@ -111,9 +111,20 @@ export async function placeNoteFromContext(note: LocalNote): Promise<LocalNote> 
   return placed;
 }
 
+/**
+ * Sequential on purpose.
+ *
+ * `placeNoteFromContext` reads the library, then creates what it did not find. Run in parallel,
+ * every note reads the same empty library and creates its own copy of the same course: a student
+ * arriving at the library with six signed-out lessons from one course got six identical courses,
+ * and then synced all six. The list is one browser's notes, so the cost of doing this in order is
+ * nothing.
+ */
 export async function placeAllNotes(): Promise<LocalNote[]> {
   const notes = await listNotes(10_000);
-  return Promise.all(notes.map(placeNoteFromContext));
+  const placed: LocalNote[] = [];
+  for (const note of notes) placed.push(await placeNoteFromContext(note));
+  return placed;
 }
 
 export async function moveNote(noteId: string, unitId: string | null): Promise<void> {
