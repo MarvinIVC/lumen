@@ -13,10 +13,10 @@
 import { openDB } from 'idb';
 import type { DBSchema, IDBPDatabase } from 'idb';
 
-import type { LocalDraft, LocalNote, StoredAsset } from './types';
+import type { LocalDraft, LocalNote, NoteVersion, StoredAsset } from './types';
 
 export const DB_NAME = 'lumen';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 interface LumenDB extends DBSchema {
   drafts: {
@@ -34,6 +34,13 @@ interface LumenDB extends DBSchema {
     value: LocalNote;
     indexes: { 'by-updatedAt': number };
   };
+  /** Version history (phase-05 §13). Snapshots are large; they get their own store for the same
+   *  reason the assets do — a note is written on every autosave and must not carry them. */
+  versions: {
+    key: string;
+    value: NoteVersion;
+    indexes: { 'by-note': string };
+  };
 }
 
 let dbPromise: Promise<IDBPDatabase<LumenDB> | null> | null = null;
@@ -41,15 +48,33 @@ let dbPromise: Promise<IDBPDatabase<LumenDB> | null> | null = null;
 export function getDb(): Promise<IDBPDatabase<LumenDB> | null> {
   if (typeof indexedDB === 'undefined') return Promise.resolve(null);
   dbPromise ??= openDB<LumenDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      const drafts = db.createObjectStore('drafts', { keyPath: 'id' });
-      drafts.createIndex('by-updatedAt', 'updatedAt');
+    /**
+     * Migrations are cumulative and keyed on `oldVersion`, not unconditional.
+     *
+     * The v1 body created all three stores every time it ran, which was correct exactly once —
+     * for a browser that had never opened this database. Bumping to 2 without this guard would
+     * have called `createObjectStore('drafts')` on every existing student's database, thrown
+     * `ConstraintError` inside the upgrade transaction, and taken `getDb()` down its `.catch(null)`
+     * path: no drafts, no notes, no history, silently, for everyone who had used the product
+     * before today.
+     */
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        const drafts = db.createObjectStore('drafts', { keyPath: 'id' });
+        drafts.createIndex('by-updatedAt', 'updatedAt');
 
-      const assets = db.createObjectStore('assets', { keyPath: 'id' });
-      assets.createIndex('by-draft', 'draftId');
+        const assets = db.createObjectStore('assets', { keyPath: 'id' });
+        assets.createIndex('by-draft', 'draftId');
 
-      const notes = db.createObjectStore('notes', { keyPath: 'id' });
-      notes.createIndex('by-updatedAt', 'updatedAt');
+        const notes = db.createObjectStore('notes', { keyPath: 'id' });
+        notes.createIndex('by-updatedAt', 'updatedAt');
+      }
+
+      // v2 (phase-05): version history.
+      if (oldVersion < 2) {
+        const versions = db.createObjectStore('versions', { keyPath: 'id' });
+        versions.createIndex('by-note', 'noteId');
+      }
     },
     blocked() {
       // Another tab is holding an old version open. Nothing to do but let it finish.
