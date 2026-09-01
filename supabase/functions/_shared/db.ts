@@ -60,7 +60,3 @@ export async function userFromJwt(token: string): Promise<AuthUser | null> {
     return null;
   }
 }
-
-export async function userIdFromJwt(token: string): Promise<string | null> {
-  return (await userFromJwt(token))?.id ?? null;
-}
