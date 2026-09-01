@@ -47,3 +47,9 @@ storybook-static/
 # Local visual review output (scripts/shoot-marketing.mjs).
 screenshots/
 .lighthouseci-mobile/
+
+# One-off debugging scripts. `chk.tmp.mjs` — a Playwright snippet for counting paged.js pages —
+# was committed by accident in phase-02 and sat in the repo root for three phases, referenced by
+# nothing, for every later agent to stop and reason about.
+*.tmp.mjs
+*.tmp.ts
