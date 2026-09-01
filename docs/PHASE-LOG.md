@@ -758,18 +758,26 @@ built around — an account buys sync, not permission.
     unit is combined into one deck; two lessons in the same unit produce the same card with a
     different line break, and a key that keeps the break keeps the duplicate.
 
-**Three things that were wrong and would not have looked wrong**
+**Four things that were wrong and would not have looked wrong**
 
-1. **`?auth=failed` was written by two routes and read by nobody.** `/auth/callback` and
+1. **`placeAllNotes` gave a student one course per lesson.** It ran `placeNoteFromContext` over
+   every note in parallel, and each call reads the library and then creates the course and unit it
+   did not find — so with nothing filed yet, every note read the same empty library and created its
+   own "AP Chemistry". Three signed-out lessons from one course became three identical courses in
+   the tree, and then synced all three: `unique (owner, local_id)` has no reason to stop them,
+   because the local ids differ. Only visible by driving a real sign-in merge in a browser against
+   a local Supabase — every seeded end-to-end fixture arrived pre-filed. It is sequential now, and
+   `library.spec.ts` seeds unfiled notes and asserts one course.
+2. **`?auth=failed` was written by two routes and read by nobody.** `/auth/callback` and
    `/auth/confirm` are redirects and can render nothing themselves, so an expired or reused magic
    link dropped the student on `/app` signed out, with `appStrings.auth.callbackFailed` sitting
    unused in the strings module. Landing quietly on the workspace reads as success until you go
    looking for your library. `HubScreen` says it now, once, and strips the parameter.
-2. **Eleven end-to-end tests were routing a URL the browser no longer requests.** Moving the AI
+3. **Eleven end-to-end tests were routing a URL the browser no longer requests.** Moving the AI
    calls behind `/api/ai/<function>` left `page.route('**/functions/v1/enhance')` matching nothing,
    so seven generation tests and four regenerate/ask tests failed on a stale fixture rather than on
    the product. Any future change to where a client posts has to move these two constants with it.
-3. **The e2e seed opened `indexedDB.open('lumen', 3)` before the app had ever opened the database**,
+4. **The e2e seed opened `indexedDB.open('lumen', 3)` before the app had ever opened the database**,
    which creates an empty database with no object stores rather than running the app's upgrade —
    the mirror image of the phase-04/05 seed bug, and it failed on _every_ store rather than one.
    The seed waits for the empty state, which is the screen's way of saying `loadLibrary()` resolved,
@@ -799,6 +807,15 @@ OpenNext's generated `worker.js` exports only `fetch`, so the weekly trigger nee
 the wrapper, not at `.open-next/worker.js` — the build order matters (`cf:build` first, then
 Wrangler bundles the wrapper), and `check:worker` exercises exactly that path.
 
+**One deployment failure, caught on the PR**
+
+Cloudflare refuses a secret edit while the newest version of a Worker is not the deployed one
+(error 10215), and a preview is `versions upload` — an upload without a deploy. The shared deploy
+step was uploading the keep-alive's secrets before its command on both paths, so every preview
+deploy failed. The secrets belong to `scheduled()`, which only exists on production, so they are
+set in a production-only step **after** the deploy that makes its version live. Anything that moves
+them back in front of the deploy will break previews again.
+
 **What phase-07 inherits**
 
 Notes carry `exported_at` and `notion_synced_at` and the cards already render both badges; nothing
@@ -808,6 +825,6 @@ student text is untouched and still lands in phase-07's lap.
 
 **Numbers**
 
-631 unit (was 621) · 34 eval · 43 edge (was 35) · 121 Storybook axe · 188 e2e (8 in the library
-suite). Worker **1934 / 3072 KiB gz — 63%** (was 1783; the Supabase client). `/` 107.7 / 120 KB gz,
+631 unit (was 621) · 34 eval · 43 edge (was 35) · 121 Storybook axe · 190 e2e (10 in the
+library suite). Worker **1934 / 3072 KiB gz — 63%** (was 1783; the Supabase client). `/` 107.7 / 120 KB gz,
 unchanged. `/app/library` first load 200 kB. Schema 1.1.0, prompt 1.3.0 — no prompt string moved.
