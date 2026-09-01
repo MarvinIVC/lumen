@@ -4,7 +4,9 @@ import { describe, expect, it } from 'vitest';
 
 import { PROMPT_VERSION } from '@/lib/ai/versions';
 import {
+  ASK_SYSTEM,
   DOMAIN_TEMPLATE_BLOCKS,
+  REGENERATE_INSTRUCTION,
   RUBRIC_SYSTEM,
   SCHEMA_BLOCK,
   buildEnhancePrompt,
@@ -156,6 +158,59 @@ describe('the cached prefix', () => {
 });
 
 /**
+ * The scoped run (phase-05 §10).
+ *
+ * The whole reason `scope` is a field on the enhance input rather than a prompt of its own is that
+ * a regeneration should hit the same prefix cache as the generation it is amending. At ~31x on
+ * input tokens that is most of what the call costs, so it is asserted rather than assumed.
+ */
+describe('regenerate scope', () => {
+  const scope = {
+    sectionId: 's-1-2-moles',
+    sectionTitle: '1.2 Moles',
+    currentSection: '{"id":"s-1-2-moles","blocks":[]}',
+  };
+
+  async function input(): Promise<BuildEnhancePromptInput> {
+    return { context: CONTEXT, options: OPTIONS, packBlock: await packBlock(), extract: 'notes' };
+  }
+
+  it('does not move the cached prefix', async () => {
+    const base = await input();
+    expect(stablePrefix(buildEnhancePrompt({ ...base, scope }))).toBe(
+      stablePrefix(buildEnhancePrompt(base)),
+    );
+  });
+
+  it('leaves an unscoped prompt byte-identical to what it was without the field', async () => {
+    const base = await input();
+    expect(buildRunInstruction({ ...base, scope: undefined })).toBe(buildRunInstruction(base));
+  });
+
+  it('asks for one section, by id, and says not to return the document', async () => {
+    const instruction = buildRunInstruction({ ...(await input()), scope });
+    expect(instruction).toContain('REGENERATE ONE SECTION ONLY');
+    expect(instruction).toContain('s-1-2-moles');
+    expect(instruction).toContain('{"id":"s-1-2-moles","blocks":[]}');
+    expect(instruction).not.toContain('Produce the NoteDocument json now.');
+  });
+
+  it("carries the student's instruction, trimmed, and only when there is one", async () => {
+    const base = await input();
+    const withOne = buildRunInstruction({
+      ...base,
+      scope: { ...scope, instruction: '  add a bigger worked example  ' },
+    });
+    expect(withOne).toContain('add a bigger worked example');
+    expect(withOne).not.toContain('  add a bigger');
+
+    expect(buildRunInstruction({ ...base, scope: { ...scope, instruction: '   ' } })).not.toContain(
+      "STUDENT'S INSTRUCTION",
+    );
+  });
+});
+
+/**
  * The version guard (§10).
  *
  * Every prompt string is hashed together. If the hash moves, a prompt changed, and a prompt change
@@ -164,10 +219,17 @@ describe('the cached prefix', () => {
  */
 describe('prompt versioning', () => {
   const families = Object.keys(DOMAIN_TEMPLATE_BLOCKS).sort() as DomainFamily[];
+  // The two phase-05 strings are in here even though neither is part of the cached prefix, and
+  // that is the point: AGENTS.md's rule is about prompt *text*, not about which side of the cache
+  // boundary an edit happened to land on. Before they were added, the whole run instruction — the
+  // half of the prompt that carries the options, the notes and now the regenerate scope — could be
+  // rewritten without this guard noticing.
   const hash = createHash('sha256')
     .update(RUBRIC_SYSTEM)
     .update(SCHEMA_BLOCK)
     .update(families.map((family) => DOMAIN_TEMPLATE_BLOCKS[family]).join(' '))
+    .update(REGENERATE_INSTRUCTION)
+    .update(ASK_SYSTEM)
     .digest('hex')
     .slice(0, 16);
 
@@ -193,4 +255,4 @@ describe('prompt versioning', () => {
 });
 
 /** Bumped together with PROMPT_VERSION. See the failure message above. */
-const EXPECTED_PROMPT_HASH = '06bbb9f05cd6168c';
+const EXPECTED_PROMPT_HASH = 'db3556e26b9ecef1';
