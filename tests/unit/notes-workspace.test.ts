@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import { assignBlockIds, validateSectionFragment } from '@/lib/ai/validate';
 import { diffSection } from '@/lib/notes/diff';
-import { insertBlock, removeBlock, replaceSection, updateBlock } from '@/lib/notes/patch';
+import { insertBlock, replaceSection } from '@/lib/notes/patch';
 import { newBlockId } from '@/lib/notes/identity';
 import { prunable } from '@/lib/store/versions';
 import type { Block, NoteDocument, Section } from '@/lib/ai/schema';
@@ -128,7 +128,7 @@ describe('replaceSection', () => {
   });
 });
 
-describe('insert, update, remove', () => {
+describe('insert', () => {
   const doc = docOf(TWO_SECTIONS);
 
   it('inserts after a named block', () => {
@@ -154,17 +154,6 @@ describe('insert, update, remove', () => {
   it('mints an id that is free', () => {
     const taken = new Set(doc.sections.flatMap((s) => s.blocks.map((b) => b.id)));
     expect(taken.has(newBlockId(doc, 's-1'))).toBe(false);
-  });
-
-  it('keeps the block id when a block is edited in place', () => {
-    const id = doc.sections[0]!.blocks[0]!.id!;
-    const next = updateBlock(doc, id, para('changed'));
-    expect(next.sections[0]?.blocks[0]).toMatchObject({ id, text: 'changed' });
-  });
-
-  it('removes by id', () => {
-    const id = doc.sections[0]!.blocks[0]!.id!;
-    expect(removeBlock(doc, id).sections[0]?.blocks).toHaveLength(1);
   });
 
   it('recomputes the stats after each of them', () => {

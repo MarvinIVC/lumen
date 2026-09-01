@@ -91,6 +91,8 @@ export function Workspace({
         canShowOriginal={hasOriginalContent(doc)}
         saving={workspace.saving}
         edited={workspace.edited}
+        canUndo={workspace.canUndo}
+        onUndo={workspace.undo}
         onRegenerate={() => setRegenerating({ sectionId: null })}
         onHistory={() => setHistory(true)}
         onUnavailable={(message) => toast({ title: 'Not yet', description: message })}

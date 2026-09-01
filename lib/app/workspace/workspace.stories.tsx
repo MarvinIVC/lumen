@@ -49,6 +49,8 @@ function Bar({ canShowOriginal = true, edited = false, saving = false }) {
       canShowOriginal={canShowOriginal}
       saving={saving}
       edited={edited}
+      canUndo={edited}
+      onUndo={() => {}}
       onRegenerate={() => {}}
       onHistory={() => {}}
       onUnavailable={() => {}}

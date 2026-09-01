@@ -14,7 +14,7 @@
 import { computeStats } from '@/lib/ai/validate';
 import type { Block, NoteDocument, Section } from '@/lib/ai/schema';
 
-import { ensureBlockIds, findBlock } from './identity';
+import { ensureBlockIds } from './identity';
 
 /** Insert after `afterBlockId`, or at the end of the section when it is null. */
 export function insertBlock(
@@ -36,35 +36,6 @@ export function insertBlock(
     }),
   };
   return restat(ensureBlockIds(next));
-}
-
-export function updateBlock(doc: NoteDocument, blockId: string, replacement: Block): NoteDocument {
-  const next = {
-    ...doc,
-    sections: doc.sections.map((section) => ({
-      ...section,
-      blocks: section.blocks.map((block) =>
-        block.id === blockId ? { ...replacement, id: blockId } : block,
-      ),
-    })),
-  };
-  return restat(next);
-}
-
-export function removeBlock(doc: NoteDocument, blockId: string): NoteDocument {
-  const next = {
-    ...doc,
-    sections: doc.sections.map((section) => ({
-      ...section,
-      blocks: section.blocks.filter((block) => block.id !== blockId),
-    })),
-  };
-  return restat(next);
-}
-
-/** The section a block belongs to, for "regenerate this section" from a selection. */
-export function sectionIdFor(doc: NoteDocument, blockId: string): string | null {
-  return findBlock(doc, blockId)?.section.id ?? null;
 }
 
 /**
