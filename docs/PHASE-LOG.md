@@ -623,6 +623,16 @@ would test that they agree, which they would, right up until ProseMirror disagre
   Relatedly: `Home` then `Shift+End` inside a ProseMirror document can leave the selection collapsed
   — a triple-click is the gesture that actually selects a paragraph.
 
+**One thing left alone, deliberately**
+
+`renderInline` applies markdown to student-origin text, so a student who wrote `2.167*6.02*10^23`
+sees `6.02` in italics — in "My original", the one mode whose promise is that this is verbatim.
+It is pre-existing (student blocks have always gone through the markdown renderer) rather than
+something phase-05 introduced, and every plausible fix is worse than the artifact: escaping on
+restore writes backslashes into the document that "keep only mine" then persists, and a
+non-markdown path for one block type splits the renderer in two. Export (phase-07) faces the same
+question on the same text and is the right place to decide it once.
+
 **What phase-06 inherits**
 
 - **The cloud-sync seam is `persist()` in `lib/app/workspace/use-workspace.ts`** — one function,
