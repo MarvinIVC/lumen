@@ -27,8 +27,9 @@ const nextConfig: NextConfig = {
    * Phase-03's parsers took it to 3742 KiB and the deploy stopped being possible.
    *
    * None of these can execute on the server. Every one is behind a single `await import()` in a
-   * client module, called from an event handler or an effect — pdf.js needs a `Worker` and a
-   * canvas, mammoth needs a `File`, heic2any and the renderers need a DOM. But Next compiles
+   * client module, called from an event handler or an effect, or behind `next/dynamic({ ssr:
+   * false })` — pdf.js needs a `Worker` and a canvas, mammoth needs a `File`, heic2any, the
+   * renderers and ProseMirror all need a DOM. But Next compiles
    * client components for the SSR pass too, so webpack follows those dynamic imports and emits
    * the chunks into `.next/server`, where OpenNext bundles them into the Worker. 2.2 MB of raw
    * JavaScript that cannot run, in the one budget that cannot take it.
@@ -56,6 +57,18 @@ const nextConfig: NextConfig = {
         katex: false,
         'smiles-drawer': false,
         pagedjs: false,
+        // Phase-05's editor. TipTap is a React wrapper around ProseMirror, and ProseMirror is a
+        // DOM library end to end — `EditorView` constructs one in its constructor. The editor is
+        // mounted through `next/dynamic({ ssr: false })` and can never run in the server pass, but
+        // webpack still followed the import and emitted the whole of it into `.next/server` for
+        // OpenNext to bundle. Same trap as the parsers in phase-03, same one-line fix.
+        //
+        // `@tiptap/pm` re-exports every `prosemirror-*` package, so aliasing the three entry
+        // points covers the tree; nothing imports a `prosemirror-*` package directly.
+        '@tiptap/react': false,
+        '@tiptap/core': false,
+        '@tiptap/pm': false,
+        '@tiptap/starter-kit': false,
       };
     }
     return config;
