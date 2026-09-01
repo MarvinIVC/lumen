@@ -338,6 +338,11 @@ test.describe('accept and reject', () => {
     await expect(page.getByText('Everything is reviewed.')).toBeVisible();
     // The guide is intact — accepting is not deleting.
     await expect(page.getByRole('heading', { name: /1\.4 Mixtures/ })).toBeVisible();
+
+    // And one press undoes it. TipTap's own history covers typing; this is for the operations
+    // that change the whole document at once.
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await expect(page.getByText(/\d+ to review/)).toBeVisible();
   });
 
   test('rejecting one correction restores the wording exactly', async ({ page }) => {

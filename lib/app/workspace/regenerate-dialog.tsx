@@ -30,7 +30,7 @@ import { readByok } from '@/lib/ai/byok-store';
 import { replaceSection } from '@/lib/notes/patch';
 import { streamRegenerate } from '@/lib/ai/regen-client';
 import { EnhanceRefused } from '@/lib/ai/sse-client';
-import type { NoteDocument, Section } from '@/lib/ai/schema';
+import type { NoteDocument } from '@/lib/ai/schema';
 import type { QuotaRefusal } from '@/lib/ai/sse-client';
 import type { RegenFragment } from '@/lib/ai/regen';
 import type { SectionDiff } from '@/lib/notes/diff';
@@ -254,6 +254,3 @@ function Diff({ diff }: { diff: SectionDiff }) {
     </div>
   );
 }
-
-/** Re-exported for the tests, which drive the diff without the dialog. */
-export type { SectionDiff, Section };

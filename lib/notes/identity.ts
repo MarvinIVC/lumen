@@ -18,7 +18,7 @@
  * or a React key tells you where you are; a nanoid does not.
  */
 import { assignBlockIds } from '@/lib/ai/validate';
-import type { Block, MarginNoteBlock, NoteDocument, Section } from '@/lib/ai/schema';
+import type { Block, NoteDocument, Section } from '@/lib/ai/schema';
 
 /** Where a block lives. Returned by the finders so a caller can patch without searching twice. */
 export interface BlockLocation {
@@ -45,16 +45,11 @@ export const ensureBlockIds = assignBlockIds;
  * generation never produced. Seeded off the section so the readable shape survives.
  */
 export function newBlockId(doc: NoteDocument, sectionId: string): string {
-  const taken = new Set(collectBlocks(doc).map((block) => block.id));
+  const taken = new Set(doc.sections.flatMap((section) => section.blocks.map((b) => b.id)));
   let next = 0;
   let candidate = `${sectionId}-n${next}`;
   while (taken.has(candidate)) candidate = `${sectionId}-n${++next}`;
   return candidate;
-}
-
-/** Every block in reading order, sections flattened. */
-export function collectBlocks(doc: NoteDocument): Block[] {
-  return doc.sections.flatMap((section) => section.blocks);
 }
 
 export function findBlock(doc: NoteDocument, id: string): BlockLocation | null {
@@ -63,32 +58,6 @@ export function findBlock(doc: NoteDocument, id: string): BlockLocation | null {
     if (blockIndex >= 0) {
       return { sectionIndex, blockIndex, section, block: section.blocks[blockIndex] as Block };
     }
-  }
-  return null;
-}
-
-/** The section a block belongs to — what "regenerate this" and the corrections links need. */
-export function sectionOf(doc: NoteDocument, blockId: string): Section | null {
-  return findBlock(doc, blockId)?.section ?? null;
-}
-
-/**
- * Resolves a margin note's anchor to a block id, falling back to source order.
- *
- * `MarginNoteBlock.anchorId` has been in the schema since phase-00 and has been unusable since
- * phase-00, because there was nothing for it to point at — `NoteDocument.tsx` says as much and
- * attaches notes to the block they follow instead. With ids it finally works, and the fallback
- * stays because the model still does not populate it: source order is what the gold fixture and
- * every deployed run actually rely on.
- */
-export function anchorTarget(section: Section, note: MarginNoteBlock): string | null {
-  if (note.anchorId && section.blocks.some((block) => block.id === note.anchorId)) {
-    return note.anchorId;
-  }
-  const index = section.blocks.indexOf(note);
-  for (let i = index - 1; i >= 0; i -= 1) {
-    const candidate = section.blocks[i];
-    if (candidate && candidate.type !== 'marginNote') return candidate.id ?? null;
   }
   return null;
 }

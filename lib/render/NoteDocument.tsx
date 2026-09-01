@@ -305,12 +305,15 @@ interface BlockRow {
 }
 
 /**
- * Attaches each margin note to the block it annotates — the block it follows in source order.
+ * Attaches each margin note to the block it annotates.
  *
- * `MarginNoteBlock.anchorId` is meant to name its target explicitly, but `Block` carries no `id`
- * in the current schema, so there is nothing for it to point at. Source order is the reliable
- * signal today and produces the same result for every note in the gold fixture. When phase-04
- * gives blocks ids, resolve `anchorId` first here and keep this as the fallback.
+ * `MarginNoteBlock.anchorId` is resolved first, which it could not be until phase-05 gave blocks
+ * ids — there was nothing for it to point at, and this function said so. It matters now because
+ * "ask about this" inserts a margin note against the block the student had selected, and source
+ * order alone would put the answer beside whichever block happened to precede it.
+ *
+ * Source order stays as the fallback, because the model still does not populate `anchorId`: it is
+ * what the gold fixture and every deployed run actually rely on.
  *
  * A note with nothing before it is held back and attached to the first real block, so it never
  * lands beside the heading where it would read as a subtitle.
@@ -318,15 +321,19 @@ interface BlockRow {
 function groupBlocks(blocks: Block[]): BlockRow[] {
   const rows: BlockRow[] = [];
   const orphans: MarginNoteBlock[] = [];
+  const byId = new Map<string, BlockRow>();
 
   for (const block of blocks) {
     if (block.type === 'marginNote') {
-      const target = rows.at(-1);
+      const anchored = block.anchorId ? byId.get(block.anchorId) : undefined;
+      const target = anchored ?? rows.at(-1);
       if (target) target.notes.push(block);
       else orphans.push(block);
       continue;
     }
-    rows.push({ block, notes: rows.length === 0 ? orphans.splice(0) : [] });
+    const row: BlockRow = { block, notes: rows.length === 0 ? orphans.splice(0) : [] };
+    rows.push(row);
+    if (block.id) byId.set(block.id, row);
   }
 
   // Nothing but margin notes in the section — render them in the text column rather than lose them.

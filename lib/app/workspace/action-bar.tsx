@@ -23,12 +23,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import {
+  ArrowUpIcon,
   BookIcon,
   CircleDotIcon,
   DownloadIcon,
   ExternalLinkIcon,
   SparkIcon,
-  TextIcon,
 } from '@/components/ui/icons';
 import { ReadingModeToggle } from '@/lib/render/reading-mode-toggle';
 import { ReadingModeProvider } from '@/lib/render/reading-mode';
@@ -49,6 +49,8 @@ export interface ActionBarProps {
   canShowOriginal: boolean;
   saving: boolean;
   edited: boolean;
+  canUndo: boolean;
+  onUndo: () => void;
   onRegenerate: () => void;
   onHistory: () => void;
   /** The stubs (phase-06 / phase-07) explain themselves through this. */
@@ -63,6 +65,8 @@ export function ActionBar({
   canShowOriginal,
   saving,
   edited,
+  canUndo,
+  onUndo,
   onRegenerate,
   onHistory,
   onUnavailable,
@@ -90,6 +94,16 @@ export function ActionBar({
 
           <div className="flex flex-wrap items-center gap-2">
             <SaveState saving={saving} edited={edited} />
+
+            {/* Undo for the operations that are not typing. TipTap has its own history for prose,
+                which is the right granularity there; this one exists because "accept all" and
+                "keep only mine" are single presses that change the whole document, and a student
+                who pressed one by mistake should not have to go through version history. */}
+            {canUndo ? (
+              <Button size="sm" variant="ghost" icon={<ArrowUpIcon />} onClick={onUndo}>
+                {strings.undo}
+              </Button>
+            ) : null}
 
             <Button
               size="sm"
@@ -169,6 +183,3 @@ function SaveState({ saving, edited }: { saving: boolean; edited: boolean }) {
     </p>
   );
 }
-
-/** Icon for the Edit tab, exported so the empty states can use the same one. */
-export { TextIcon as EditIcon };
