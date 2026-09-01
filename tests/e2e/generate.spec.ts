@@ -302,7 +302,12 @@ test.describe('generation', () => {
 test.describe('a finished note on this device', () => {
   test('is stored, rendered and still there after a reload', async ({ page }) => {
     await stubUsage(page);
-    await page.goto('/app');
+    // The marketing home rather than `/app`, because `/app` opens the database itself — at version
+    // 2 since phase-05 added the version-history store — and the seed below deliberately writes a
+    // **version 1** store, which is what a student who used this product before phase-05 has. It
+    // then exercises the v1 → v2 upgrade on the way into the note, which is the migration that
+    // would otherwise silently empty every returning student's library.
+    await page.goto('/');
     await page.waitForLoadState('networkidle');
 
     const context = {
@@ -332,6 +337,13 @@ test.describe('a finished note on this device', () => {
           generated: { ...doc, context, options },
           model: 'deepseek-v4-flash',
         };
+
+        await new Promise<void>((done) => {
+          const wipe = indexedDB.deleteDatabase('lumen');
+          wipe.onsuccess = () => done();
+          wipe.onerror = () => done();
+          wipe.onblocked = () => done();
+        });
 
         await new Promise<void>((resolve, reject) => {
           const open = indexedDB.open('lumen', 1);
