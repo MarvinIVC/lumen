@@ -76,6 +76,22 @@ export interface Provenanced {
   origin: Origin;
   /** Present when origin is 'ai-clarified' or 'ai-corrected': what the student originally wrote. */
   originalText?: string;
+  /**
+   * Stable address for this block within its document (schema 1.1.0).
+   *
+   * The model is never asked for one — it is minted on the client by `ensureBlockIds` the first
+   * time a document is opened, and persisted from then on. Asking the model would put a volatile
+   * string in the output for no gain and give it one more rule to break; minting it locally makes
+   * it *ours*, which is what the workspace needs it to be.
+   *
+   * Everything in phase-05 addresses a block by this: accept/reject, the TipTap round-trip,
+   * `MarginNoteBlock.anchorId`, the regenerate diff and version history. Positional paths were the
+   * alternative and they break the moment anything is inserted, which is the whole activity.
+   *
+   * Optional in the type because a document arriving from the model has none yet; by the time it
+   * reaches a renderer or the editor, `migrateNoteDocument` has given every block one.
+   */
+  id?: string;
 }
 
 /* -------------------------------------------------------------------------- *

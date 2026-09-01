@@ -26,8 +26,11 @@ import { PROMPT_VERSION, SCHEMA_VERSION } from './versions.ts';
 import type {
   Block,
   ChartSpec,
+  Correction,
   DocumentStats,
+  GlossaryEntry,
   NoteDocument,
+  OpenQuestion,
   Section,
   ValidationIssue,
   ValidationResult,
@@ -500,7 +503,9 @@ export function validateNoteDocument(input: unknown): ValidationResult {
 
   if (Array.isArray(doc.furtherStudy)) doc.furtherStudy = doc.furtherStudy.filter(nonEmpty);
 
-  const document = doc as unknown as NoteDocument;
+  // Ids are minted here rather than only on the client, so a document leaves the pipeline already
+  // addressable: the streaming reveal, the eval harness and the workspace all get the same one.
+  const document = assignBlockIds(doc as unknown as NoteDocument);
   document.stats = computeStats(document);
 
   // `allText` is only needed by the checks above; referencing it keeps the intent obvious to the
@@ -508,6 +513,96 @@ export function validateNoteDocument(input: unknown): ValidationResult {
   void allText;
 
   return { ok: !issues.hasErrors, issues: issues.list, document };
+}
+
+/**
+ * A single regenerated section (phase-05 §10).
+ *
+ * `validateNoteDocument` cannot be reused here and should not be made to: half of what it does is
+ * whole-document work — cross-referencing flashcards against section ids, checking that every
+ * correction has a matching inline mark, deciding whether too much was dropped to be repairable —
+ * and a fragment has no document to be checked against. What it *can* share is the part that
+ * matters, `validateBlock`, so a formula that arrives without units is caught by the identical
+ * rule whether it came from a generation or a re-roll.
+ *
+ * The section id and level are not validated, because they are not the model's to decide:
+ * `replaceSection` re-imposes the ones the document already had. What is validated is that
+ * something usable came back at all — a fragment with no blocks left is a failed regenerate, and
+ * a failed regenerate must leave the original alone (§5, "regenerate failure keeps the original").
+ */
+export function validateSectionFragment(input: unknown): SectionFragmentResult {
+  const issues = new Issues();
+
+  if (!isObject(input)) {
+    issues.error('(root)', 'shape', 'the model did not return a JSON object');
+    return { ok: false, issues: issues.list };
+  }
+
+  // Tolerated because it is cheap to tolerate and expensive to refuse: a model that returns the
+  // section unwrapped has done the hard part right and got the envelope wrong.
+  const raw = isObject(input.section) ? input.section : input;
+
+  if (!Array.isArray(raw.blocks)) {
+    issues.error('section.blocks', 'sections', 'the fragment has no blocks');
+    return { ok: false, issues: issues.list };
+  }
+
+  const blocks: Block[] = [];
+  let dropped = 0;
+  (raw.blocks as unknown[]).forEach((rawBlock, index) => {
+    const block = validateBlock(rawBlock, `section.blocks[${index}]`, issues);
+    if (block) blocks.push(block);
+    else dropped += 1;
+  });
+
+  if (blocks.length === 0) {
+    issues.error('section.blocks', 'sections', 'every block in the fragment was unusable');
+    return { ok: false, issues: issues.list };
+  }
+  if (dropped > MIN_DROPPED_TO_FAIL && dropped / (dropped + blocks.length) > MAX_DROPPED_SHARE) {
+    issues.error(
+      'section.blocks',
+      'too-much-dropped',
+      `${dropped} blocks were unusable — the section is broken rather than repairable`,
+    );
+  }
+
+  const section: Section = {
+    id: text(raw.id),
+    title: text(raw.title),
+    level: raw.level === 3 ? 3 : 2,
+    blocks,
+  };
+
+  const envelope = isObject(input.section) ? input : {};
+  return {
+    ok: !issues.hasErrors,
+    issues: issues.list,
+    section,
+    corrections: listOf<Correction>(envelope.corrections, (entry) => nonEmpty(entry.original)),
+    openQuestions: listOf<OpenQuestion>(envelope.openQuestions, (entry) =>
+      nonEmpty(entry.question),
+    ),
+    glossary: listOf<GlossaryEntry>(
+      envelope.glossary,
+      (entry) => nonEmpty(entry.term) && nonEmpty(entry.definition),
+    ),
+  };
+}
+
+export interface SectionFragmentResult {
+  ok: boolean;
+  issues: ValidationIssue[];
+  section?: Section;
+  /** Annotations the model wrote about this section. `sectionId` is re-imposed on apply. */
+  corrections?: Correction[];
+  openQuestions?: OpenQuestion[];
+  glossary?: GlossaryEntry[];
+}
+
+function listOf<T>(value: unknown, keep: (entry: Mutable) => boolean): T[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry) => isObject(entry) && keep(entry)) as T[];
 }
 
 /**
@@ -555,19 +650,63 @@ export function degradeDocument(document: NoteDocument, issues: ValidationIssue[
   return degraded;
 }
 
-/** Upgrades a document written under an older SCHEMA_VERSION so the current renderer can draw it. */
+/**
+ * Gives every block a stable id, leaving the ones that have one alone (schema 1.1.0).
+ *
+ * Lives here rather than in `lib/notes/` because the migration below needs it and this module is
+ * the one both Next and the Deno edge runtime can import. Idempotent, and it has to be: it runs on
+ * every load, after every regeneration and after every insert, and a version that renumbered each
+ * pass would invalidate every saved reference in a document nobody had touched.
+ *
+ * Collisions are resolved rather than assumed away — a regenerated section arrives with ids minted
+ * in a different pass, and a restored version can carry ids a later edit also handed out.
+ */
+export function assignBlockIds(doc: NoteDocument): NoteDocument {
+  const taken = new Set<string>();
+  for (const section of doc.sections) {
+    for (const block of section.blocks) {
+      if (block.id && !taken.has(block.id)) taken.add(block.id);
+    }
+  }
+
+  let changed = false;
+  const sections = doc.sections.map((section) => {
+    let next = 0;
+    const blocks = section.blocks.map((block) => {
+      if (block.id && taken.has(block.id)) return block;
+      let candidate = `${section.id}-b${next++}`;
+      while (taken.has(candidate)) candidate = `${section.id}-b${next++}`;
+      taken.add(candidate);
+      changed = true;
+      return { ...block, id: candidate };
+    });
+    return changed ? { ...section, blocks } : section;
+  });
+
+  return changed ? { ...doc, sections } : doc;
+}
+
+/**
+ * Upgrades a document written under an older SCHEMA_VERSION so the current renderer can draw it.
+ *
+ * A switch on the stored version now, rather than the single version stamp it was through 1.0.0.
+ * Every step is additive and runs in order, so a document generated in phase-04 and opened in the
+ * workspace today walks 1.0.0 → 1.1.0 and comes out with block ids it was never generated with.
+ */
 export function migrateNoteDocument(doc: NoteDocument): NoteDocument {
-  if (doc.schemaVersion === SCHEMA_VERSION) return doc;
-  // 1.0.0 is the first shipped schema; every later field has been additive and optional so far,
-  // so the migration is a version stamp plus recomputed stats. The moment that stops being true,
-  // this becomes a switch on the stored version.
-  const migrated: NoteDocument = {
-    ...doc,
-    schemaVersion: SCHEMA_VERSION,
-    furtherStudy: doc.furtherStudy ?? [],
-  };
-  migrated.stats = computeStats(migrated);
-  return migrated;
+  let migrated: NoteDocument = doc;
+
+  // 1.0.0 → 1.1.0: `furtherStudy` and per-block ids. Both optional in the type, because a document
+  // fresh from the model has neither; by the time anything renders one, this has run.
+  if (!migrated.furtherStudy) migrated = { ...migrated, furtherStudy: [] };
+  migrated = assignBlockIds(migrated);
+
+  if (migrated.schemaVersion !== SCHEMA_VERSION) {
+    migrated = { ...migrated, schemaVersion: SCHEMA_VERSION };
+  }
+  if (migrated === doc) return doc;
+
+  return { ...migrated, stats: computeStats(migrated) };
 }
 
 /** Recomputes `stats` from the blocks. Cheap; call after any edit. */
