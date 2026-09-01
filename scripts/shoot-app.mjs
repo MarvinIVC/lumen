@@ -1,5 +1,6 @@
 /**
- * Screenshots the phase-03 workspace flow at two widths in both themes.
+ * Screenshots the workspace flow — ingest, review, note, hub, library, settings — at two widths in
+ * both themes.
  *
  * These screens cannot be captured by navigating to a URL — there is nothing on them until files
  * have been read into IndexedDB — so this drives the real flow with the real fixtures and shoots
@@ -72,6 +73,17 @@ for (const theme of ['light', 'dark']) {
     await page.goto(`${BASE}/app`);
     await page.getByRole('heading', { name: 'Pick up where you left off' }).waitFor();
     await shoot('hub');
+
+    // The library and settings need nothing seeded beyond the note the flow above just made,
+    // which is the point: this is what a student sees after one lesson, signed out.
+    await page.goto(`${BASE}/app/library`);
+    await page.getByRole('heading', { name: 'Your library' }).waitFor();
+    await page.getByRole('tree').waitFor();
+    await shoot('library');
+
+    await page.goto(`${BASE}/app/settings`);
+    await page.getByRole('heading', { name: 'Settings' }).waitFor();
+    await shoot('settings');
 
     await context.close();
   }
