@@ -28,6 +28,8 @@ interface PullResponse {
   courses: CloudRow[];
   units: CloudRow[];
   notes: CloudRow[];
+  /** Every note id the account owns, changed or not — the only way to see a remote deletion. */
+  noteIds?: string[];
   pulledAt: string;
 }
 
@@ -215,15 +217,21 @@ async function postMutation(body: Record<string, unknown>): Promise<PushResponse
 
 export async function pullCloud(ownerId: string): Promise<void> {
   if (typeof navigator !== 'undefined' && !navigator.onLine) return;
-  const response = await fetch('/api/sync/pull', { cache: 'no-store' });
+  const meta = await syncMeta(ownerId);
+  const since = meta?.lastPulledAt ? `?since=${encodeURIComponent(meta.lastPulledAt)}` : '';
+  const response = await fetch(`/api/sync/pull${since}`, { cache: 'no-store' });
   if (!response.ok) return;
   const pulled = (await response.json()) as PullResponse;
   const db = await getDb();
   if (!db) return;
   const pending = new Set((await listOutbox()).map((entry) => `${entry.entity}:${entry.entityId}`));
 
+  // An incremental pull returns only the courses and units that changed, so the maps start from
+  // the mirror. Without that, a note whose course was untouched would resolve to no course at all
+  // and quietly unfile itself from the tree.
   const localCourses = await db.getAll('courses');
   const courseByCloud = new Map<string, LocalCourse>();
+  for (const course of localCourses) if (course.cloudId) courseByCloud.set(course.cloudId, course);
   for (const row of pulled.courses) {
     const cloudId = string(row.id);
     const localId = nullableString(row.local_id) ?? `crs_cloud_${cloudId}`;
@@ -249,6 +257,7 @@ export async function pullCloud(ownerId: string): Promise<void> {
 
   const localUnits = await db.getAll('units');
   const unitByCloud = new Map<string, LocalUnit>();
+  for (const unit of localUnits) if (unit.cloudId) unitByCloud.set(unit.cloudId, unit);
   for (const row of pulled.units) {
     const cloudId = string(row.id);
     const course = courseByCloud.get(string(row.course));
@@ -269,7 +278,7 @@ export async function pullCloud(ownerId: string): Promise<void> {
   }
 
   const localNotes = await listNotes(10_000);
-  const cloudNoteIds = new Set<string>();
+  const cloudNoteIds = new Set<string>(pulled.noteIds ?? []);
   for (const row of pulled.notes) {
     const cloudId = string(row.id);
     cloudNoteIds.add(cloudId);
@@ -286,8 +295,8 @@ export async function pullCloud(ownerId: string): Promise<void> {
       cloudId,
       cloudRevision: number(row.sync_revision),
       cloudUpdatedAt: string(row.updated_at),
-      courseId: courseByCloud.get(string(row.course))?.id ?? null,
-      unitId: unitByCloud.get(string(row.unit))?.id ?? null,
+      courseId: courseByCloud.get(string(row.course))?.id ?? existing?.courseId ?? null,
+      unitId: unitByCloud.get(string(row.unit))?.id ?? existing?.unitId ?? null,
       thumbnailPath: nullableString(row.thumbnail_path),
       exportedAt: nullableString(row.exported_at),
       notionSyncedAt: nullableString(row.notion_synced_at),
@@ -308,8 +317,10 @@ export async function pullCloud(ownerId: string): Promise<void> {
     await saveNote(note, { queue: false, preserveUpdatedAt: true });
   }
 
-  // A deletion on another device removes the mirror only when this browser has no unsent edit.
-  for (const note of localNotes) {
+  // A deletion on another device removes the mirror only when this browser has no unsent edit —
+  // and only when the server actually listed every id, or an incremental pull would look like a
+  // remote deletion of everything it did not mention.
+  for (const note of pulled.noteIds ? localNotes : []) {
     if (!note.cloudId || cloudNoteIds.has(note.cloudId) || pending.has(`note:${note.id}`)) continue;
     const tx = db.transaction(['notes', 'versions', 'assets'], 'readwrite');
     const versions = await tx.objectStore('versions').index('by-note').getAllKeys(note.id);
@@ -324,7 +335,7 @@ export async function pullCloud(ownerId: string): Promise<void> {
 
   await db.put('syncMeta', {
     id: 'state',
-    deviceId: (await syncMeta(ownerId))?.deviceId ?? crypto.randomUUID(),
+    deviceId: meta?.deviceId ?? crypto.randomUUID(),
     ownerId,
     lastPulledAt: pulled.pulledAt,
   });
