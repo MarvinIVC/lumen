@@ -753,7 +753,15 @@ built around — an account buys sync, not permission.
 9. **Deletion order is Storage, then the auth user, then this browser.** No database cascade
    reaches Storage, and the rows naming those objects are about to disappear. `scripts/test-account-delete.mjs`
    asserts all three.
-10. **`normal()` in `lib/store/library.ts` collapses interior whitespace as well as trimming.** It
+10. **The pull is incremental, and two things make that safe.** `?since=` narrows the rows, but
+    the note _ids_ are still returned in full — a note deleted on another device does not appear in
+    a changed-rows query, so without the list the mirror could only ever grow, and the deletion
+    pass is skipped entirely when the server sends no list rather than reading an absent one as
+    "everything was deleted". The course and unit maps start from the local mirror for the same
+    reason: an incremental pull returns only the parents that changed, and a note whose course was
+    untouched would otherwise resolve to no course and unfile itself from the tree. The window is
+    widened by a minute because `pulledAt` is the Worker's clock and `updated_at` is Postgres's.
+11. **`normal()` in `lib/store/library.ts` collapses interior whitespace as well as trimming.** It
     is the comparison key for both the course match on the first merge and the card dedupe when a
     unit is combined into one deck; two lessons in the same unit produce the same card with a
     different line break, and a key that keeps the break keeps the duplicate.
