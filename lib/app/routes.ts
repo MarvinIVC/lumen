@@ -22,6 +22,10 @@ export function reviewHref(draftId: string): string {
   return `${APP_REVIEW}?${DRAFT_PARAM}=${draftId}`;
 }
 
+export function printHref(noteId: string): string {
+  return `${APP_HOME}/note/${noteId}/print`;
+}
+
 export function noteHref(noteId: string): string {
   return `/app/note/${noteId}`;
 }

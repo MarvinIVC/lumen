@@ -18,6 +18,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ActionBar } from './action-bar';
 import { AskDialog } from './ask-dialog';
 import { EditView } from './edit-view';
+import { ExportControls } from './export-controls';
 import { Notice } from '@/lib/app/notice';
 import { ReadView } from './read-view';
 import { RegenerateDialog } from './regenerate-dialog';
@@ -96,6 +97,7 @@ export function Workspace({
         onRegenerate={() => setRegenerating({ sectionId: null })}
         onHistory={() => setHistory(true)}
         onUnavailable={(message) => toast({ title: 'Not yet', description: message })}
+        exportMenu={<ExportControls note={note} doc={doc} />}
       />
 
       <div className="mx-auto flex w-full max-w-(--note-shell) flex-col gap-4">

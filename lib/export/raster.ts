@@ -57,6 +57,7 @@ export async function rasterizeSvg(svg: SVGSVGElement): Promise<Omit<RasterAsset
   // stored artefact rather than a view — phase-06 settled that a saved file is paper in both
   // themes. So the copy is drawn on white with the ink it resolved to on screen.
   inlineColours(svg, clone);
+  flattenForeignObjects(svg, clone);
 
   const source = new XMLSerializer().serializeToString(clone);
   const url = URL.createObjectURL(new Blob([source], { type: 'image/svg+xml;charset=utf-8' }));
@@ -106,6 +107,73 @@ function inlineColours(live: SVGSVGElement, clone: SVGSVGElement): void {
   });
 }
 
+/**
+ * Replaces every `<foreignObject>` with real SVG text.
+ *
+ * **This is what makes a Mermaid diagram exportable at all.** `06 §1` configures Mermaid with
+ * `flowchart: { htmlLabels: true }`, so every node label is HTML inside a `<foreignObject>` — and
+ * an SVG containing one *taints the canvas it is drawn onto*. The failure is quiet and confusing:
+ * the image decodes, `drawImage` succeeds, and then `toBlob` throws "Tainted canvases may not be
+ * exported". Chrome treats foreign content as potentially cross-origin whatever it actually
+ * contains. So every diagram silently reached Word and Markdown as a caption with no picture.
+ *
+ * The labels are plain text in practice, so each `<foreignObject>` becomes centred `<text>` lines
+ * with the font it was rendered in. Approximate, and much closer than the alternative, which is
+ * either no diagram or re-rendering the whole of Mermaid a second time with a different config.
+ */
+function flattenForeignObjects(live: SVGSVGElement, clone: SVGSVGElement): void {
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const sources = [...live.querySelectorAll('foreignObject')];
+  const targets = [...clone.querySelectorAll('foreignObject')];
+
+  targets.forEach((target, index) => {
+    const source = sources[index];
+    const width = Number(target.getAttribute('width')) || 0;
+    const height = Number(target.getAttribute('height')) || 0;
+    const x = Number(target.getAttribute('x')) || 0;
+    const y = Number(target.getAttribute('y')) || 0;
+
+    const group = document.createElementNS(SVG_NS, 'g');
+    const lines = source ? labelLines(source) : [];
+
+    if (lines.length) {
+      const style = getComputedStyle(source!.querySelector('*') ?? source!);
+      const fontSize = Number.parseFloat(style.fontSize) || 12;
+      const lineHeight = fontSize * 1.25;
+      const top = y + height / 2 - ((lines.length - 1) * lineHeight) / 2;
+
+      lines.forEach((line, row) => {
+        const text = document.createElementNS(SVG_NS, 'text');
+        text.setAttribute('x', String(x + width / 2));
+        text.setAttribute('y', String(top + row * lineHeight));
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'central');
+        text.setAttribute('font-family', style.fontFamily);
+        text.setAttribute('font-size', `${fontSize}px`);
+        text.setAttribute('fill', style.color);
+        text.textContent = line;
+        group.append(text);
+      });
+    }
+
+    target.replaceWith(group);
+  });
+}
+
+/** The visible lines of a Mermaid label, which is HTML rather than SVG under `htmlLabels`. */
+function labelLines(source: Element): string[] {
+  const blocks = [...source.querySelectorAll('p, div, span')].filter(
+    (element) => element.children.length === 0 && (element.textContent ?? '').trim(),
+  );
+  const lines = (
+    blocks.length ? blocks.map((element) => element.textContent ?? '') : [source.textContent ?? '']
+  )
+    .map((line) => line.trim())
+    .filter(Boolean);
+  // De-duplicated because a nested `<span><p>text</p></span>` yields the same string twice.
+  return [...new Set(lines)];
+}
+
 function load(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -113,6 +181,19 @@ function load(url: string): Promise<HTMLImageElement> {
     image.onerror = () => reject(new Error('svg decode failed'));
     image.src = url;
   });
+}
+
+/**
+ * Surfaces a failure to the error monitor without abandoning the rest of the export.
+ *
+ * Rethrowing on a macrotask produces the unhandled rejection Sentry's global handler reports,
+ * while the loop it came from carries on — phase-03's fix for the same shape of problem in the
+ * parse loop.
+ */
+function reportUnexpected(error: unknown): void {
+  setTimeout(() => {
+    throw error;
+  }, 0);
 }
 
 /**
@@ -137,8 +218,11 @@ export async function rasterizeAll(
         const raster = await rasterizeSvg(svg);
         const alt = 'alt' in row.block ? row.block.alt : '';
         rasters.set(id, { ...raster, blockId: id, alt });
-      } catch {
-        // Deliberately swallowed — see above.
+      } catch (error) {
+        // The export continues without this figure — but the failure is reported out of band, on
+        // phase-03's pattern, so the monitor sees the real error. A figure that silently goes
+        // missing from a file nobody re-opens is precisely the bug that cannot be found later.
+        reportUnexpected(error);
       }
     }
     onProgress?.((done += 1), blocks.length);

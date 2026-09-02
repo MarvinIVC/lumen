@@ -8,9 +8,9 @@
  * reading half a study guide are the same ones they wanted at the top, and a document this long
  * otherwise makes "Edit" a scroll.
  *
- * The save/export/share buttons are honest stubs. Phase-06 brings accounts and phase-07 brings
- * export and sharing; until then each says what it will do and why it cannot yet, because a
- * disabled button with no explanation is the one thing 01 §6 is most insistent about.
+ * Export is real from phase-07 and arrives as a slot — see `exportMenu`. The remaining stubs say
+ * what they will do and why they cannot yet, because a disabled button with no explanation is the
+ * one thing 01 §6 is most insistent about.
  */
 import { Button } from '@/components/ui/button';
 import {
@@ -53,8 +53,15 @@ export interface ActionBarProps {
   onUndo: () => void;
   onRegenerate: () => void;
   onHistory: () => void;
-  /** The stubs (phase-06 / phase-07) explain themselves through this. */
+  /** The stubs still waiting on a later phase explain themselves through this. */
   onUnavailable: (message: string) => void;
+  /**
+   * The export menu, injected rather than built here.
+   *
+   * It is the only control on this bar that touches storage and spawns a Worker, and the bar is
+   * rendered in stories where neither exists — so the workspace owns it and passes it in.
+   */
+  exportMenu?: React.ReactNode;
 }
 
 export function ActionBar({
@@ -70,6 +77,7 @@ export function ActionBar({
   onRegenerate,
   onHistory,
   onUnavailable,
+  exportMenu,
 }: ActionBarProps) {
   return (
     <div
@@ -114,14 +122,16 @@ export function ActionBar({
               {strings.saveToLibrary}
             </Button>
 
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<DownloadIcon />}
-              onClick={() => onUnavailable(strings.exportSoon)}
-            >
-              {strings.exportCta}
-            </Button>
+            {exportMenu ?? (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<DownloadIcon />}
+                onClick={() => onUnavailable(strings.exportUnavailable)}
+              >
+                {strings.exportCta}
+              </Button>
+            )}
 
             <Button
               size="sm"
