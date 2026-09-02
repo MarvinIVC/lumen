@@ -108,6 +108,45 @@ const FIELDS = [
     github: 'secret',
   },
   {
+    key: 'NOTION_OAUTH_CLIENT_ID',
+    label: 'Notion OAuth client id',
+    where: 'notion.so/my-integrations → your public integration → OAuth Domain & URIs',
+    optional: true,
+    validate: (value) => (value.length >= 8 ? null : 'That looks too short to be a client id.'),
+    github: 'secret',
+  },
+  {
+    key: 'NOTION_OAUTH_CLIENT_SECRET',
+    label: 'Notion OAuth client secret',
+    where: 'The same page, under Secrets. Starts with secret_.',
+    secret: true,
+    optional: true,
+    validate: (value) => (value.length >= 16 ? null : 'That looks too short to be the secret.'),
+    github: 'secret',
+  },
+  {
+    key: 'GOOGLE_DRIVE_OAUTH_CLIENT_ID',
+    label: 'Google Drive OAuth client id',
+    where:
+      'A Cloud project of its own — NOT the sign-in one. drive.file is a sensitive scope and the ' +
+      'consent screen is per project, so sharing it would put sign-in into Google review.',
+    optional: true,
+    validate: (value) =>
+      value.endsWith('.apps.googleusercontent.com')
+        ? null
+        : 'A Google client id ends with .apps.googleusercontent.com',
+    github: 'secret',
+  },
+  {
+    key: 'GOOGLE_DRIVE_OAUTH_CLIENT_SECRET',
+    label: 'Google Drive OAuth client secret',
+    where: 'The same credential, in the same separate Cloud project.',
+    secret: true,
+    optional: true,
+    validate: (value) => (value.length >= 16 ? null : 'That looks too short to be the secret.'),
+    github: 'secret',
+  },
+  {
     key: 'SUPABASE_ACCESS_TOKEN',
     label: 'Supabase personal access token',
     where: 'supabase.com/dashboard/account/tokens → Generate new token',
@@ -138,6 +177,15 @@ const GENERATED = [
   {
     key: 'ANON_ID_SECRET',
     label: 'Anonymous-id signing secret',
+    generate: () => randomBytes(32).toString('base64'),
+    github: 'secret',
+  },
+  {
+    // The OAuth callback is an edge function on another origin and cannot see the app's httpOnly
+    // session, so the `state` parameter is what ties the code coming back to the person who
+    // started the flow. Signed, short-lived, and single-purpose.
+    key: 'INTEGRATION_STATE_SECRET',
+    label: 'OAuth state signing secret',
     generate: () => randomBytes(32).toString('base64'),
     github: 'secret',
   },
@@ -268,6 +316,7 @@ async function askField(field, current) {
   console.log(dim(`  ${field.where}`));
   if (field.example) console.log(dim(`  e.g. ${field.example}`));
   if (isSet) console.log(dim('  Already set — press enter to keep it.'));
+  else if (field.optional) console.log(dim('  Optional — press enter to skip.'));
   else if (current && field.stale?.(current)) {
     const shown = current.length > 32 ? `${current.slice(0, 32)}…` : current;
     console.log(yellow(`  Currently ${shown} — that is the local stack, not your project.`));
@@ -278,6 +327,14 @@ async function askField(field, current) {
     if (answer === null) throw new EndOfInput();
     if (!answer) {
       if (isSet) return null;
+      // An optional key is one the app runs without: the feature behind it reports itself as not
+      // configured, which is the honest thing for it to say, rather than the setup refusing to end.
+      if (field.optional) {
+        console.log(
+          dim('  Skipped. The feature reports itself as not configured until it is set.'),
+        );
+        return null;
+      }
       console.log(red('  This one is needed.'));
       continue;
     }
