@@ -471,9 +471,14 @@ additional_redirect_urls = [
 # account verified on sight and put the 20/day allowance behind nothing at all.
 enable_confirmations = true
 
-# Google sign-in (01-PRODUCT.md §4). Enabled once the OAuth client exists and both secrets are set
-# in the deploy environment; until then the modal offers the magic link and says so.
+# Google sign-in (01-PRODUCT.md §4). The OAuth client lives in Google Cloud; its only redirect URI
+# is Supabase's own callback, and Supabase then returns to the app callback in the allow-list above.
+#
+# The consent screen is External and requests `openid`, `userinfo.email` and `userinfo.profile` —
+# all non-sensitive, which is what makes this publishable without Google's verification review. Any
+# later phase that reaches for a sensitive scope (Drive in phase-07 is a *separate* client, so it
+# does not) buys a review with it.
 [remotes.production.auth.external.google]
-enabled = false
+enabled = true
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
 secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
