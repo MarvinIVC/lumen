@@ -62,6 +62,8 @@ export interface ActionBarProps {
    * rendered in stories where neither exists — so the workspace owns it and passes it in.
    */
   exportMenu?: React.ReactNode;
+  /** The share dialog, injected for the same reason as `exportMenu`. */
+  shareControls?: React.ReactNode;
 }
 
 export function ActionBar({
@@ -78,6 +80,7 @@ export function ActionBar({
   onHistory,
   onUnavailable,
   exportMenu,
+  shareControls,
 }: ActionBarProps) {
   return (
     <div
@@ -133,14 +136,16 @@ export function ActionBar({
               </Button>
             )}
 
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<ExternalLinkIcon />}
-              onClick={() => onUnavailable(strings.shareSoon)}
-            >
-              {strings.shareCta}
-            </Button>
+            {shareControls ?? (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<ExternalLinkIcon />}
+                onClick={() => onUnavailable(strings.shareSoon)}
+              >
+                {strings.shareCta}
+              </Button>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -11,6 +11,8 @@
  * locale `/app` claims, and moving it into the catalogues is one file's work when the app UI is
  * translated. Copy voice is 01-PRODUCT.md §6 — warm, plain, talks to a smart 16-year-old as a peer.
  */
+import { AI_DISCLAIMER } from '@/lib/config';
+
 /** What each format is called in a sentence, rather than in a menu. */
 const FORMAT_NAMES: Record<string, string> = {
   docx: 'Word document',
@@ -260,6 +262,38 @@ export const appStrings = {
     missingCta: 'Start a new one',
     sourceLine: (files: number, chars: number) =>
       `${files} ${files === 1 ? 'source' : 'sources'} · ${chars.toLocaleString('en')} characters`,
+  },
+
+  share: {
+    goneTitle: 'This link is not available',
+    goneBody:
+      'It may have been turned off by whoever shared it, or it may have expired. Ask them for a ' +
+      'new one — nothing has been lost on their side.',
+    busyTitle: 'This link is busy right now',
+    busyBody: 'It is being opened a lot at the moment. Try again in a minute.',
+    cta: 'Rebuild your own notes',
+    madeWith: 'Made with',
+    tagline: 'Turn the notes you already have into a study guide.',
+    report: 'Report this page',
+    reportHref: (shareId: string) =>
+      `mailto:hello@lumen.study?subject=${encodeURIComponent(`Reporting a shared page (${shareId})`)}`,
+    disclaimer: AI_DISCLAIMER,
+    dialogSignedOutTitle: 'Sharing needs an account',
+    dialogSignedOutBody:
+      'A link has to be readable by someone else, and a signed-out note lives only in this ' +
+      'browser. Signing in keeps your notes across devices and makes sharing possible.',
+    creating: 'Making a link…',
+    copied: 'Link copied.',
+    revoked: 'Link turned off. Anyone opening it now sees nothing.',
+    failed: 'That did not work',
+    failedBody: 'Nothing changed on your note. Trying again usually works.',
+    notSynced:
+      'This note has not reached your library yet. It syncs on its own in a moment — try again ' +
+      'then.',
+    expiryNever: 'No expiry',
+    expiryDay: 'Expires in a day',
+    expiryWeek: 'Expires in a week',
+    expiryMonth: 'Expires in a month',
   },
 
   print: {
