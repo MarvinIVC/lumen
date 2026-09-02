@@ -140,12 +140,44 @@ on conflict (id) do update set
   allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists share_cards_public_read on storage.objects;
+drop policy if exists share_cards_owner_insert on storage.objects;
+drop policy if exists share_cards_owner_update on storage.objects;
+
 create policy share_cards_public_read on storage.objects
   for select to anon, authenticated
   using (bucket_id = 'share-cards');
 
--- Writing a card is the service role's job, from the route that creates the
--- share. A browser that could write here could replace any note's card.
+-- The card is named for the share and nothing else. Filing it under the owner's
+-- uid — which is what every other bucket here does — would put that uid in the
+-- `og:image` URL of a public page, and 06 §4 is explicit that no owner
+-- identifier appears on a shared page. So the path is `<share id>.png` and the
+-- policy proves ownership by joining rather than by reading the path.
+create policy share_cards_owner_insert on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'share-cards'
+    and exists (
+      select 1 from public.share s
+      where s.owner = (select auth.uid()) and name = s.id || '.png'
+    )
+  );
+
+create policy share_cards_owner_update on storage.objects
+  for update to authenticated
+  using (
+    bucket_id = 'share-cards'
+    and exists (
+      select 1 from public.share s
+      where s.owner = (select auth.uid()) and name = s.id || '.png'
+    )
+  )
+  with check (
+    bucket_id = 'share-cards'
+    and exists (
+      select 1 from public.share s
+      where s.owner = (select auth.uid()) and name = s.id || '.png'
+    )
+  );
 
 -- ---------------------------------------------------------------------------
 -- Integration tokens stay out of reach of the browser that owns them.

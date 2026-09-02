@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 
 import { safeAppNext } from '@/lib/auth/safe-next';
 import { combineFlashcards, flattenDocument, searchLocalNotes } from '@/lib/store/library';
-import { renderThumbnail } from '@/lib/store/thumbnails';
+import { readableMath, renderThumbnail } from '@/lib/store/thumbnails';
 import { assignBlockIds } from '@/lib/ai/validate';
 import type { Block, Flashcard, NoteDocument } from '@/lib/ai/schema';
 import type { LocalNote } from '@/lib/store/types';
@@ -151,12 +151,81 @@ describe('combining a unit into one deck', () => {
 describe('the saved thumbnail', () => {
   it('escapes a title that would otherwise close the SVG', () => {
     const svg = renderThumbnail(docOf({ title: 'Acids <script>alert(1)</script> & bases' }));
-    expect(svg).toContain('Acids &lt;script&gt;alert(1)&lt;/script&gt; &amp; bases');
+    expect(svg).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(svg).toContain('&amp;');
     expect(svg).not.toContain('<script>');
     // Storage serves this file back to the browser; an unbalanced tag would be a broken card at
     // best and injected markup at worst.
     expect(svg.match(/<svg/g)).toHaveLength(1);
     expect(svg.trimEnd().endsWith('</svg>')).toBe(true);
+  });
+
+  it('wraps a long title instead of running it off the edge', () => {
+    // Phase-07 put this file in front of strangers as a share link's Open Graph card, and SVG
+    // `<text>` does not wrap: the real AP Chem title came out as "Atomic Structure and Properties
+    // — the mo" with the rest outside the picture. Every lesson title is this long.
+    const svg = renderThumbnail(
+      docOf({ title: 'Atomic Structure and Properties — the mole, isotopes and formulas' }),
+    );
+    const titles = [...svg.matchAll(/class="title">([^<]*)</g)].map((match) => match[1]!);
+    expect(titles.length).toBeGreaterThan(1);
+    for (const line of titles) expect(line.length).toBeLessThanOrEqual(40);
+    expect(titles.join(' ')).toContain('Atomic Structure');
+  });
+
+  it('makes maths readable rather than printing LaTeX at a reader', () => {
+    expect(readableMath('6.022\\times10^{23}')).toBe('6.022×10²³');
+    expect(readableMath('\\ce{H2O}')).toBe('H2O');
+    expect(readableMath('\\dfrac{m}{M}')).toBe('m/M');
+    expect(readableMath('\\ce{A <=> B}')).toBe('A <=> B');
+    // A command this does not know loses its name rather than showing it.
+    expect(readableMath('x \\qquad y')).toBe('x y');
+    // LaTeX's spacing commands are a backslash and one punctuation mark, and left a stray slash.
+    expect(readableMath('6.022\\times10^{23}\\ \\text{mol}^{-1}')).toBe('6.022×10²³ mol⁻¹');
+  });
+
+  it('strips inline syntax rather than printing it at a reader', () => {
+    // The card is built from the document's own text, and the document is written in the
+    // restricted markdown the renderer parses — so without this a chemistry note put
+    // `$6.022\times10^{23}$` on a public card verbatim.
+    const svg = renderThumbnail(
+      docOf({
+        title: 'The **mole**',
+        summary: 'One mole is $6.022\\times10^{23}$ particles.',
+      }),
+    );
+    expect(svg).not.toContain('$');
+    expect(svg).not.toContain('\\times');
+    expect(svg).not.toContain('**');
+    expect(svg).toContain('The mole');
+    expect(svg).toContain('6.022×10²³');
+  });
+
+  it('makes the body legible too, not only the summary', () => {
+    // The body is the longest text on the card and comes straight out of the blocks, so it is the
+    // one most likely to be carrying LaTeX. It took its own fix.
+    const svg = renderThumbnail(
+      docOf({
+        summary: 'Plain.',
+        sections: [
+          {
+            id: 's-1',
+            title: 'The mole',
+            level: 2,
+            blocks: [
+              {
+                type: 'paragraph',
+                origin: 'ai-added',
+                text: 'One mole is $6.022\\times10^{23}$ particles of $\\ce{H2O}$.',
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(svg).not.toContain('\\times');
+    expect(svg).not.toContain('\\ce{');
+    expect(svg).toContain('6.022×10²³');
   });
 
   it('renders a document with no sections at all', () => {
