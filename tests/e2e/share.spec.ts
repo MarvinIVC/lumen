@@ -18,7 +18,9 @@ test.describe('a share link that is not live', () => {
     // the person who was sent it can act on, and an unknown, revoked and expired link all get the
     // same answer so that a stranger cannot tell which they are holding.
     expect(response?.status()).toBe(200);
-    await expect(page.getByText(/link is not available/i)).toBeVisible();
+    // Scoped to the body: the same words are in the `<title>`, and a bare text locator matches
+    // both, which is a strict-mode violation rather than a real failure.
+    await expect(page.locator('main').getByText(/link is not available/i)).toBeVisible();
     await expect(page.locator('.lumen-note')).toHaveCount(0);
   });
 
