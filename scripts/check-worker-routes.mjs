@@ -40,7 +40,12 @@ const EXPECTED = [
   ['/app/review', 200],
   ['/app/library', 200],
   ['/app/note/does-not-exist', 200],
+  ['/app/note/does-not-exist/print', 200],
   ['/app/settings', 200],
+  // The public share route. `force-dynamic`, so unlike everything above it there is no prerendered
+  // copy for the Worker to fall back on — if the runtime cannot reach Supabase, this is the URL
+  // that says so. A dead link is a rendered page rather than a 404, deliberately: 06 §4.
+  ['/s/thislinkdoesnotexist', 200],
   // `dynamicParams = false` has to keep meaning what it says: an unknown locale is not a page.
   ['/fr', 404],
 ];
