@@ -151,33 +151,49 @@ describe('buildExportModel', () => {
 describe('inline emitters', () => {
   it('parses a bold run that contains maths, in every format', () => {
     const text = '**mass-to-charge ratio ($m/z$)**';
-    expect(toMarkdown(text, 'ai-added')).toBe('**mass\\-to\\-charge ratio \\($m/z$\\)**');
-    expect(toAnkiHtml(text, 'ai-added')).toBe('<b>mass-to-charge ratio (\\(m/z\\))</b>');
-    expect(toPlainText(text, 'ai-added')).toBe('mass-to-charge ratio (m/z)');
+    expect(toMarkdown(text)).toBe('**mass-to-charge ratio ($m/z$)**');
+    expect(toAnkiHtml(text)).toBe('<b>mass-to-charge ratio (\\(m/z\\))</b>');
+    expect(toPlainText(text)).toBe('mass-to-charge ratio (m/z)');
   });
 
-  it('emits student text verbatim rather than parsing it', () => {
-    // Phase-05's open question. On screen the asterisk becomes emphasis; in a file it would be
-    // gone for good, and Obsidian would re-apply the same rule on every open.
-    const text = 'the * marks the limiting reagent';
-    expect(toMarkdown(text, 'student')).toBe('the \\* marks the limiting reagent');
-    expect(toPlainText(text, 'student')).toBe(text);
-    expect(toAnkiHtml(text, 'student')).toBe('the * marks the limiting reagent');
+  it('escapes only what GFM reads as syntax, never a parenthesis', () => {
+    // `\(` and `\)` are MathJax's inline delimiters: escaping a parenthesis turns the rest of the
+    // sentence into an equation in Obsidian.
+    expect(toMarkdown('atomic mass (units u), give or take')).toBe(
+      'atomic mass (units u), give or take',
+    );
+    // A lone `*` is not emphasis and has nothing to pair with, so it escapes; `_c_` is real
+    // italic and round-trips to the canonical `*c*`.
+    expect(toMarkdown('the * marks the limiting reagent')).toBe(
+      'the \\* marks the limiting reagent',
+    );
+    expect(toMarkdown('_c_')).toBe('*c*');
+  });
+
+  it('parses student-origin text too, because the model wrote its markup', () => {
+    // Phase-05's open question, answered the other way round. The student typed "Remember: Have No
+    // Fear of Ice Cold Beer"; the document carries the model's formatted version of it, still
+    // marked `student` because the mnemonic is theirs. Escaping that put literal backslashes in
+    // front of every reader — see the note at the top of `lib/export/inline.ts`.
+    const asDocumented = '**"Have No Fear Of Ice Cold Beer"** → **H**ydrogen, $\\ce{O2}$';
+    expect(toMarkdown(asDocumented)).toContain('**"Have No Fear Of Ice Cold Beer"**');
+    expect(toMarkdown(asDocumented)).toContain('$\\ce{O2}$');
+    expect(toPlainText(asDocumented)).toBe('"Have No Fear Of Ice Cold Beer" → Hydrogen, \\ce{O2}');
   });
 
   it('keeps chemistry maths as MathJax delimiters for Anki and as $$ for Markdown', () => {
     const text = 'Balanced: $$\\ce{2H2 + O2 -> 2H2O}$$';
-    expect(toMarkdown(text, 'ai-added')).toContain('$$\\ce{2H2 + O2 -> 2H2O}$$');
-    expect(toAnkiHtml(text, 'ai-added')).toContain('\\[\\ce{2H2 + O2 -> 2H2O}\\]');
+    expect(toMarkdown(text)).toContain('$$\\ce{2H2 + O2 -> 2H2O}$$');
+    expect(toAnkiHtml(text)).toContain('\\[\\ce{2H2 + O2 -> 2H2O}\\]');
   });
 
   it('renders an unsafe href as characters rather than as a link', () => {
     const text = '[click](javascript:alert(1))';
-    expect(toAnkiHtml(text, 'ai-added')).not.toContain('<a ');
-    expect(toPlainText(text, 'ai-added')).toContain('javascript:');
+    expect(toAnkiHtml(text)).not.toContain('<a ');
+    expect(toPlainText(text)).toContain('javascript:');
   });
 
   it('escapes HTML rather than passing it through to Anki', () => {
-    expect(toAnkiHtml('<script>x</script>', 'ai-added')).toBe('&lt;script&gt;x&lt;/script&gt;');
+    expect(toAnkiHtml('<script>x</script>')).toBe('&lt;script&gt;x&lt;/script&gt;');
   });
 });
