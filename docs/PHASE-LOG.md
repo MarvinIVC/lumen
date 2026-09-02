@@ -852,6 +852,16 @@ deploy failed. The secrets belong to `scheduled()`, which only exists on product
 set in a production-only step **after** the deploy that makes its version live. Anything that moves
 them back in front of the deploy will break previews again.
 
+**A trap phase-07 can spring on sign-in**
+
+Google's OAuth **consent screen is per Cloud project, not per client**, and so is its verification
+status. Sign-in is publishable without review only because the screen requests nothing but
+`openid`, `userinfo.email` and `userinfo.profile` — all non-sensitive. Drive push wants
+`drive.file`, which is **sensitive**: adding it to the same project's consent screen puts the whole
+screen, sign-in included, into Google's verification queue and can show every student an unverified
+-app warning on a flow that works today. Phase-07's Drive client belongs in its own Cloud project,
+or the review has to be planned for deliberately rather than discovered.
+
 **What phase-07 inherits**
 
 Notes carry `exported_at` and `notion_synced_at` and the cards already render both badges; nothing
