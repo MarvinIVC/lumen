@@ -30,6 +30,7 @@
     "test:edge": "node scripts/test-edge.mjs",
     "test:rls": "node scripts/test-rls.mjs",
     "test:sync": "node scripts/test-sync.mjs",
+    "test:share": "node scripts/test-share.mjs",
     "test:account-delete": "node scripts/test-account-delete.mjs",
     "check:edge": "deno check --config supabase/functions/deno.json supabase/functions/*/index.ts",
     "test:e2e": "playwright test",
