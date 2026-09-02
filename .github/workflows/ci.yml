@@ -35,6 +35,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # The OAuth `state` format is implemented once per runtime — a Next route mints it, a Deno
+      # edge function verifies it — and `oauth-state.test.ts` proves the two agree by minting in
+      # node and verifying in Deno, and back. Without Deno on this runner those three assertions
+      # do not fail loudly, they fail as ENOENT, which is a worse way to learn the same thing.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:

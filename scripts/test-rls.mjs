@@ -125,12 +125,42 @@ try {
     .select()
     .single();
   if (quizResult.error) throw quizResult.error;
-  const integrationResult = await a.client
+  // An integration row is created by the OAuth callback with the service role, never by a
+  // browser — phase-07's `0004` revoked `insert` from `authenticated` outright, so this seeds it
+  // the way the product does and then asserts the browser's side of the boundary below.
+  const integrationResult = await admin
     .from('integration')
-    .insert({ owner: a.id, kind: 'notion', token_ciphertext: 'sealed' })
+    .insert({ owner: a.id, kind: 'notion', token_ciphertext: 'sealed', meta: {} })
     .select()
     .single();
   if (integrationResult.error) throw integrationResult.error;
+
+  const forgedIntegration = await a.client
+    .from('integration')
+    .insert({ owner: a.id, kind: 'drive', token_ciphertext: 'forged' });
+  assert(
+    Boolean(forgedIntegration.error),
+    'An authenticated browser inserted an integration row; only the OAuth callback may',
+  );
+
+  // Phase-06 #8, applied to the second secret this product holds: the owner can see *that* a
+  // workspace is connected, and cannot read the token back out.
+  const ownStatus = await a.client.from('integration').select('kind, meta').eq('owner', a.id);
+  assert(!ownStatus.error, "User A could not read their own integration's status");
+  assert(ownStatus.data?.length === 1, 'User A did not see their own integration');
+  const ownToken = await a.client.from('integration').select('token_ciphertext').eq('owner', a.id);
+  assert(Boolean(ownToken.error), 'User A read their own integration token back out');
+
+  const otherStatus = await b.client
+    .from('integration')
+    .select('kind, meta')
+    .eq('id', integrationResult.data.id);
+  assert(!otherStatus.error, "User B's integration read errored instead of returning no rows");
+  assert(otherStatus.data?.length === 0, "User B read user A's integration row");
+
+  // Even the columns a browser may read are refused wholesale, because `*` includes the token.
+  const otherEverything = await b.client.from('integration').select('*');
+  assert(Boolean(otherEverything.error), 'select(*) on integration is not denied to a browser');
 
   for (const [table, id] of [
     ['course', course.id],
@@ -139,7 +169,9 @@ try {
     ['note_asset', childResult.data.id],
     ['flashcard', cardResult.data.id],
     ['quiz_item', quizResult.data.id],
-    ['integration', integrationResult.data.id],
+    // `integration` is deliberately not in this loop: `select('*')` on it is denied outright for
+    // `authenticated`, because there is no grant on the token columns at all. That is a stronger
+    // answer than "no rows", and it is checked on the readable columns just below.
   ]) {
     const result = await b.client.from(table).select('*').eq('id', id);
     assert(!result.error, `User B's ${table} read errored instead of returning no rows`);
@@ -195,12 +227,26 @@ try {
     owner: a.id,
   });
   if (shareInsert.error) throw shareInsert.error;
+  // Phase-07 closed the share table to `anon` entirely. `0003` had left a policy letting anyone
+  // holding a link select the row — which carries `note` and `owner`, so one link disclosed the
+  // owner's user id and two could be correlated to the same person. The public surface is now the
+  // `shared_note()` function and nothing else; `pnpm test:share` drives it end to end.
   const publicShare = await anon.from('share').select('id').eq('id', shareId);
-  assert(publicShare.data?.length === 1, 'A live share was not publicly readable');
+  assert(
+    Boolean(publicShare.error) || publicShare.data?.length === 0,
+    'The share table is readable by a stranger; it carries the owner id',
+  );
   const publicNote = await anon.from('note').select('id').eq('id', note.id);
   assert(
     Boolean(publicNote.error) || publicNote.data?.length === 0,
     'A public share made its note enumerable',
+  );
+  const throughFunction = await anon.rpc('shared_note', { p_share_id: shareId });
+  assert(!throughFunction.error, 'The share function refused a stranger');
+  assert(throughFunction.data?.ok === true, 'A live share was not readable through shared_note()');
+  assert(
+    throughFunction.data?.owner === undefined && throughFunction.data?.note === undefined,
+    'shared_note() leaked an owner or a note id',
   );
 
   const path = `${a.id}/${note.id}/thumb.svg`;
