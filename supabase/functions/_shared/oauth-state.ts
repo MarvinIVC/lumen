@@ -26,10 +26,11 @@ export interface OAuthState {
   next: string;
 }
 
+/** `||` rather than `??`, for the reason recorded on `siteUrl()`: a blank env var is not unset. */
 function secret(): string {
   return (
-    Deno.env.get('INTEGRATION_STATE_SECRET') ??
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ??
+    Deno.env.get('INTEGRATION_STATE_SECRET') ||
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ||
     'local-dev'
   );
 }
