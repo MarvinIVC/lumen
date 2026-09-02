@@ -68,6 +68,55 @@ describe.each(DEFERRED)('%s', (pkg) => {
 });
 
 /**
+ * `docx` reaches the browser through exactly one door (phase-07 §2).
+ *
+ * Same shape as the editor rule below and for the same reason: an `await import()` is not
+ * available here, because the library runs inside a Web Worker whose entry module is its own
+ * chunk. So the guarantee is structural instead — `docx` is imported by the worker and by the
+ * document builder it calls, and nothing else may import either of them.
+ *
+ * Both halves fail differently. A `docx` import anywhere else puts ~600 KB in the bundle of a
+ * student who never exports anything. An import of the builder from a client component drags the
+ * same 600 KB in through the back door, and — because `next.config.ts` aliases `docx` to `false`
+ * in the server compilation — either breaks the build on a missing module or gets "fixed" by
+ * removing the alias, which is the phase-03 trap with a different library.
+ */
+describe('the Word export', () => {
+  const DOCX = /^\s*import\s+(?!type\b)[^;]*?from\s+['"]docx['"]/m;
+  const DOOR = ['lib/export/docx.worker.ts', 'lib/export/docx-document.ts'];
+
+  it('has files to check', () => {
+    for (const file of DOOR) expect(sources).toContain(file);
+  });
+
+  it('is imported only by the worker and the document builder', () => {
+    const offenders = sources
+      .filter((file) => !DOOR.includes(file))
+      .filter((file) => DOCX.test(readFileSync(resolve(ROOT, file), 'utf8')));
+
+    expect(offenders, 'Import docx from lib/export/docx.worker.ts only.').toEqual([]);
+  });
+
+  it('is only entered by constructing the worker', () => {
+    const importers = sources
+      .filter((file) => !DOOR.includes(file))
+      .map((file) => [file, readFileSync(resolve(ROOT, file), 'utf8')] as const)
+      .filter(([, body]) =>
+        body
+          .split('\n')
+          .filter((line) => /['"]@?[./]*\/?(lib\/export\/)?docx(-document|\.worker)/.test(line))
+          .some((line) => !/^\s*import\s+type\b/.test(line)),
+      );
+
+    for (const [file, body] of importers) {
+      expect(body, `${file} must reach the Word export by constructing the worker`).toMatch(
+        /new Worker\(\s*new URL\(\s*['"]\.\/docx\.worker\.ts['"]/,
+      );
+    }
+  });
+});
+
+/**
  * TipTap and ProseMirror reach the browser through exactly one door (phase-05 §8).
  *
  * The other deferred libraries above have one loader module each and are pulled in with
