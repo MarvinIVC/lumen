@@ -198,7 +198,9 @@ alter table public.integration
   add constraint integration_owner_kind_key unique (owner, kind);
 
 revoke select, insert, update, delete on table public.integration from authenticated;
+-- Read to show which workspace is connected, and delete to disconnect. No insert: a row is
+-- created by the OAuth callback with the service role, after an exchange the browser cannot
+-- perform. No update either — `saveMeta` runs inside the push functions.
 grant select (id, owner, kind, meta, account_label, revoked, created_at, updated_at)
   on table public.integration to authenticated;
-grant update (meta) on table public.integration to authenticated;
 grant delete on table public.integration to authenticated;

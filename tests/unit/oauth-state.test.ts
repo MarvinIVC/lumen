@@ -17,8 +17,23 @@ import { mintState, verifyState } from '@/lib/integrations/oauth-state.server';
 const SECRET = 'dGVzdC1zZWNyZXQtZm9yLXRoZS1zdGF0ZS1wYXJhbWV0ZXI=';
 const STATE = { userId: 'user-123', provider: 'notion' as const, next: '/app/settings' };
 
-/** Runs a snippet against the Deno implementation, with the same secret. */
+/**
+ * Runs a snippet against the Deno implementation, with the same secret.
+ *
+ * Deno is already a prerequisite for this repository — `pnpm check:edge` is in the loop and cannot
+ * run without it — but an `ENOENT` from `spawnSync` is an unhelpful way to be told that, so it is
+ * said plainly instead.
+ */
 function deno(snippet: string): string {
+  try {
+    execFileSync('deno', ['--version'], { stdio: 'ignore' });
+  } catch {
+    throw new Error(
+      'This test needs Deno, because it proves the node and Deno halves of the OAuth state ' +
+        'format agree. Install it (https://deno.land) — `pnpm check:edge` needs it too.',
+    );
+  }
+
   return execFileSync(
     'deno',
     [
