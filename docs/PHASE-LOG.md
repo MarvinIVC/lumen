@@ -1037,6 +1037,16 @@ a forged state on both callbacks) and stops there.
   Env reads in `supabase/functions/**` use `||` for this reason, and `.env.test` sets
   `PUBLIC_SITE_URL=` blank on purpose so the guardrails run against the deployed shape. Found by
   checking production after the merge, which is the whole argument of "the rule that matters most".
+- **A pull request applies its migrations and its function secrets to the _live_ Supabase project,
+  before it is merged.** There is one Supabase project for previews and production, and in
+  `deploy.yml` only "Push the auth configuration" is gated on `github.event_name != 'pull_request'`
+  — "Apply migrations" and "Set the function secrets" are not. That is how this phase's
+  `PUBLIC_SITE_URL` reached production from PR #17's deploy while the code fix was still unmerged,
+  and how `0004` was live before #16 merged. It is fine for additive migrations and it is a sharp
+  edge for anything else: **a destructive migration on a branch reaches production the moment CI
+  runs, with no review in between.** Phase-06 gated `config push` for the same class of reason
+  after it overwrote live auth settings; these two were left ungated. Know it before writing a
+  migration that drops or rewrites anything.
 - **The mobile Lighthouse LCP budget on `/` is within ~1.6% of failing.** A tree byte-identical to
   a passing PR run came in at 1828 ms against the 1800 ms ceiling on `main`, and passed on re-run.
   Nothing about `/` changed this phase — it is still 107.7 kB — so this is runner variance on a
