@@ -439,3 +439,38 @@ verify_jwt = true
 [functions.cron-keepalive]
 verify_jwt = false
 
+# ---------------------------------------------------------------------------
+# Production overrides, pushed by the deploy workflow (`supabase config push`).
+#
+# Everything above this line describes the *local* stack, which is why `site_url` points at
+# localhost. Those values are not safe on the live project: `site_url` is the fallback Auth
+# redirects to when a target is not on the allow-list, and `enable_confirmations = false` maps to
+# `mailer_autoconfirm`, which would hand every new account the verified 20/day tier without anyone
+# proving they own the address.
+#
+# This block is the reason the live project's auth settings are reviewable in a diff instead of
+# being dashboard state nobody can see.
+# ---------------------------------------------------------------------------
+[remotes.production]
+project_id = "lgrjaxwuejwfnushnvwv"
+
+[remotes.production.auth]
+site_url = "https://lumen.marvinmaiwang.workers.dev"
+# Exact URLs and one wildcard for the per-PR previews, which is where the sign-in flow is verified
+# before it reaches production.
+additional_redirect_urls = [
+  "https://lumen.marvinmaiwang.workers.dev/auth/callback",
+  "https://*-lumen.marvinmaiwang.workers.dev/auth/callback",
+]
+
+[remotes.production.auth.email]
+# The verified tier is "email confirmed" (04-AI-ENGINE.md §2). Auto-confirming would make every
+# account verified on sight and put the 20/day allowance behind nothing at all.
+enable_confirmations = true
+
+# Google sign-in (01-PRODUCT.md §4). Enabled once the OAuth client exists and both secrets are set
+# in the deploy environment; until then the modal offers the magic link and says so.
+[remotes.production.auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"

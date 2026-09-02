@@ -823,6 +823,26 @@ OpenNext's generated `worker.js` exports only `fetch`, so the weekly trigger nee
 the wrapper, not at `.open-next/worker.js` — the build order matters (`cf:build` first, then
 Wrangler bundles the wrapper), and `check:worker` exercises exactly that path.
 
+**The auth configuration is code now, and the reason is not a happy one**
+
+`supabase/config.toml` described only the local stack, nothing pushed it, and the live project's
+site URL, redirect allow-list and provider set were dashboard state nobody could read in a diff.
+I found that out by running `supabase config push` against the linked project while checking
+whether the CLI would even parse a `[remotes]` block — **it is not a dry run**, and it overwrote
+the live auth config with the localhost values, including `enable_confirmations = false`, which is
+`mailer_autoconfirm` and would have handed every new account the verified 20/day tier without
+anyone proving they own the address. Repaired within minutes and verified against
+`/auth/v1/settings`, but the prior dashboard values are unrecoverable — the live project had never
+had its production callback in the allow-list, so sign-in there had almost certainly never worked.
+
+So: **`[remotes.production]` now holds the live site URL, the redirect allow-list (with a wildcard
+for per-PR previews) and the provider set**, and the deploy job pushes it on production runs only —
+previews are covered by the wildcard, and a pull request that could rewrite live auth config is a
+sharper edge than the migrations this job already applies. Two rules follow from the incident:
+`config push` writes immediately and has no dry-run flag, and **the base `[auth]` block is the
+local stack's** — anything that must differ live belongs in the remote override, or the next push
+quietly applies a development default to production.
+
 **One deployment failure, caught on the PR**
 
 Cloudflare refuses a secret edit while the newest version of a Worker is not the deployed one
