@@ -1027,6 +1027,23 @@ upload. The credentials exist and the functions deploy, but nothing automated ca
 Notion or Google account — `test:edge` covers the door (no session, no connection, nothing to push,
 a forged state on both callbacks) and stops there.
 
+**Two things the next phase should know about the pipeline**
+
+- **A GitHub Actions `${{ vars.X }}` for an undefined variable is the empty string, not nothing.**
+  The deploy ran `supabase secrets set PUBLIC_SITE_URL=""`, so the functions got an env var that
+  existed and was blank — and `??` does not fall back on `''`. `siteUrl()` returned `''`,
+  `new URL('/app/settings')` threw for having no base, and both OAuth callbacks answered 500 in
+  production while returning 303 locally, where the variable was absent rather than blank.
+  Env reads in `supabase/functions/**` use `||` for this reason, and `.env.test` sets
+  `PUBLIC_SITE_URL=` blank on purpose so the guardrails run against the deployed shape. Found by
+  checking production after the merge, which is the whole argument of "the rule that matters most".
+- **The mobile Lighthouse LCP budget on `/` is within ~1.6% of failing.** A tree byte-identical to
+  a passing PR run came in at 1828 ms against the 1800 ms ceiling on `main`, and passed on re-run.
+  Nothing about `/` changed this phase — it is still 107.7 kB — so this is runner variance on a
+  budget with almost no headroom. **Do not widen it to stop the flake**; phase-02 bought that
+  number with the `opsz` axis and it is the honest measure. It is recorded here so the next person
+  to see it red knows to re-run once and look properly if it fails twice.
+
 **Numbers**
 
 694 unit (was 631) · 34 eval · 50 edge (was 43) · 121 Storybook axe · 199 e2e. Worker
