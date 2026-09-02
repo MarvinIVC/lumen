@@ -254,6 +254,16 @@ export const appStrings = {
       `${files} ${files === 1 ? 'source' : 'sources'} · ${chars.toLocaleString('en')} characters`,
   },
 
+  print: {
+    laying: 'Laying it out into pages…',
+    ready: 'Laid out. Print this page and choose “Save as PDF”.',
+    print: 'Print',
+    backToNote: 'Back to the note',
+    nothingTitle: 'There is nothing to print yet',
+    nothingBody:
+      'This note has not been rebuilt into a study guide, so there are no pages to lay out.',
+  },
+
   generate: {
     starting: 'Reading your notes…',
     cancel: 'Stop',
