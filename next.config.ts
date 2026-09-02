@@ -69,8 +69,12 @@ const nextConfig: NextConfig = {
         '@tiptap/core': false,
         '@tiptap/pm': false,
         '@tiptap/starter-kit': false,
-        // ZIP creation only runs after the student presses Data export in Settings.
+        // ZIP creation only runs after the student presses Data export in Settings, and in
+        // phase-07's Markdown export.
         fflate: false,
+        // Phase-07's Word export. `docx` runs inside a Web Worker — it can no more execute in the
+        // server pass than TipTap can, and it is ~600 KB raw, which this budget cannot spare.
+        docx: false,
       };
     }
     return config;
