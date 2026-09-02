@@ -874,3 +874,162 @@ student text is untouched and still lands in phase-07's lap.
 631 unit (was 621) · 34 eval · 43 edge (was 35) · 121 Storybook axe · 190 e2e (10 in the
 library suite). Worker **1934 / 3072 KiB gz — 63%** (was 1783; the Supabase client). `/` 107.7 / 120 KB gz,
 unchanged. `/app/library` first load 200 kB. Schema 1.1.0, prompt 1.3.0 — no prompt string moved.
+
+## Phase 07 — Integrations & export
+
+Shipped 2026-09-03. Four export formats, a print route, public share links, and Notion and Drive.
+Everything a student exports is made **in their own browser** — no note text reaches a server for
+any of it, which is the claim the export menu makes and the one thing this phase must keep true.
+
+**Must not undo**
+
+1. **Exports are built from the workspace's live document, never `note.generated`.**
+   `note.generated` is the raw generation as it was stored; the workspace renders it after
+   `migrateNoteDocument`, which is what mints the block ids. Every figure in every format is
+   looked up by block id — `raster.ts` finds a diagram's SVG with `getElementById(block.id)` — so
+   exporting the stored copy asks for elements whose ids are `undefined`, finds none of them, and
+   produces a document with **no pictures at all**, silently: each figure degrades to its caption,
+   which is exactly what a genuinely absent diagram is supposed to look like. It is also the
+   honest document, because a student who edited their note expects the edits in the file.
+2. **`raster.ts` flattens every `<foreignObject>` before drawing.** 06 §1 configures Mermaid with
+   `flowchart: { htmlLabels: true }`, so node labels are HTML inside a `<foreignObject>` — and an
+   SVG containing one **taints the canvas it is drawn onto**. The failure is quiet: the image
+   decodes, `drawImage` succeeds, and `toBlob` throws "Tainted canvases may not be exported".
+   Every flowchart reached Word as a caption with no picture. `tests/e2e/export.spec.ts` asserts
+   two drawings for the fixture's two visuals, and that assertion was checked against a build with
+   the fix backed out.
+3. **The rasteriser reports its failures out of band.** Both bugs above were invisible because the
+   `catch` swallowed them. It rethrows on a macrotask now, on phase-03's pattern, so the monitor
+   sees the real error while the export carries on without that one figure.
+4. **`docx` has the same one-door rule as TipTap, for the same reasons.** It cannot be behind an
+   `await import()` because it lives in a Web Worker entry chunk, so the guarantee is structural:
+   `docx` is imported only by `docx.worker.ts` and `docx-document.ts`, and nothing else may import
+   either. `dynamic-imports.test.ts` asserts both halves. It is also aliased to `false` in the
+   server compilation like the other nine — the Worker grew only 45 KiB for a 600 KB library.
+5. **The main thread rasterises and the Worker packs, and that split is not a preference.**
+   `createImageBitmap` on an SVG blob is unsupported in Workers on WebKit and Firefox: it resolves
+   in Chrome and rejects on the devices students actually use.
+6. **`/s/:shareId` is `force-dynamic`, and that is the feature.** Phase-02's incremental cache
+   cannot revalidate or write, so a cacheable share page could never be withdrawn and "revoke"
+   would be a button nobody could observe working. Revoke and expiry are re-evaluated on every
+   read inside `shared_note()`.
+7. **The public share surface is one security-definer function and nothing else.** `0003` dropped
+   `note_shared_read` and revoked every grant on `note` from `anon`, so the read path did not
+   exist — and a policy alone could not restore it, because grants are checked first. Rather than
+   grant `anon` access to `note`, `shared_note()` returns exactly the title and the document. An
+   unknown link, a revoked one and an expired one get the **same** answer; a distinguishable
+   'revoked' would confirm to a stranger that the link had once been real.
+8. **The OG card is drawn in the browser, never by `next/og`.** That library put 1.4 MB of
+   WebAssembly in the Worker in phase-02 and broke the deploy at 3787 KiB. The card comes from the
+   SVG phase-06 already saves as the note's thumbnail, fitted onto a 1200×630 canvas — which is
+   what that phase anticipated when it settled that the thumbnail is paper in both themes.
+9. **The share card is named for the share and nothing else.** Filing it under the owner's uid,
+   which is what every other bucket here does, would put that uid in the `og:image` URL of a
+   public page. The storage policy proves ownership by joining `share` instead of reading the path.
+10. **The OAuth `state` is signed, and the format is implemented twice.** The callback is an edge
+    function on the Supabase origin and cannot read the app's httpOnly session, so `state` is the
+    only thing that says who the returning `code` belongs to. Without it the callback attaches a
+    Notion workspace to whichever user id the caller typed in. `oauth-state.test.ts` mints in node
+    and verifies in Deno and back, because a byte of drift makes every connection fail as
+    "state_invalid" with nothing in either file looking wrong.
+11. **A withdrawn token flags the row; it never deletes it.** 06 §3's "never lose the note": the
+    mapping in `integration.meta` survives, so reconnecting puts the note back in the database it
+    was already going to rather than asking the student to choose again.
+12. **Drive's client belongs to its own Google Cloud project**, and `GOOGLE_DRIVE_OAUTH_CLIENT_ID`
+    is named so sign-in's credentials cannot be pasted in by accident. Phase-06 predicted this
+    trap: the consent screen and its verification status are per project, and `drive.file` is
+    sensitive, so sharing the project would put working sign-in into Google's review queue.
+    `access_type=offline` and `prompt=consent` are load-bearing — without both, a connection stops
+    working an hour later and looks broken rather than expired.
+
+**Five things that were wrong and would not have looked wrong**
+
+1. **Every export lost every figure**, because the model was built from the stored note whose block
+   ids are null. See #1. Found by opening the files, not by a test.
+2. **Every Mermaid diagram was missing from Word**, because a `<foreignObject>` taints the canvas.
+   See #2. The image decoded, so nothing looked like an error anywhere.
+3. **A stranger holding a share link could read the owner's user id.** `0003`'s
+   `share_public_read` let `anon` select the `share` row, which carries `note` and `owner` — so one
+   link disclosed the owner and two could be correlated to the same person. Nothing public reads
+   that table any more; the policy and the grant are both gone. Found by `pnpm test:share` asking
+   for the row as a stranger rather than trusting the SQL to mean what it looked like.
+4. **The saved thumbnail ran long titles off the edge and printed LaTeX at the reader.** SVG
+   `<text>` does not wrap, so the real AP Chem title came out as "Atomic Structure and Properties —
+   the mo"; and the card is built from the document's own blocks, which are written in the
+   restricted markdown the renderer parses, so it showed `$6.022\times10^{23}$` verbatim. Both were
+   already true of every **library card** and had been since phase-06 — putting the same file in
+   front of strangers as an Open Graph card is what made anyone look. Titles wrap to two lines now
+   and `readableMath` renders the maths that turns up in a first paragraph as `6.022×10²³ mol⁻¹`.
+5. **The worked example printed its answer twice** in Markdown, because the renderer shows
+   `answerLatex` _instead of_ `answer` — the plain form is its screen-reader text. Only visible by
+   reading the generated file.
+
+**Phase-05's open question, answered the other way round**
+
+The plan was to emit student-origin text verbatim in the exporters, so a note saying "the * marks
+the limiting reagent" kept its asterisk. Dumping the fixture showed what that actually does: the
+student typed `Remember: Have No Fear of Ice Cold Beer` and the model returned
+`**"Have No Fear Of Ice Cold Beer"** → **H**ydrogen …` with `$\ce{O2}$` in it, **still marked
+`student`**, because the mnemonic is theirs. `origin: 'student'` means the substance is the
+student's, not that the characters are — and no field in the document holds raw keystrokes;
+`Correction.original` and `originalText` are the model's transcription and carry its notation too.
+Escaping put literal backslashes in front of every reader on every note, a real regression traded
+against a hypothetical one this corpus does not contain. **The exporters parse every origin, as the
+renderer does, and the renderer is unchanged.** The question is closed.
+
+Related: `escapeMarkdown` escapes only what GFM reads as syntax. The obvious set is every
+escapable punctuation mark and it is actively wrong — `\(` and `\)` are MathJax's inline
+delimiters, so escaping a parenthesis makes Obsidian render `\(units u\)` as the start of an
+equation.
+
+**Decided, and worth not re-deciding**
+
+- **Anki ships as CSV, not `.apkg`.** Not because the container is hard: a `Flashcard` is text and
+  maths and never an image, so a deck built from it has no media — and media is the only thing
+  `.apkg` buys. Against that, `collection.anki2` fails silently in three ways (a checksum over the
+  stripped first field, an `\x1f` field separator, per-note GUIDs). What makes the CSV import
+  cleanly is the `#` directive block, which configures Anki's own import dialog: the student picks
+  the file and presses Import. `.apkg` is tracked for v1.1, where sql.js can do it properly.
+- **Maths in Word is a LaTeX line, not OMML.** `docx` has OMML primitives but no LaTeX converter,
+  and mhchem's `\ce{}` has no OMML analogue at all, so a partial converter would silently mangle
+  exactly the chemistry this product exists to get right. Word 2016+ converts a clean LaTeX line
+  in place through its own equation editor.
+- **Notion gets a picture where mhchem is involved.** Their KaTeX build has no mhchem, so an
+  `equation` block containing `\ce{}` renders as a red error box — a broken page and no chemistry,
+  which is strictly worse than a picture of the right thing. Everything else is a real `equation`.
+- **Re-pushing to Notion keeps the page id** and archives its children, rather than making a new
+  page. Slower — one paced request per existing block — but the page URL is the backlink a student
+  has already pasted somewhere.
+- **Drive uploads into folders Lumen made.** `drive.file` grants access only to files the app
+  created, so Lumen cannot list a student's existing folders at all. The Google Picker is the way
+  to reach anywhere else and costs an external script, an API key and client bytes; it is the v1.1
+  path.
+- **`exported_at` is local-only.** Exporting is the one action in this product that never touches
+  the server, so making it write to the cloud would be the feature contradicting its own promise —
+  and `sync_note` writes a fixed column list with no `exported_at` in it, so syncing the badge
+  would mean a second writer to `note`, which is the trap that filed a student's own edit as a
+  conflicted copy in phase-06. `notion_synced_at` **is** written server-side, by `notion-push`,
+  because that push is already a server operation.
+- **Blocks are mapped to Notion in the browser** and relayed by the function. That is where the
+  rendered diagrams are, and making the whole export chain Deno-safe would be four modules
+  rewritten to serve one caller.
+
+**What is verified, and what is not**
+
+Verified end to end: all four formats produced by pressing the real Export button (the PDF printed
+from the real route — 11 pages, KaTeX fonts embedded, 10,178 text-showing operators, so genuinely
+vector and selectable); the share flow against a local Supabase with a real magic-link session,
+including the card served from storage, `og:image`, `noindex` by default and revoke taking effect
+immediately; and the OAuth start route asking for exactly `drive.file` with offline consent.
+
+**Not yet verified against a real account:** a Notion push into a live workspace, and a Drive
+upload. The credentials exist and the functions deploy, but nothing automated can hold a real
+Notion or Google account — `test:edge` covers the door (no session, no connection, nothing to push,
+a forged state on both callbacks) and stops there.
+
+**Numbers**
+
+694 unit (was 631) · 34 eval · 50 edge (was 43) · 121 Storybook axe · 199 e2e. Worker
+**2001.7 / 3072 KiB gz — 65%** (was 1934; `docx` added 45 KiB because it is aliased out of the
+server build). `/` 107.7 / 120 KB gz, unchanged. Schema 1.1.0, prompt 1.3.0 — no prompt string
+moved. Migration `0004_share_integrations.sql`.
