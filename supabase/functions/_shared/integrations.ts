@@ -92,9 +92,20 @@ export async function saveMeta(
   });
 }
 
-/** Where the app lives, for redirects back out of a function. */
+/**
+ * Where the app lives, for redirects back out of a function.
+ *
+ * **`||`, not `??`, and that distinction was a production-only 500.** A GitHub Actions
+ * `${{ vars.X }}` for a variable nobody has defined expands to the *empty string*, not to nothing
+ * — so `supabase secrets set PUBLIC_SITE_URL=""` gives this an env var that exists and is blank.
+ * `??` only falls back on null and undefined, so `siteUrl()` returned `''`, `new URL('/app')` threw
+ * for having no base, and both OAuth callbacks answered 500 where they should have redirected.
+ *
+ * Locally the variable is absent rather than blank, so the fallback worked and `test:edge` passed.
+ * `.env.test` now sets it to empty on purpose, which is the shape production actually has.
+ */
 export function siteUrl(): string {
-  return (Deno.env.get('PUBLIC_SITE_URL') ?? 'http://localhost:3000').replace(/\/$/, '');
+  return (Deno.env.get('PUBLIC_SITE_URL') || 'http://localhost:3000').replace(/\/$/, '');
 }
 
 /** This function's own public URL, which is what an OAuth provider must be given as the redirect. */
