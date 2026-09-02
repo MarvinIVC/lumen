@@ -18,12 +18,18 @@ import type { ExportProgress } from './bundle';
 
 const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-export async function exportDocx(
+/**
+ * The Word document as a blob.
+ *
+ * Split out from the download so the Drive push uploads the same bytes rather than growing a
+ * second implementation of "the Word export" that drifts from this one.
+ */
+export async function buildDocxBlob(
   note: LocalNote,
   doc: NoteDocument,
   options: ExportOptions,
   onProgress?: ExportProgress,
-): Promise<void> {
+): Promise<Blob> {
   const model = modelFor(note, doc, options);
   const rasters = await collectRasters(model, note, 'docx', (done, total) =>
     onProgress?.('rendering', done, total),
@@ -33,7 +39,17 @@ export async function exportDocx(
   const bytes = await pack({ model, rasters: [...rasters.values()] });
   onProgress?.('packing', 1, 1);
 
-  downloadBlob(`${safeFilename(model.title)}.docx`, new Blob([bytes], { type: DOCX_MIME }));
+  return new Blob([bytes], { type: DOCX_MIME });
+}
+
+export async function exportDocx(
+  note: LocalNote,
+  doc: NoteDocument,
+  options: ExportOptions,
+  onProgress?: ExportProgress,
+): Promise<void> {
+  const blob = await buildDocxBlob(note, doc, options, onProgress);
+  downloadBlob(`${safeFilename(modelFor(note, doc, options).title)}.docx`, blob);
 }
 
 /**

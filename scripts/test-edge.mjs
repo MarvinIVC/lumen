@@ -494,6 +494,85 @@ async function main() {
   await testByokAccountSync();
   await testKillSwitch();
   await testKeepalive();
+  await testIntegrationGuards();
+
+  /**
+   * The integration functions, at the door (06 §3).
+   *
+   * Everything past the door needs a real Notion or Google account, which no automated check can
+   * have. What *can* be proved here is the part that protects a student: that none of these will act
+   * for a caller they cannot identify, and that a push for somebody with no connection is refused
+   * rather than half-done.
+   */
+  async function testIntegrationGuards() {
+    const keys = localKeys();
+    const anonHeaders = { authorization: `Bearer ${keys.ANON_KEY}`, apikey: keys.ANON_KEY };
+
+    const admin = createClient(SUPABASE_URL, keys.SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
+    });
+    const email = `integ-${crypto.randomUUID().slice(0, 8)}@example.test`;
+    const password = `Integ-${crypto.randomUUID()}!`;
+    const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+    if (created.error || !created.data.user)
+      throw created.error ?? new Error('Could not create user');
+    const userClient = createClient(SUPABASE_URL, keys.ANON_KEY, {
+      auth: { persistSession: false },
+    });
+    const signedIn = await userClient.auth.signInWithPassword({ email, password });
+    if (signedIn.error || !signedIn.data.session) throw signedIn.error ?? new Error('No session');
+    const ownerToken = signedIn.data.session.access_token;
+
+    try {
+      for (const fn of ['notion-push', 'notion-search', 'drive-push']) {
+        const { response } = await post(fn, {}, anonHeaders);
+        check(
+          `${fn} refuses a caller with no session`,
+          response.status === 401,
+          `got ${response.status}`,
+        );
+      }
+
+      // A signed-in student who has never connected Notion gets `reauth`, not a 500 and not a
+      // half-written page: 06 §3's "never lose the note" starts here.
+      const { response: unconnected, text } = await post(
+        'notion-push',
+        { noteLocalId: 'nte-guard', blocks: [{ object: 'block', type: 'divider', divider: {} }] },
+        { authorization: `Bearer ${ownerToken}`, apikey: keys.ANON_KEY },
+      );
+      check(
+        'notion-push asks an unconnected student to connect, rather than failing',
+        unconnected.status === 409 && text.includes('reauth'),
+        `got ${unconnected.status} ${text.slice(0, 120)}`,
+      );
+
+      const { response: noBlocks } = await post(
+        'notion-push',
+        { noteLocalId: 'nte-guard' },
+        { authorization: `Bearer ${ownerToken}`, apikey: keys.ANON_KEY },
+      );
+      check(
+        'notion-push refuses a request with nothing to push',
+        noBlocks.status === 400 || noBlocks.status === 409,
+        `got ${noBlocks.status}`,
+      );
+
+      // The OAuth callbacks are redirects, and an unsigned `state` must not reach the token exchange.
+      for (const fn of ['notion-oauth', 'drive-auth']) {
+        const response = await fetch(`${BASE}/${fn}?code=fake&state=forged`, {
+          redirect: 'manual',
+        });
+        const location = response.headers.get('location') ?? '';
+        check(
+          `${fn} refuses a forged state`,
+          response.status === 303 && location.includes('state_invalid'),
+          `got ${response.status} ${location}`,
+        );
+      }
+    } finally {
+      await admin.auth.admin.deleteUser(created.data.user.id).catch(() => {});
+    }
+  }
 
   for (const { name, ok, detail } of results) {
     console.log(

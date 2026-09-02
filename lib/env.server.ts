@@ -19,8 +19,14 @@ const serverSchema = z.object({
   BYOK_ENC_KEY: optional(z.string().min(32)),
   NOTION_OAUTH_CLIENT_ID: optional(z.string()),
   NOTION_OAUTH_CLIENT_SECRET: optional(z.string()),
-  GOOGLE_OAUTH_CLIENT_ID: optional(z.string()),
-  GOOGLE_OAUTH_CLIENT_SECRET: optional(z.string()),
+  // Drive's client belongs to its own Google Cloud project — the consent screen and its
+  // verification status are per project, and `drive.file` is a sensitive scope. The name is what
+  // stops sign-in's credentials being pasted in here. See `.env.example`.
+  GOOGLE_DRIVE_OAUTH_CLIENT_ID: optional(z.string()),
+  GOOGLE_DRIVE_OAUTH_CLIENT_SECRET: optional(z.string()),
+  // Signs the `state` that carries a student's identity through an OAuth round trip, because the
+  // callback is an edge function on another origin and cannot read the app's session.
+  INTEGRATION_STATE_SECRET: optional(z.string().min(16)),
   SUPABASE_SERVICE_ROLE_KEY: optional(z.string().min(20)),
   SENTRY_DSN: optional(z.url()),
   TURNSTILE_SECRET: optional(z.string()),

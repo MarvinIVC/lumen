@@ -19,6 +19,7 @@ import { ActionBar } from './action-bar';
 import { AskDialog } from './ask-dialog';
 import { EditView } from './edit-view';
 import { ExportControls } from './export-controls';
+import { IntegrationControls } from './integration-controls';
 import { ShareControls } from './share-controls';
 import { Notice } from '@/lib/app/notice';
 import { ReadView } from './read-view';
@@ -110,6 +111,13 @@ export function Workspace({
         {readingMode === 'my-original' && !hasOriginalContent(doc) ? (
           <Notice tone="info">{strings.originalEmpty}</Notice>
         ) : null}
+      </div>
+
+      {/* Notion and Drive sit under the banners rather than in the action bar: they are a
+          destination for a finished note rather than something you do while reading one, and the
+          bar is already the busiest row on the page. They render nothing when signed out. */}
+      <div className="mx-auto mt-4 w-full max-w-(--note-shell)">
+        <IntegrationControls note={note} doc={doc} />
       </div>
 
       <div className="mt-6">

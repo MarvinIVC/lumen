@@ -296,6 +296,63 @@ export const appStrings = {
     expiryMonth: 'Expires in a month',
   },
 
+  integrations: {
+    notionPushing: 'Sending it to Notion…',
+    notionCreated: 'Created in Notion.',
+    notionUpdated: 'Updated the page in Notion.',
+    drivePushing: 'Uploading to Drive…',
+    driveDone: (folder: string) => `Saved to Lumen ▸ ${folder}.`,
+    open: 'Open',
+    pushFailed: (name: string) => `${name} did not take it`,
+    pushFailedBody: 'Your note is exactly as it was. Trying again usually works.',
+    reauthTitle: (name: string) => `${name} needs reconnecting`,
+    reauthBody:
+      'They withdrew our access, which happens. Your note is untouched and still on this ' +
+      'device — reconnect and it will go to the same place as before.',
+    pickTitle: 'Where should this course go?',
+    pickBody: (course: string) =>
+      `Choose once for ${course}. Every note in it goes to the same place after that.`,
+    noTargets:
+      'Notion has not shared any pages with Lumen yet. In Notion, open the page or database you ' +
+      'want, then use ••• → Connections → Lumen.',
+    /** What the OAuth callbacks hand back in the query string. */
+    returned: {
+      connected: { title: (name: string) => `${name} connected.`, tone: 'success' as const },
+      cancelled: {
+        title: (name: string) => `${name} was not connected`,
+        body: 'You cancelled, which is fine — nothing changed.',
+        tone: 'neutral' as const,
+      },
+      not_configured: {
+        title: (name: string) => `${name} is not set up on this deployment`,
+        body: 'The keys for it are missing. Everything else still works.',
+        tone: 'warning' as const,
+      },
+      state_invalid: {
+        title: (name: string) => `That ${name} link had expired`,
+        body: 'Start again from the note and it will work.',
+        tone: 'warning' as const,
+      },
+      exchange_failed: {
+        title: (name: string) => `${name} refused the connection`,
+        body: 'Nothing was stored. Trying again usually works.',
+        tone: 'danger' as const,
+      },
+      failed: {
+        title: (name: string) => `${name} could not be connected`,
+        body: 'Nothing was stored, and your notes are untouched.',
+        tone: 'danger' as const,
+      },
+    } as Record<
+      string,
+      {
+        title: (name: string) => string;
+        body?: string;
+        tone: 'success' | 'neutral' | 'warning' | 'danger';
+      }
+    >,
+  },
+
   print: {
     laying: 'Laying it out into pages…',
     ready: 'Laid out. Print this page and choose “Save as PDF”.',
