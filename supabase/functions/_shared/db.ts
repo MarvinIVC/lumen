@@ -42,6 +42,41 @@ export async function rpc<T>(name: string, args: Record<string, unknown>): Promi
   return (text ? JSON.parse(text) : null) as T;
 }
 
+/** Insert or update, with the conflict target PostgREST needs to resolve an upsert. */
+export async function upsert<T>(
+  table: string,
+  row: Record<string, unknown>,
+  onConflict: string,
+): Promise<T[]> {
+  const response = await fetch(
+    `${url}/rest/v1/${table}?on_conflict=${encodeURIComponent(onConflict)}`,
+    {
+      method: 'POST',
+      headers: headers({ prefer: 'resolution=merge-duplicates,return=representation' }),
+      body: JSON.stringify(row),
+    },
+  );
+  if (!response.ok)
+    throw new Error(`upsert ${table} failed: ${response.status} ${await response.text()}`);
+  return (await response.json()) as T[];
+}
+
+/** A filtered update. `filter` is a PostgREST query string, e.g. `id=eq.123`. */
+export async function patch<T>(
+  table: string,
+  filter: string,
+  row: Record<string, unknown>,
+): Promise<T[]> {
+  const response = await fetch(`${url}/rest/v1/${table}?${filter}`, {
+    method: 'PATCH',
+    headers: headers({ prefer: 'return=representation' }),
+    body: JSON.stringify(row),
+  });
+  if (!response.ok)
+    throw new Error(`patch ${table} failed: ${response.status} ${await response.text()}`);
+  return (await response.json()) as T[];
+}
+
 export interface AuthUser {
   id: string;
   emailConfirmed: boolean;

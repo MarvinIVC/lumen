@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { FileIcon, SparkIcon } from '@/components/ui/icons';
 import { StreamingDoc } from '@/components/domain/streaming-doc';
 import { Notice } from '@/lib/app/notice';
+import { useToast } from '@/components/ui/toast';
 import { Workspace } from '@/lib/app/workspace/workspace';
 import { appStrings } from '@/lib/app/strings';
 import { APP_NEW, APP_SETTINGS, reviewHref } from '@/lib/app/routes';
@@ -39,7 +40,34 @@ import type { NoteDocument } from '@/lib/ai/schema';
  * A note left in `generating` by a closed tab does not auto-restart. It offers to, which is the
  * difference between a student choosing to spend a credit and us spending it for them.
  */
+function useIntegrationReturn(): void {
+  const toast = useToast();
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    for (const provider of ['notion', 'drive'] as const) {
+      const status = url.searchParams.get(provider);
+      if (!status) continue;
+      const name = provider === 'notion' ? 'Notion' : 'Google Drive';
+      const message =
+        appStrings.integrations.returned[status] ?? appStrings.integrations.returned.failed!;
+      toast({
+        title: message.title(name),
+        ...(message.body ? { description: message.body } : {}),
+        tone: message.tone,
+      });
+      url.searchParams.delete(provider);
+      window.history.replaceState(null, '', url.toString());
+    }
+  }, [toast]);
+}
+
 export function NoteScreen({ noteId }: { noteId: string }) {
+  // The OAuth callbacks are redirects and can render nothing themselves, so they hand the outcome
+  // back in the query string. Phase-06 shipped `?auth=failed` written by two routes and read by
+  // nobody, which left an expired magic link looking like a successful sign-in; this is the same
+  // shape of message and it gets read.
+  useIntegrationReturn();
   const [note, setNote] = useState<LocalNote | null | undefined>(undefined);
   const [document, setDocument] = useState<NoteDocument | null>(null);
   const [status, setStatus] = useState<string>(appStrings.generate.starting);
