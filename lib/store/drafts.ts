@@ -157,6 +157,23 @@ export async function saveNote(
   if (options.queue ?? true) await queueMutation('note', note.id);
 }
 
+/**
+ * Records that this note has been exported, for the badge on its library card.
+ *
+ * **Local only, and deliberately.** `updatedAt` is preserved and no sync mutation is queued, for
+ * two reasons. Exporting is the one action in this product that never touches the server, so
+ * making it write to the cloud would be the feature contradicting its own promise. And phase-06's
+ * `sync_note` writes a fixed column list that has no `exported_at` in it — the way to sync this
+ * would be to add a second writer to `note`, which is the trap that filed a student's own edit as
+ * a conflicted copy last phase. The badge is per-device until something needs it not to be.
+ */
+export async function markExported(id: string, at = Date.now()): Promise<void> {
+  const db = await getDb();
+  const note = await db?.get('notes', id);
+  if (!db || !note) return;
+  await db.put('notes', { ...note, exportedAt: new Date(at).toISOString() });
+}
+
 export async function loadNote(id: string): Promise<LocalNote | null> {
   const db = await getDb();
   return (await db?.get('notes', id)) ?? null;

@@ -10,6 +10,7 @@ import { DEFAULT_EXPORT_OPTIONS } from './types';
 import type {
   ExportBlock,
   ExportEndnote,
+  ExportFormat,
   ExportModel,
   ExportOptions,
   ExportSection,
@@ -109,4 +110,17 @@ function flow(
 /** Every block that will need rasterizing, in document order. */
 export function visualBlocks(model: ExportModel): ExportBlock[] {
   return model.sections.flatMap((section) => section.blocks.filter((row) => isVisual(row.block)));
+}
+
+/**
+ * Whether this visual needs rasterising for a given format.
+ *
+ * Markdown keeps a Mermaid diagram as its source in a ```mermaid fence, because Obsidian draws it
+ * — so rasterising one there costs a second of work and puts a 40 KB picture in the bundle that
+ * nothing links to. Every other format needs the pixels.
+ */
+export function needsRaster(row: ExportBlock, format: ExportFormat): boolean {
+  const block = row.block;
+  const isMermaid = block.type === 'diagram' && block.engine === 'mermaid' && Boolean(block.source);
+  return format === 'markdown' ? !isMermaid : true;
 }

@@ -80,6 +80,152 @@ async function seedNote(page: Page): Promise<string> {
 }
 
 /**
+ * Every format, produced by pressing the button a student presses (06 §2).
+ *
+ * These drive the real menu and catch the real download, because every bug this suite has found so
+ * far was invisible from the unit tests: the exporters read the *rendered* page for their pictures,
+ * so nothing that does not render can prove they work.
+ */
+test.describe('export', () => {
+  test.skip(
+    ({ browserName }) => browserName !== 'chromium',
+    'downloads and canvas rasterising are engine-independent here; chromium is enough',
+  );
+  test.slow();
+
+  test('carries both diagrams into Word, and the Mermaid one as a real picture', async ({
+    page,
+  }) => {
+    const id = await seedNote(page);
+    await page.goto(`/app/note/${id}`);
+    await page.waitForSelector('.lumen-note');
+
+    // The rasteriser reads the SVGs off the page, so the export is only meaningful once they are
+    // drawn. Mermaid and the charts both land asynchronously.
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll('.lumen-note [id]')].filter((element) =>
+          element.querySelector('svg.flowchart, svg[class*="overflow-visible"]'),
+        ).length >= 2,
+      undefined,
+      { timeout: 40_000 },
+    );
+
+    const failures: string[] = [];
+    page.on('pageerror', (error) => failures.push(error.message));
+
+    await page.getByRole('button', { name: 'Export' }).click();
+    const download = page.waitForEvent('download', { timeout: 120_000 });
+    await page.getByRole('menuitem', { name: /Word/i }).click();
+    const file = await download;
+    expect(file.suggestedFilename()).toMatch(/\.docx$/);
+
+    const path = await file.path();
+    const { readFileSync } = await import('node:fs');
+    const { unzipSync, strFromU8 } = await import('fflate');
+    const files = unzipSync(new Uint8Array(readFileSync(path)));
+    const document = strFromU8(files['word/document.xml']!);
+
+    // Two visuals in the fixture, two pictures in the file. This is the assertion that catches the
+    // canvas-taint bug: a Mermaid diagram uses `htmlLabels`, so its SVG carries a `<foreignObject>`,
+    // and drawing one onto a canvas taints it — `toBlob` then throws and the figure degrades to a
+    // caption with no picture. Everything still "works", and the diagram is simply gone.
+    expect(document.match(/<w:drawing>/g) ?? []).toHaveLength(2);
+    expect(Object.keys(files).filter((name) => /^word\/media\/.+/.test(name)).length).toBe(2);
+
+    // The rasteriser reports its failures out of band rather than swallowing them.
+    expect(failures.filter((message) => /[Tt]ainted|toBlob/.test(message))).toEqual([]);
+  });
+
+  test('leaves Mermaid as source in the Markdown bundle, with no orphan picture', async ({
+    page,
+  }) => {
+    const id = await seedNote(page);
+    await page.goto(`/app/note/${id}`);
+    await page.waitForSelector('.lumen-note');
+    await page.waitForFunction(
+      () => document.querySelectorAll('.lumen-note svg').length >= 2,
+      undefined,
+      { timeout: 40_000 },
+    );
+
+    await page.getByRole('button', { name: 'Export' }).click();
+    const download = page.waitForEvent('download', { timeout: 120_000 });
+    await page.getByRole('menuitem', { name: /Markdown/i }).click();
+    const file = await download;
+
+    const { readFileSync } = await import('node:fs');
+    const { unzipSync, strFromU8 } = await import('fflate');
+    const files = unzipSync(new Uint8Array(readFileSync(await file.path())));
+    const markdown = strFromU8(files['note.md']!);
+
+    // Obsidian draws Mermaid itself, so the source goes out rather than a picture of it — and no
+    // asset is written for it, because an unreferenced 40 KB PNG in the bundle is just weight.
+    expect(markdown).toContain('```mermaid');
+    const assets = Object.keys(files).filter((name) => name.startsWith('assets/'));
+    for (const asset of assets) {
+      expect(markdown, `${asset} is in the bundle but nothing links to it`).toContain(asset);
+    }
+    expect(assets.length).toBeGreaterThan(0);
+  });
+
+  test('ships the Anki deck with its import guide', async ({ page }) => {
+    const id = await seedNote(page);
+    await page.goto(`/app/note/${id}`);
+    await page.waitForSelector('.lumen-note');
+
+    await page.getByRole('button', { name: 'Export' }).click();
+    const download = page.waitForEvent('download', { timeout: 120_000 });
+    await page.getByRole('menuitem', { name: /Anki/i }).click();
+    const file = await download;
+
+    const { readFileSync } = await import('node:fs');
+    const { unzipSync, strFromU8 } = await import('fflate');
+    const files = unzipSync(new Uint8Array(readFileSync(await file.path())));
+    expect(Object.keys(files).sort()).toEqual(['flashcards.txt', 'how-to-import.md']);
+
+    const deck = strFromU8(files['flashcards.txt']!);
+    expect(deck.split('\n')[0]).toBe('#separator:tab');
+    expect(deck).toContain('#deck:Lumen::AP Chemistry');
+  });
+
+  test('records the export on the note, for the library badge', async ({ page }) => {
+    const id = await seedNote(page);
+    await page.goto(`/app/note/${id}`);
+    await page.waitForSelector('.lumen-note');
+
+    await page.getByRole('button', { name: 'Export' }).click();
+    const download = page.waitForEvent('download', { timeout: 120_000 });
+    await page.getByRole('menuitem', { name: /Anki/i }).click();
+    await download;
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            (noteId) =>
+              new Promise<string | null>((done) => {
+                const open = indexedDB.open('lumen');
+                open.onsuccess = () => {
+                  const request = open.result
+                    .transaction('notes', 'readonly')
+                    .objectStore('notes')
+                    .get(noteId);
+                  request.onsuccess = () => {
+                    open.result.close();
+                    done((request.result as { exportedAt?: string })?.exportedAt ?? null);
+                  };
+                };
+              }),
+            id,
+          ),
+        { timeout: 20_000 },
+      )
+      .not.toBeNull();
+  });
+});
+
+/**
  * Pagination is expensive and engine-independent, and phase-01 learned what running it on every
  * project costs: enough to blow a 20-minute CI job on its own. Printing is a desktop action.
  */

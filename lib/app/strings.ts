@@ -11,6 +11,14 @@
  * locale `/app` claims, and moving it into the catalogues is one file's work when the app UI is
  * translated. Copy voice is 01-PRODUCT.md §6 — warm, plain, talks to a smart 16-year-old as a peer.
  */
+/** What each format is called in a sentence, rather than in a menu. */
+const FORMAT_NAMES: Record<string, string> = {
+  docx: 'Word document',
+  markdown: 'Markdown bundle',
+  anki: 'Anki deck',
+  pdf: 'PDF',
+};
+
 export const appStrings = {
   auth: {
     signIn: 'Sign in',
@@ -326,7 +334,13 @@ export const appStrings = {
     saveToLibrary: 'Save to library',
     saveToLibraryHint: 'Sign in to keep this across your devices.',
     exportCta: 'Export',
-    exportSoon: 'Exporting arrives in the next build.',
+    exportUnavailable: 'Export needs the note open on this device.',
+    exportLocal: 'Made on this device — nothing is uploaded.',
+    exportStarted: (format: string) => `Building your ${FORMAT_NAMES[format] ?? format}…`,
+    exportDone: (format: string) => `${FORMAT_NAMES[format] ?? format} downloaded.`,
+    exportFailed: 'That export did not finish',
+    exportFailedBody:
+      'Nothing was lost — your note is exactly as it was. Trying again usually works.',
     shareCta: 'Share',
     shareSoon: 'Sharing arrives in the next build.',
     regenerate: 'Regenerate',

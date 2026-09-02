@@ -7,6 +7,7 @@
  * unsupported in Workers on WebKit and Firefox, so the pictures have to be drawn on the main
  * thread, and packing the zip is the part that is actually slow enough to be worth moving off it.
  */
+import type { NoteDocument } from '@/lib/ai/schema';
 import type { LocalNote } from '@/lib/store/types';
 
 import { collectRasters, modelFor } from './bundle';
@@ -19,11 +20,12 @@ const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingm
 
 export async function exportDocx(
   note: LocalNote,
+  doc: NoteDocument,
   options: ExportOptions,
   onProgress?: ExportProgress,
 ): Promise<void> {
-  const model = modelFor(note, options);
-  const rasters = await collectRasters(model, note, (done, total) =>
+  const model = modelFor(note, doc, options);
+  const rasters = await collectRasters(model, note, 'docx', (done, total) =>
     onProgress?.('rendering', done, total),
   );
 
