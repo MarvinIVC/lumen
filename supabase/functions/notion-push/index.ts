@@ -38,6 +38,9 @@ async function paced<T>(run: () => Promise<T>): Promise<T> {
 
 class Revoked extends Error {}
 
+/** Carries Notion's own explanation, so a failed push can be reported rather than guessed at. */
+class PushFailed extends Error {}
+
 async function notion(
   token: string,
   path: string,
@@ -66,7 +69,20 @@ async function notion(
     return notion(token, path, init);
   }
 
-  if (!response.ok) throw new Error(`notion ${path}: ${response.status} ${await response.text()}`);
+  if (!response.ok) {
+    // Notion says precisely what it did not like — "body.children[0].toggle.icon should be not
+    // present" — and that sentence is the difference between a fixable report and a shrug. It is
+    // carried out to the client rather than swallowed into a generic failure.
+    const body = await response.text();
+    let detail = body.slice(0, 300);
+    try {
+      const parsed = JSON.parse(body) as { message?: string; code?: string };
+      detail = parsed.message ?? parsed.code ?? detail;
+    } catch {
+      // Not JSON. The truncated body is still better than nothing.
+    }
+    throw new PushFailed(`${response.status}: ${detail}`);
+  }
   return (await response.json()) as Record<string, unknown>;
 }
 
@@ -267,7 +283,13 @@ serve(async (request) => {
         409,
       );
     }
-    return error(request, 'push_failed', 'That push did not finish. Your note is untouched.', 502);
+    const detail = thrown instanceof PushFailed ? ` (${thrown.message})` : '';
+    return error(
+      request,
+      'push_failed',
+      `Notion did not accept that push${detail}. Your note is untouched.`,
+      502,
+    );
   }
 });
 

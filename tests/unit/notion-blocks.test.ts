@@ -137,3 +137,83 @@ describe('Notion blocks', () => {
     expect(parts.map((part) => part.text!.content).join('')).toHaveLength(5000);
   });
 });
+
+/**
+ * Every block, checked against the properties Notion actually allows for its type.
+ *
+ * This exists because of a bug that shipped: the mapper put an `icon` on a `toggle` and on a
+ * `bulleted_list_item`. `icon` is a property of `callout`, and of pages and databases, and of
+ * nothing else — so Notion answered `body.children[N].toggle.icon should be not present` and
+ * rejected the request. The append is one call, so a single invalid property loses the whole
+ * document, and what the student saw was an empty page in their workspace and "that push did not
+ * finish".
+ *
+ * An allow-list rather than a validator: the failure mode is emitting a property that reads
+ * plausibly and is not in the schema, which is exactly what a hand-written allow-list catches and
+ * what "does it have the required fields" does not.
+ */
+const ALLOWED: Record<string, string[]> = {
+  paragraph: ['rich_text', 'color', 'children'],
+  heading_1: ['rich_text', 'color', 'is_toggleable'],
+  heading_2: ['rich_text', 'color', 'is_toggleable'],
+  heading_3: ['rich_text', 'color', 'is_toggleable'],
+  bulleted_list_item: ['rich_text', 'color', 'children'],
+  numbered_list_item: ['rich_text', 'color', 'children'],
+  toggle: ['rich_text', 'color', 'children'],
+  callout: ['rich_text', 'icon', 'color', 'children'],
+  code: ['rich_text', 'caption', 'language'],
+  equation: ['expression'],
+  divider: [],
+  image: ['type', 'external', 'file', 'file_upload', 'caption'],
+  table: ['table_width', 'has_column_header', 'has_row_header', 'children'],
+  table_row: ['cells'],
+};
+
+describe('the Notion block schema', () => {
+  function walk(blocks: ReturnType<typeof toNotionBlocks>['blocks'], path = 'root'): string[] {
+    const problems: string[] = [];
+
+    for (const [index, block] of blocks.entries()) {
+      const where = `${path}[${index}] ${block.type}`;
+      const allowed = ALLOWED[block.type];
+      if (!allowed) {
+        problems.push(`${where}: unknown block type`);
+        continue;
+      }
+
+      const body = block[block.type] as Record<string, unknown> | undefined;
+      for (const key of Object.keys(body ?? {})) {
+        if (!allowed.includes(key)) problems.push(`${where}: '${key}' is not a property of it`);
+      }
+
+      const children = (body as { children?: unknown })?.children;
+      if (Array.isArray(children)) {
+        problems.push(...walk(children as ReturnType<typeof toNotionBlocks>['blocks'], where));
+      }
+    }
+
+    return problems;
+  }
+
+  it('emits no property Notion does not have for that block type', () => {
+    const { blocks } = mapped();
+    expect(walk(blocks)).toEqual([]);
+  });
+
+  it('keeps the icon on the one block that takes one', () => {
+    const { blocks } = mapped();
+    const callouts = blocks.filter((block) => block.type === 'callout');
+    expect(callouts.length).toBeGreaterThan(0);
+    expect(callouts.every((block) => 'icon' in (block.callout as object))).toBe(true);
+  });
+
+  it('puts the emoji in the text where the block cannot carry one', () => {
+    const { blocks } = mapped();
+    const toggles = blocks.filter((block) => block.type === 'toggle');
+    expect(toggles.length).toBeGreaterThan(0);
+    for (const block of toggles) {
+      const body = block.toggle as { rich_text: { text?: { content: string } }[] };
+      expect(body.rich_text[0]?.text?.content).toMatch(/^\p{Extended_Pictographic}/u);
+    }
+  });
+});

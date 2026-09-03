@@ -194,8 +194,9 @@ export function toNotionBlocks(model: ExportModel, backlink: string): NotionMapp
         object: 'block',
         type: 'bulleted_list_item',
         bulleted_list_item: {
-          icon: { type: 'emoji', emoji: MARGIN_ICONS[note.kind] ?? '📝' },
-          rich_text: rich(`${note.number}. ${note.text}`),
+          // The emoji goes *in* the text. `icon` is a property of `callout` and of pages, and of
+          // nothing else — see the note on `toggle()`.
+          rich_text: rich(`${MARGIN_ICONS[note.kind] ?? '📝'} ${note.number}. ${note.text}`),
         },
       });
     }
@@ -259,13 +260,21 @@ export function toNotionBlocks(model: ExportModel, backlink: string): NotionMapp
   return { blocks, images };
 }
 
+/**
+ * A collapsible section.
+ *
+ * **No `icon`.** Notion allows `icon` on a `callout` and on a page or database, and on nothing
+ * else — a `toggle.icon` is rejected with `body.children[N].toggle.icon should be not present`,
+ * and because the whole append is one request, one bad property loses the entire document. That is
+ * what a student saw as an empty page in Notion and "that push did not finish". The emoji goes in
+ * the title text instead, which reads the same and is a thing the API actually has.
+ */
 function toggle(title: string, emoji: string, children: NotionBlock[]): NotionBlock {
   return {
     object: 'block',
     type: 'toggle',
     toggle: {
-      rich_text: plain(title),
-      icon: { type: 'emoji', emoji },
+      rich_text: plain(`${emoji} ${title}`),
       // Notion caps children per request; the push splits a long toggle rather than losing the end.
       children: children.slice(0, MAX_CHILDREN),
     },
