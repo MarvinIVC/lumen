@@ -659,14 +659,46 @@ test.describe('editing', () => {
  * The stubs that are honest about being stubs
  * ========================================================================== */
 
-test.describe('what is not built yet', () => {
-  test('save, export and share say what they will do', async ({ page }) => {
+test.describe('save to library', () => {
+  test('files the note under its course and says where it went', async ({ page }) => {
     const id = await seedNote(page);
     await openNote(page, id);
 
     await page.getByRole('button', { name: 'Save to library' }).click();
+
+    // It used to say "Sign in to keep this across your devices", which was false twice over: the
+    // library is local-first and needs no account, and the note was already filed. Signed out is
+    // the case that proves it — this test has no session at all.
     // Twice on the page by design: the visible toast, and the assertive live region that announces
     // it. `.first()` is the visible one.
-    await expect(page.getByText(/Sign in to keep this across your devices/).first()).toBeVisible();
+    await expect(page.getByText(/Filed in your library/).first()).toBeVisible();
+    await expect(page.getByText(/Under AP Chemistry/).first()).toBeVisible();
+  });
+
+  test('is idempotent — pressing it twice files it once', async ({ page }) => {
+    const id = await seedNote(page);
+    await openNote(page, id);
+
+    await page.getByRole('button', { name: 'Save to library' }).click();
+    await expect(page.getByText(/Filed in your library/).first()).toBeVisible();
+    await page.getByRole('button', { name: 'Save to library' }).click();
+
+    const courses = await page.evaluate(
+      () =>
+        new Promise<number>((done) => {
+          const open = indexedDB.open('lumen');
+          open.onsuccess = () => {
+            const request = open.result
+              .transaction('courses', 'readonly')
+              .objectStore('courses')
+              .getAll();
+            request.onsuccess = () => {
+              open.result.close();
+              done((request.result as unknown[]).length);
+            };
+          };
+        }),
+    );
+    expect(courses).toBe(1);
   });
 });

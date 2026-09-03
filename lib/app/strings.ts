@@ -328,6 +328,11 @@ export const appStrings = {
         body: 'The keys for it are missing. Everything else still works.',
         tone: 'warning' as const,
       },
+      signed_out: {
+        title: () => 'Sign in first',
+        body: 'Connecting an account needs an account — signing in takes a moment.',
+        tone: 'warning' as const,
+      },
       state_invalid: {
         title: (name: string) => `That ${name} link had expired`,
         body: 'Start again from the note and it will work.',
@@ -423,7 +428,14 @@ export const appStrings = {
     edit: 'Edit',
     study: 'Study',
     saveToLibrary: 'Save to library',
-    saveToLibraryHint: 'Sign in to keep this across your devices.',
+    saveUnavailable: 'Saving needs the note open on this device.',
+    savedToLibrary: 'Filed in your library.',
+    savedUnder: (course: string, unit: string) =>
+      unit ? `Under ${course} ▸ ${unit}.` : `Under ${course}.`,
+    savedPlain: 'You can find it from the library at any time.',
+    viewLibrary: 'View library',
+    saveFailed: 'That did not save',
+    saveFailedBody: 'The note is still here on this device. Trying again usually works.',
     exportCta: 'Export',
     exportUnavailable: 'Export needs the note open on this device.',
     exportLocal: 'Made on this device — nothing is uploaded.',

@@ -64,6 +64,8 @@ export interface ActionBarProps {
   exportMenu?: React.ReactNode;
   /** The share dialog, injected for the same reason as `exportMenu`. */
   shareControls?: React.ReactNode;
+  /** "Save to library", injected for the same reason: it touches IndexedDB. */
+  saveToLibrary?: React.ReactNode;
 }
 
 export function ActionBar({
@@ -81,6 +83,7 @@ export function ActionBar({
   onUnavailable,
   exportMenu,
   shareControls,
+  saveToLibrary,
 }: ActionBarProps) {
   return (
     <div
@@ -116,14 +119,16 @@ export function ActionBar({
               </Button>
             ) : null}
 
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<BookIcon />}
-              onClick={() => onUnavailable(strings.saveToLibraryHint)}
-            >
-              {strings.saveToLibrary}
-            </Button>
+            {saveToLibrary ?? (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<BookIcon />}
+                onClick={() => onUnavailable(strings.saveUnavailable)}
+              >
+                {strings.saveToLibrary}
+              </Button>
+            )}
 
             {exportMenu ?? (
               <Button
