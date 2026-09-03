@@ -1014,6 +1014,19 @@ equation.
   rendered diagrams are, and making the whole export chain Deno-safe would be four modules
   rewritten to serve one caller.
 
+**Two things a student found that no check did**
+
+- **Every Connect button answered `not_configured`** — the secrets-have-two-homes trap above.
+- **"Save to library" told a signed-in student to sign in.** A phase-05 stub nobody rewired, and
+  its copy was false twice over: the library is local-first and needs no account, and the note is
+  already filed automatically on the sign-in merge and on every library screen load. It files the
+  note now and says where it went, which is the one moment the automatic filing does not cover —
+  straight after generating. Its tests run signed _out_, which is what demonstrates the old
+  message was wrong.
+
+Both were reachable only by using the deployed app. Neither was a logic error; both were a gap
+between where a thing runs and where its configuration lives.
+
 **What is verified, and what is not**
 
 Verified end to end: all four formats produced by pressing the real Export button (the PDF printed
@@ -1037,6 +1050,15 @@ a forged state on both callbacks) and stops there.
   Env reads in `supabase/functions/**` use `||` for this reason, and `.env.test` sets
   `PUBLIC_SITE_URL=` blank on purpose so the guardrails run against the deployed shape. Found by
   checking production after the merge, which is the whole argument of "the rule that matters most".
+- **A secret has two homes, and wiring it to one of them looks exactly like wiring it to both.**
+  The OAuth _callbacks_ are Supabase edge functions and read Supabase function secrets. The OAuth
+  _start_ route is a Next route, so it runs in the **Cloudflare Worker** and reads that Worker's
+  secrets — and `deploy.yml` hands the Worker only what its `wrangler secret bulk` step names.
+  Phase-07 set the keys on the Supabase side, shipped, and every Connect button answered
+  `not_configured` in production while working perfectly against `next dev`, because `next dev`
+  reads `.env.local` and supplies them for free. **A config path tested on a machine that already
+  has the config is not tested.** The Worker gets the two client _ids_ now; the client _secrets_
+  stay Supabase-side, because only the token exchange needs them.
 - **A pull request applies its migrations and its function secrets to the _live_ Supabase project,
   before it is merged.** There is one Supabase project for previews and production, and in
   `deploy.yml` only "Push the auth configuration" is gated on `github.event_name != 'pull_request'`
