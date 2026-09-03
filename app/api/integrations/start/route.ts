@@ -25,17 +25,31 @@ const SCOPES = {
   drive: 'https://www.googleapis.com/auth/drive.file',
 };
 
+/**
+ * Back into the app, with something the workspace can say out loud.
+ *
+ * A student pressed a button; they must not end up looking at a JSON body on a white page. Every
+ * failure here returns them to where they started with a status the note screen already turns into
+ * a toast — `appStrings.integrations.returned` has an entry for each of these.
+ */
+function back(next: string, provider: string, status: string, origin: string): Response {
+  const url = new URL(next, origin);
+  url.searchParams.set(provider === 'drive' ? 'drive' : 'notion', status);
+  return Response.redirect(url.toString(), 303);
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const provider = url.searchParams.get('provider');
   const next = safeAppNext(url.searchParams.get('next'));
 
   if (provider !== 'notion' && provider !== 'drive') {
-    return Response.json({ error: 'unknown_provider' }, { status: 400 });
+    return back(next, 'notion', 'failed', url.origin);
   }
 
   const session = await requireSupabaseUser();
-  if (!session) return Response.json({ error: 'signed_out' }, { status: 401 });
+  // Signing in is the fix, and the workspace is where the button to do it lives.
+  if (!session) return back(next, provider, 'signed_out', url.origin);
 
   const state = mintState({ userId: session.user.id, provider, next });
   const callback = new URL(
@@ -45,7 +59,7 @@ export async function GET(request: Request) {
 
   if (provider === 'notion') {
     const id = serverEnv().NOTION_OAUTH_CLIENT_ID;
-    if (!id) return Response.json({ error: 'not_configured' }, { status: 501 });
+    if (!id) return back(next, provider, 'not_configured', url.origin);
 
     const authorize = new URL('https://api.notion.com/v1/oauth/authorize');
     authorize.searchParams.set('client_id', id);
@@ -57,7 +71,7 @@ export async function GET(request: Request) {
   }
 
   const id = serverEnv().GOOGLE_DRIVE_OAUTH_CLIENT_ID;
-  if (!id) return Response.json({ error: 'not_configured' }, { status: 501 });
+  if (!id) return back(next, provider, 'not_configured', url.origin);
 
   const authorize = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   authorize.searchParams.set('client_id', id);

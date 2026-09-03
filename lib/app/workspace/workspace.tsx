@@ -20,6 +20,7 @@ import { AskDialog } from './ask-dialog';
 import { EditView } from './edit-view';
 import { ExportControls } from './export-controls';
 import { IntegrationControls } from './integration-controls';
+import { SaveToLibrary } from './save-to-library';
 import { ShareControls } from './share-controls';
 import { Notice } from '@/lib/app/notice';
 import { ReadView } from './read-view';
@@ -101,6 +102,7 @@ export function Workspace({
         onUnavailable={(message) => toast({ title: 'Not yet', description: message })}
         exportMenu={<ExportControls note={note} doc={doc} />}
         shareControls={<ShareControls note={note} doc={doc} />}
+        saveToLibrary={<SaveToLibrary note={note} />}
       />
 
       <div className="mx-auto flex w-full max-w-(--note-shell) flex-col gap-4">
